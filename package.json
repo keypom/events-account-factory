@@ -1,0 +1,19 @@
+{
+	"name": "keypom-trial-accounts",
+	"version": "1.0.0",
+	"license": "MIT",
+	"author": "Ben Kurrek, Matt Lockyer",
+	"scripts": {
+		"build": "cd contract && ./build.sh",
+		"test": "ava __tests__/tests.ava.ts"
+	},
+	"dependencies": {
+		"@types/bn.js": "^5.1.0",
+		"ava": "^5.2.0",
+		"near-api-js": "^0.45.1",
+		"near-workspaces": "^3.3.0",
+		"ts-node": "^10.8.0",
+		"typescript": "^4.6.4",
+		"keypom-js": "1.4.5"
+	}
+}
