@@ -13,6 +13,18 @@ impl Contract {
         } else {
             env::panic_str("Balance overflow");
         }
+
+        // Increment the total supply and log a mint event
+        self.total_supply += amount;
+        env::log_str(&EventLog {
+            standard: FT_STANDARD_NAME.to_string(),
+            version: FT_METADATA_SPEC.to_string(),
+            event: EventLogVariant::FtMint(FtMintLog {
+                owner_id: account_id.to_string(),
+                amount: amount.to_string(),
+                memo: None,
+            })
+        }.to_string());
     }
 
     /// Internal method for depositing some amount of FTs into an account. 
