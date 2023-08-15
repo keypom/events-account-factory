@@ -3,7 +3,8 @@ use crate::*;
 #[derive(BorshSerialize, BorshStorageKey)]
 pub enum StorageKeys {
     VendorInfo,
-    Admins
+    Admins,
+    BalanceByAccount
 }
 
 /// For each vendor, there's a store-front and list of items for sale
