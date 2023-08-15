@@ -5,7 +5,7 @@ impl Contract {
     /// Allows a user to specify a list of items for a specific vendor to purchase.
     /// This will transfer their tokens to the vendor (assuming they have enough)
     #[handle_result]
-    pub fn purchase_item(&mut self, vendor_id: AccountId, item_ids: Vec<String>) -> Result<Vec<String>, String> {
+    pub fn purchase_item(&mut self, vendor_id: AccountId, item_ids: Vec<u64>) -> Result<Vec<u64>, String> {
         let vendor_data = self.data_by_vendor.get(&vendor_id).expect("No vendor found");
 
         // Tally the total price across all the items being purchased

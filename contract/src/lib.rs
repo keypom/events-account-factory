@@ -7,10 +7,12 @@ use near_sdk::{near_bindgen, BorshStorageKey, PanicOnDefault, AccountId, require
 mod models;
 mod events;
 mod fungible_tokens;
+mod vendors;
 
 use models::*;
 use fungible_tokens::*;
 use events::*;
+use vendors::*;
 
 const TRIAL_CONTRACT: &[u8] = include_bytes!("../../out/trial-accounts.wasm");
 const INITIAL_TOTAL_SUPPLY: u128 = 1_000_000_000;
@@ -55,18 +57,5 @@ impl Contract {
         };
         contract.internal_deposit_mint(&env::current_account_id(), INITIAL_TOTAL_SUPPLY);
         contract
-    }
-
-    // pub fn add_vendor(&mut self, vendor_id: AccountId, vendor_info: VendorInformation) {
-    //     self.assert_admin();
-    //     self.vendor_info.insert(&vendor_id, &vendor_info);
-    // }
-
-    // pub fn get_vendor_info(&self, vendor_id: AccountId) -> VendorInformation {
-    //     self.vendor_info.get(&vendor_id).expect("No vendor found")
-    // }
-
-    pub(crate) fn assert_admin(&self) {
-        require!(self.admin_accounts.contains(&env::predecessor_account_id()), "Unauthorized");
     }
 }

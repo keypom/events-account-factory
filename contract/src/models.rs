@@ -1,8 +1,10 @@
 use crate::*;
+use near_sdk::CryptoHash;
 
 #[derive(BorshSerialize, BorshStorageKey)]
 pub enum StorageKeys {
     DataByVendor,
+    VendorItems { vendor_id_hash: CryptoHash },
     AdminAccounts,
     BalanceByAccount
 }
@@ -13,13 +15,26 @@ pub struct VendorInformation {
     /// Info to render on the store-front 
     pub metadata: VendorMetadata,
     /// List of items for sale
-    pub item_by_id: LookupMap<String, VendorItem>
+    pub item_by_id: UnorderedMap<u64, InternalVendorItem>
 }
 
 /// Represents an asset that is purchasable.
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
 #[serde(crate = "near_sdk::serde")]
-pub struct VendorItem {
+pub struct InternalVendorItem {
+    pub id: String,
+    pub name: String,
+    pub image: String,
+    /// Price in $NCON
+    pub price: U128,
+    /// Is the item currently purchasable?
+    pub in_stock: bool,
+}
+
+/// Represents an asset that is purchasable.
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
+#[serde(crate = "near_sdk::serde")]
+pub struct ExtVendorItem {
     pub name: String,
     pub image: String,
     /// Price in $NCON
