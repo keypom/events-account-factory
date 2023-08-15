@@ -2,19 +2,18 @@ use crate::*;
 
 #[derive(BorshSerialize, BorshStorageKey)]
 pub enum StorageKeys {
-    VendorInfo,
-    Admins,
+    DataByVendor,
+    AdminAccounts,
     BalanceByAccount
 }
 
 /// For each vendor, there's a store-front and list of items for sale
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
-#[serde(crate = "near_sdk::serde")]
+#[derive(BorshSerialize, BorshDeserialize)]
 pub struct VendorInformation {
     /// Info to render on the store-front 
     pub metadata: VendorMetadata,
     /// List of items for sale
-    pub items: Vec<VendorItem>
+    pub item_by_id: LookupMap<String, VendorItem>
 }
 
 /// Represents an asset that is purchasable.

@@ -13,13 +13,14 @@ use fungible_tokens::*;
 use events::*;
 
 const TRIAL_CONTRACT: &[u8] = include_bytes!("../../out/trial-accounts.wasm");
+const INITIAL_TOTAL_SUPPLY: u128 = 1_000_000_000;
 
 #[near_bindgen]
 #[derive(BorshSerialize, BorshDeserialize, PanicOnDefault)]
 pub struct Contract {
     // ------------------------ Vendor Information ------------------------ //
-    pub vendor_info: UnorderedMap<AccountId, VendorInformation>,
-    pub admins: LookupSet<AccountId>,
+    pub data_by_vendor: UnorderedMap<AccountId, VendorInformation>,
+    pub admin_accounts: LookupSet<AccountId>,
 
     // ------------------------ Fungible Tokens ------------------------ //
     pub balance_by_account: LookupMap<AccountId, Balance>,
@@ -34,12 +35,12 @@ pub struct Contract {
 impl Contract {
     #[init]
     pub fn new(allowed_drop_id: String) -> Self {
-        Self {
-            vendor_info: UnorderedMap::new(StorageKeys::VendorInfo),
-            admins: LookupSet::new(StorageKeys::Admins),
+        let mut contract = Self {
+            data_by_vendor: UnorderedMap::new(StorageKeys::DataByVendor),
+            admin_accounts: LookupSet::new(StorageKeys::AdminAccounts),
             
             balance_by_account: LookupMap::new(StorageKeys::BalanceByAccount),
-            total_supply: 1_000_000_000_000, // Todo: change
+            total_supply: 0,
             metadata: FungibleTokenMetadata {
                 spec: "ft-1.0.0".to_string(),
                 name: "NEARCon Fungible Token".to_string(),
@@ -51,19 +52,21 @@ impl Contract {
             },
 
             allowed_drop_id
-        }
+        };
+        contract.internal_deposit_mint(&env::current_account_id(), INITIAL_TOTAL_SUPPLY);
+        contract
     }
 
-    pub fn add_vendor(&mut self, vendor_id: AccountId, vendor_info: VendorInformation) {
-        self.assert_admin();
-        self.vendor_info.insert(&vendor_id, &vendor_info);
-    }
+    // pub fn add_vendor(&mut self, vendor_id: AccountId, vendor_info: VendorInformation) {
+    //     self.assert_admin();
+    //     self.vendor_info.insert(&vendor_id, &vendor_info);
+    // }
 
-    pub fn get_vendor_info(&self, vendor_id: AccountId) -> VendorInformation {
-        self.vendor_info.get(&vendor_id).expect("No vendor found")
-    }
+    // pub fn get_vendor_info(&self, vendor_id: AccountId) -> VendorInformation {
+    //     self.vendor_info.get(&vendor_id).expect("No vendor found")
+    // }
 
     pub(crate) fn assert_admin(&self) {
-        require!(self.admins.contains(&env::predecessor_account_id()), "Unauthorized");
+        require!(self.admin_accounts.contains(&env::predecessor_account_id()), "Unauthorized");
     }
 }

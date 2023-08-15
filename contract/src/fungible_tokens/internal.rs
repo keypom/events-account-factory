@@ -1,18 +1,7 @@
-use near_sdk::{require};
-
 use crate::*;
+use near_sdk::require;
 
 impl Contract {
-    /// Internal method for force getting the balance of an account. If the account doesn't have a balance, panic with a custom message.
-    pub(crate) fn internal_unwrap_balance_of(&self, account_id: &AccountId) -> Balance {
-        match self.balance_by_account.get(account_id) {
-            Some(balance) => balance,
-            None => {
-                env::panic_str(format!("The account {} is not registered", &account_id).as_str())
-            }
-        }
-    }
-
     /// Internal method for depositing some amount of FTs into an account and updating the total supply.
     pub(crate) fn internal_deposit_mint(&mut self, account_id: &AccountId, amount: Balance) {
         // Get the current balance of the account. If they're not registered, panic.
@@ -28,8 +17,8 @@ impl Contract {
 
     /// Internal method for depositing some amount of FTs into an account. 
     pub(crate) fn internal_deposit(&mut self, account_id: &AccountId, amount: Balance) {
-        // Get the current balance of the account. If they're not registered, panic.
-        let balance = self.internal_unwrap_balance_of(account_id);
+        // Get the current balance of the account.
+        let balance = self.balance_by_account.get(&account_id).unwrap_or(0);
         
         // Add the amount to the balance and insert the new balance into the accounts map
         if let Some(new_balance) = balance.checked_add(amount) {
@@ -41,8 +30,8 @@ impl Contract {
 
     /// Internal method for withdrawing some amount of FTs from an account. 
     pub(crate) fn internal_withdraw(&mut self, account_id: &AccountId, amount: Balance) {
-        // Get the current balance of the account. If they're not registered, panic.
-        let balance = self.internal_unwrap_balance_of(account_id);
+        // Get the current balance of the account.
+        let balance = self.balance_by_account.get(&account_id).unwrap_or(0);
         
         // Decrease the amount from the balance and insert the new balance into the accounts map
         if let Some(new_balance) = balance.checked_sub(amount) {
@@ -57,8 +46,7 @@ impl Contract {
         &mut self,
         sender_id: &AccountId,
         receiver_id: &AccountId,
-        amount: Balance,
-        memo: Option<String>,
+        amount: Balance
     ) {
         // Ensure the sender can't transfer to themselves
         require!(sender_id != receiver_id, "Sender and receiver should be different");
@@ -77,15 +65,8 @@ impl Contract {
                 old_owner_id: sender_id.to_string(),
                 new_owner_id: receiver_id.to_string(),
                 amount: amount.to_string(),
-                memo,
+                memo: None,
             })
         }.to_string());
-    }
-
-    /// Internal method for registering an account with the contract.
-    pub(crate) fn internal_register_account(&mut self, account_id: &AccountId) {
-        if self.balance_by_account.insert(account_id, &0).is_some() {
-            env::panic_str("The account is already registered");
-        }
     }
 }
