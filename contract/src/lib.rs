@@ -12,7 +12,6 @@ mod vendors;
 use models::*;
 use fungible_tokens::*;
 use events::*;
-use vendors::*;
 
 const TRIAL_CONTRACT: &[u8] = include_bytes!("../../out/trial-accounts.wasm");
 const INITIAL_TOTAL_SUPPLY: u128 = 1_000_000_000;
