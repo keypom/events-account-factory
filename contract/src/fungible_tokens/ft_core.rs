@@ -4,15 +4,15 @@ use crate::*;
 impl Contract {
     /// Allows an admin to mint an amount of tokens to a desired account ID.
     /// Useful for dropping tokens to users for things like attending talks
-    pub fn drop_tokens(&mut self, account_id: AccountId, amount: Balance) {
+    pub fn drop_tokens(&mut self, account_id: AccountId, amount: U128) {
         self.assert_admin();
-        self.internal_deposit_mint(&account_id, amount);
+        self.internal_deposit_mint(&account_id, amount.0);
     }
 
     /// Allows a user to specify a list of items for a specific vendor to purchase.
     /// This will transfer their tokens to the vendor (assuming they have enough)
     #[handle_result]
-    pub fn purchase_item(&mut self, vendor_id: AccountId, item_ids: Vec<u64>) -> Result<Vec<u64>, String> {
+    pub fn purchase_items(&mut self, vendor_id: AccountId, item_ids: Vec<u64>) -> Result<Vec<u64>, String> {
         let vendor_data = self.data_by_vendor.get(&vendor_id).expect("No vendor found");
 
         // Tally the tgotal price across all the items being purchased

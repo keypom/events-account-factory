@@ -70,12 +70,14 @@ impl Contract {
     }
 
     pub(crate) fn assert_admin(&self) {
-        require!(self.admin_accounts.contains(&env::predecessor_account_id()), "Unauthorized");
+        if env::predecessor_account_id() != env::current_account_id() {
+            require!(self.admin_accounts.contains(&env::predecessor_account_id()), "Unauthorized");
+        }
     }
 
     pub(crate) fn assert_admin_or_vendor(&self, vendor_id: &AccountId) {
         // If the caller isn't the vendor, ensure they're an admin
-        if env::predecessor_account_id() != vendor_id.clone() {
+        if env::predecessor_account_id() != vendor_id.clone() && env::predecessor_account_id() != env::current_account_id() {
             self.assert_admin();
         }
     }

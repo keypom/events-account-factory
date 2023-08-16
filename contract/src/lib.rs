@@ -14,8 +14,6 @@ use models::*;
 use fungible_tokens::*;
 use events::*;
 
-const INITIAL_TOTAL_SUPPLY: u128 = 1_000_000_000;
-
 #[near_bindgen]
 #[derive(BorshSerialize, BorshDeserialize, PanicOnDefault)]
 pub struct Contract {
@@ -44,7 +42,7 @@ impl Contract {
         starting_near_balance: U128,
         starting_ncon_balance: U128
     ) -> Self {
-        let mut contract = Self {
+        Self {
             data_by_vendor: UnorderedMap::new(StorageKeys::DataByVendor),
             admin_accounts: LookupSet::new(StorageKeys::AdminAccounts),
             
@@ -64,9 +62,7 @@ impl Contract {
             keypom_contract,
             starting_near_balance: starting_near_balance.into(),
             starting_ncon_balance: starting_ncon_balance.into(),
-        };
-        contract.internal_deposit_mint(&env::current_account_id(), INITIAL_TOTAL_SUPPLY);
-        contract
+        }
     }
 
     #[private]
