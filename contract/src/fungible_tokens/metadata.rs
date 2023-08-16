@@ -25,4 +25,9 @@ impl Contract {
     pub fn ft_metadata(&self) -> FungibleTokenMetadata {
         self.metadata.clone()
     }
+
+    #[private]
+    pub fn update_ft_metadata(&mut self, metadata: FungibleTokenMetadata) {
+        self.metadata = metadata;
+    }
 }

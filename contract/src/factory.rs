@@ -1,4 +1,4 @@
-use near_sdk::{PublicKey, Promise};
+use near_sdk::{PublicKey, Promise, Gas, GasWeight};
 
 use crate::*;
 
@@ -14,6 +14,7 @@ pub struct KeypomArgs {
 }
 
 const TRIAL_CONTRACT: &[u8] = include_bytes!("../../out/trial-accounts.wasm");
+const SETUP_ARGS: &[u8] = include_bytes!("../../out/setup_args.json");
 
 #[near_bindgen]
 impl Contract {
@@ -40,13 +41,16 @@ impl Contract {
             .add_access_key(new_public_key.into(), 0, account_id, "execute,create_account_and_claim".to_string())
             .transfer(self.starting_near_balance)
             .deploy_contract(TRIAL_CONTRACT.to_vec())
+            .function_call_weight("setup".to_string(), SETUP_ARGS.to_vec(), 0, Gas(10_000_000_000_000), GasWeight(0))
     }
 
     /// In the case that multiple people choose the same username (i.e ben.nearcon.near) at the same time
     /// Before the frontend can validate, we should simply append a number to the end of the username i.e ben1.nearcon.near & ben2.nearcon.near etc...
     pub(crate) fn find_available_account_id(&self, new_account_id: AccountId) -> AccountId {
-        let account_prefix = "foo".to_string();
-        let account_suffix = ".foo.testnet".to_string();
+        let delim = format!(".{}", env::current_account_id()).to_string();
+        let binding = new_account_id.to_string();
+        let split: Vec<&str> = binding.split(&delim).collect();
+        let prefix = split[0].to_string();
 
         let mut account_id = new_account_id.clone();
         let found = false;
@@ -60,7 +64,7 @@ impl Contract {
             }
 
             i += 1;
-            account_id = format!("{}-{}{}", new_account_id, i, account_suffix).parse().unwrap();
+            account_id = format!("{}-{}.{}", prefix, i, env::current_account_id()).parse().unwrap();
         };
 
         new_account_id

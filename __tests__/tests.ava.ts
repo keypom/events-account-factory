@@ -1,7 +1,6 @@
 import anyTest, { TestFn } from "ava";
-import { claimTrialAccountDrop, createDrop, createTrialAccountDrop, getDrops, getUserBalance, parseNearAmount, trialCallMethod } from "keypom-js";
-import { NearAccount, Worker } from "near-workspaces";
-import { CONTRACT_METADATA, initKeypomConnection } from "./utils/general";
+import { NEAR, NearAccount, Worker } from "near-workspaces";
+import { TrialRules, generateKeyPairs, parseExecutionResults } from "./utils";
 const { readFileSync } = require('fs');
 
 const test = anyTest as TestFn<{
@@ -21,27 +20,27 @@ test.beforeEach(async (t) => {
     // Prepare sandbox for tests, create accounts, deploy contracts, etc.
     const root = worker.rootAccount;
     
-    const keypom = await root.createSubAccount('keypom');
-    const mapping = await root.createSubAccount('mapping');
+    const nearcon = await root.createSubAccount('nearcon23');
     
-    // Custom-root.near, deploy contracts to it and init new linkdrop
-    await root.deploy(`./out/linkdrop.wasm`);
     // Deploy the keypom contract.
-    await keypom.deploy(`./out/keypom.wasm`);
-    await mapping.deploy(`./out/mapping.wasm`);
-    
-    // Init empty/default linkdrop contract
-    await root.call(root, 'new', {});
-    // Init the contract
-    await keypom.call(keypom, 'new', {root_account: 'testnet', owner_id: keypom, contract_metadata: CONTRACT_METADATA});
-    await mapping.call(mapping, 'new', {});
+    await nearcon.deploy(`./out/factory.wasm`);
+
+    await nearcon.call(nearcon, 'new', {
+        allowed_drop_id: 'nearcon-drop', 
+        keypom_contract: 'keypom.test.near',
+        starting_ncon_balance: NEAR.parse("1").toString(),
+        starting_near_balance: NEAR.parse("1").toString(),
+    });
 
     // Test users
     const funder = await root.createSubAccount('funder');
+    const admin = await root.createSubAccount('admin');
+    const foodVendor = await root.createSubAccount('food_vendor');
+    const merchVendor = await root.createSubAccount('merch_vendor');
 
     // Save state for test runs
     t.context.worker = worker;
-    t.context.accounts = { root, keypom, funder, mapping };
+    t.context.accounts = { root, nearcon, funder, admin, foodVendor, merchVendor };
     t.context.rpcPort = rpcPort;
 });
 
@@ -52,62 +51,81 @@ test.afterEach(async t => {
     });
 });
 
+// test('Create Duplicate Accounts', async t => {
+//     const { root, nearcon, funder } = t.context.accounts;
+//     const rpcPort = t.context.rpcPort;
+//     const dropId = 'nearcon-drop';
+//     const keys = await generateKeyPairs(1);
+//     const newAccountId = `benji.${nearcon.accountId}`
+
+//     // Loop 3 times
+//     for (let i = 0; i < 3; i++) {
+//         let rawVal = await nearcon.callRaw(nearcon, 'create_account', {
+//             new_account_id: newAccountId, 
+//             new_public_key: keys.publicKeys[0],
+//             drop_id: dropId,
+//             keypom_args: {
+//                 drop_id_field: "drop_id"
+//             }
+//         });
+
+//         parseExecutionResults(
+//             "create_account",
+//             nearcon.accountId,
+//             rawVal,
+//             true,
+//             false
+//         );
+
+//         let expectedAccountId = i == 0 ? `benji.${nearcon.accountId}` : `benji-${i}.${nearcon.accountId}`
+//         let account = root.getAccount(expectedAccountId);
+//         let doesExist = await account.exists();
+//         t.is(doesExist, true, `Account ${expectedAccountId} does not exist`);
+
+//         let accountContract = await account.viewCode();
+//         console.log('accountContract: ', accountContract)
+
+//         let rules: TrialRules = await account.view("get_rules", {});
+//         console.log('rules: ', rules)
+//         t.is(rules, 
+//         {
+//             amounts: '100000000000000000000000000',
+//             contracts: 'testnet',
+//             floor: '0',
+//             funder: 'bar',
+//             methods: 'bar',
+//             repay: 'bar',
+//             current_floor: '1000000000000000000000000'
+//         });
+//     }
+// });
+
 //testing drop empty initialization and that default values perform as expected
-test('Claim trial account drop', async t => {
-    const {keypom, funder, mapping} = t.context.accounts;
-    const rpcPort = t.context.rpcPort;
-    await initKeypomConnection(rpcPort, funder);
+test('Adding Vendor Items', async t => {
+    const { root, nearcon, funder, admin, merchVendor, foodVendor } = t.context.accounts;
 
-    const callableContracts = [
-        `mapping.test.near`,
-        `keypom.test.near`,
-    ]
+    await nearcon.call(nearcon, 'add_admin', {account_ids: [admin.accountId]});
 
-    const {keys} 
-    //@ts-ignore
-    = await createTrialAccountDrop({
-        numKeys: 1,
-        contractBytes: [...readFileSync('./out/trial.wasm')],
-        startingBalanceNEAR: 1,
-        callableContracts: callableContracts,
-        callableMethods: ['*', 'add_to_balance'],
-        maxAttachableNEARPerContract: callableContracts.map(() => '1'),
-        trialEndFloorNEAR: (1 + 0.3) - 0.5,
-        config: {
-            dropRoot: `test.near`
-        }
-    })
+    let vendorMetadata = {
+        name: "Benji's Homegrown Burgers!",
+        description: "The greatest burgers in town.",
+        cover_image: "bafybeihnb36l3xvpehkwpszthta4ic6bygjkyckp5cffxvszbcltzyjcwi",
+    };
+    await admin.call(nearcon, 'add_vendor', {
+        vendor_id: merchVendor, 
+        vendor_metadata: vendorMetadata
+    });
+    let metadata = await nearcon.view('get_vendor_metadata', {vendor_id: merchVendor});
+    console.log('metadata: ', metadata)
+    t.deepEqual(metadata, vendorMetadata);
 
-    const trialAccountId = `trial.test.near`
-    const trialAccountSecretKey = keys!.secretKeys[0]
-    await claimTrialAccountDrop({
-        secretKey: keys!.secretKeys[0],
-        desiredAccountId: trialAccountId
-    })
-
-    const balBefore = await getUserBalance({
-        accountId: trialAccountId
-    })
-    console.log('balBefore: ', balBefore)
-
-    await trialCallMethod({
-        trialAccountId,
-        trialAccountSecretKey,
-        contractId: `keypom.test.near`,
-        methodName: `add_to_balance`,
-        args: '',
-        attachedDeposit: parseNearAmount("0.1")!,
-        attachedGas: '10000000000000'
-    })
-
-    const balAfter = await getUserBalance({
-        accountId: trialAccountId
-    })
-    console.log('balAfter: ', balAfter)
-
-    // //@ts-ignore
-    // const drops = await getDrops({
-    //     accountId: funder.accountId,
-    // })
-    // console.log('drops: ', drops)
+    let items = await nearcon.view('get_items_for_vendor', {vendor_id: merchVendor});
+    console.log('items: ', items)
+    t.deepEqual(items, []);
 });
+
+// test('Purchase vendor items', async t => {
+// });
+
+// test('Drop tokens to users', async t => {
+// });

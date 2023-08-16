@@ -68,4 +68,18 @@ impl Contract {
         contract.internal_deposit_mint(&env::current_account_id(), INITIAL_TOTAL_SUPPLY);
         contract
     }
+
+    #[private]
+    pub fn add_admin(&mut self, account_ids: Vec<AccountId>) {
+        for account_id in account_ids {
+            self.admin_accounts.insert(&account_id);
+        }
+    }
+
+    #[private]
+    pub fn remove_admin(&mut self, account_ids: Vec<AccountId>) {
+        for account_id in account_ids {
+            self.admin_accounts.remove(&account_id);
+        }
+    }
 }

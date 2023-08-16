@@ -50,5 +50,6 @@ pub struct ExtVendorItem {
 pub struct VendorMetadata {
     pub name: String,
     pub description: String,
+    /// Must be IPFS CID
     pub cover_image: String,
 }
