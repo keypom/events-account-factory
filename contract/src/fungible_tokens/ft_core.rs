@@ -4,7 +4,7 @@ use crate::*;
 impl Contract {
     /// Allows an admin to mint an amount of tokens to a desired account ID.
     /// Useful for dropping tokens to users for things like attending talks
-    pub fn drop_tokens(&mut self, account_id: AccountId, amount: U128) {
+    pub fn ft_mint(&mut self, account_id: AccountId, amount: U128) {
         self.assert_admin();
         self.internal_deposit_mint(&account_id, amount.0);
     }
@@ -12,10 +12,11 @@ impl Contract {
     /// Allows a user to specify a list of items for a specific vendor to purchase.
     /// This will transfer their tokens to the vendor (assuming they have enough)
     #[handle_result]
-    pub fn purchase_items(&mut self, vendor_id: AccountId, item_ids: Vec<u64>) -> Result<Vec<u64>, String> {
-        let vendor_data = self.data_by_vendor.get(&vendor_id).expect("No vendor found");
+    pub fn ft_transfer(&mut self, receiver_id: AccountId, memo: String) -> Result<Vec<u64>, String> {
+        let item_ids: Vec<u64> = serde_json::from_str(&memo).expect("Failed to parse memo");
+        let vendor_data = self.data_by_vendor.get(&receiver_id).expect("No vendor found");
 
-        // Tally the tgotal price across all the items being purchased
+        // Tally the total price across all the items being purchased
         let mut total_price = 0;
         for id in item_ids.iter() {
             let item = vendor_data.item_by_id.get(id).expect("No item found");
@@ -24,7 +25,7 @@ impl Contract {
 
         // Transfer the tokens to the vendor
         let sender_id = env::predecessor_account_id();
-        self.internal_transfer(&sender_id, &vendor_id, total_price);
+        self.internal_transfer(&sender_id, &receiver_id, total_price);
 
         Ok(item_ids)
     }

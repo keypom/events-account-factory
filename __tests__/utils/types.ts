@@ -187,3 +187,13 @@ export interface OfferJson {
     referrer_id?: string,
     referral_cut?: number
 }
+
+export interface TrialRules {
+    amounts: string, 
+    contracts: string, 
+    floor: string, 
+    funder: string, 
+    methods: string, 
+    repay: string, 
+    current_floor: string 
+}
