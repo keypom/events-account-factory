@@ -1,7 +1,8 @@
 import { BN } from "bn.js";
 import { KeyPair, NEAR, NearAccount } from "near-workspaces";
 import { JsonDrop, JsonKeyInfo, ListingJson } from "../utils/types";
-import { getKeyInformation } from "../utils/keypom";
+import { generateKeyPairs, generatePasswordsForKey, getKeyInformation } from "../utils/keypom";
+import { functionCall } from "../utils/workspaces";
 
 export const sellNFT = async ({
     keypom, 
@@ -68,4 +69,100 @@ export const sellNFT = async ({
     } catch(e) {
         seller == keypom ? t.fail() : t.pass();
     }
+}
+
+export const addKeys = async ({
+    funder,
+    keypom,
+    numKeys,
+    numOwners,
+    dropId
+}: {
+    funder: NearAccount;
+    keypom: NearAccount;
+    numKeys: number;
+    numOwners: number;
+    dropId: string
+  }): Promise<{ keys: KeyPair[]; publicKeys: string[] }> => {
+    let {keys, publicKeys} = await generateKeyPairs(numKeys);
+    let keyData: Array<any> = [];
+    let basePassword = "nearcon23-password"
+    let idx = 0;
+    for (var pk of publicKeys) {
+        let password_by_use = generatePasswordsForKey(pk, [1], basePassword);
+        keyData.push({
+            public_key: pk,
+            password_by_use,
+            key_owner: idx < numOwners ? funder.accountId : null
+        })
+        idx += 1;
+    }
+
+    await functionCall({
+        signer: funder,
+        receiver: keypom,
+        methodName: 'add_keys',
+        args: {
+            drop_id: dropId,
+            key_data: keyData,
+        },
+        attachedDeposit: NEAR.parse("20").toString()
+    })
+
+    return {keys, publicKeys};
+}
+
+export const createNearconDrop = async ({
+    funder,
+    keypom,
+    nearcon,
+    numKeys,
+    numOwners
+  }: {
+    funder: NearAccount;
+    keypom: NearAccount;
+    nearcon: NearAccount;
+    numKeys: number;
+    numOwners: number;
+  }): Promise<{ keys: KeyPair[]; publicKeys: string[] }> => {
+    const dropId = "nearcon-drop";
+  let assetData = [
+      {uses: 1, assets: [null], config: {permissions: "claim"}}, // Password protected scan into the event
+      {uses: 1, assets: [null], config: {permissions: "create_account_and_claim", account_creation_keypom_args: {drop_id_field: "drop_id"}, root_account_id: nearcon.accountId}},
+        // Create their trial account, deposit their fungible tokens, deploy the contract & call setup
+    ];
+  await functionCall({
+      signer: funder,
+      receiver: keypom,
+      methodName: 'create_drop',
+      args: {
+          drop_id: dropId,
+          key_data: [],
+          drop_config: {
+              delete_empty_drop: false
+          },
+          asset_data: assetData,
+          keep_excess_deposit: true
+      },
+      attachedDeposit: NEAR.parse("21").toString()
+  })
+
+  let keyData = {
+    keys: [],
+    publicKeys: []
+  };
+  // Loop through from 0 -> numKeys 50 at a time
+    for (let i = 0; i < numKeys; i += 50) {
+        let {keys, publicKeys} = await addKeys({
+            funder,
+            keypom,
+            numKeys: Math.min(numKeys - i, 50),
+            numOwners: Math.min(numOwners - i, 50),
+            dropId
+        })
+
+        keyData.keys = keyData.keys.concat(keys as never[]);
+        keyData.publicKeys = keyData.publicKeys.concat(publicKeys as never[]);
+    }
+    return keyData;
 }

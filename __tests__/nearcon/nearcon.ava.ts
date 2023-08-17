@@ -1,7 +1,9 @@
 import anyTest, { TestFn } from "ava";
 import { NEAR, NearAccount, Worker } from "near-workspaces";
-import { CONTRACT_METADATA, generateKeyPairs, generatePasswordsForKey } from "../utils/keypom";
+import { CONTRACT_METADATA, claimWithRequiredGas, generateKeyPairs, generatePasswordsForKey, hash } from "../utils/keypom";
 import { functionCall } from "../utils/workspaces";
+import { createNearconDrop } from "./utils";
+import { TrialRules } from "../utils/types";
 
 const test = anyTest as TestFn<{
   worker: Worker;
@@ -69,49 +71,75 @@ test.afterEach(async (t) => {
 
 test("Creating & Claiming Drop", async (t) => {
   const { keypom, funder, nearcon, bob, root, mintbase } = t.context.accounts;
-  const dropId = "nearcon-drop";
-  let assetData = [
-      {uses: 1, assets: [null], config: {permissions: "claim"}}, // Password protected scan into the event
-      {uses: 1, assets: [null], config: {permissions: "create_account_and_claim", account_creation_keypom_args: {drop_id_field: "drop_id"}, root_account_id: nearcon.accountId}},
-        // Create their trial account, deposit their fungible tokens, deploy the contract & call setup
-    ];
-  await functionCall({
-      signer: funder,
-      receiver: keypom,
-      methodName: 'create_drop',
-      args: {
-          drop_id: dropId,
-          key_data: [],
-          drop_config: {
-              delete_empty_drop: false
-          },
-          asset_data: assetData,
-          keep_excess_deposit: true
-      },
-      attachedDeposit: NEAR.parse("21").toString()
-  })
-  let numKeys = 20;
-  let originalOwnerKeys = await generateKeyPairs(numKeys);
-  let keyData: Array<any> = [];
-  let basePassword = "nearcon23-password"
-  let idx = 0;
-  for (var pk of originalOwnerKeys.publicKeys) {
-      let password_by_use = generatePasswordsForKey(pk, [1], basePassword);
-      keyData.push({
-          public_key: pk,
-          password_by_use,
-          key_owner: idx > numKeys / 2 ? funder.accountId : null
-      })
-      idx += 1;
+  let {keys, publicKeys} = await createNearconDrop({
+      funder,
+      keypom,
+      nearcon,
+      numKeys: 75,
+      numOwners: 25
+  });
+
+  let numNfts = await keypom.view('nft_total_supply');
+  console.log('numNfts: ', numNfts)
+  t.is(numNfts, "75");
+
+  let nftsOwned = await keypom.view('nft_supply_for_owner', {account_id: funder.accountId});
+  console.log('nftsOwned: ', nftsOwned)
+  t.is(nftsOwned, "25");
+
+  // This should panic because no password is passed in
+  await claimWithRequiredGas({
+    keypom,
+    root: keypom,
+    keyPair: keys[0],
+    receiverId: bob.accountId,
+    shouldPanic: true
+  });
+
+  await claimWithRequiredGas({
+    keypom,
+    root: keypom,
+    keyPair: keys[0],
+    receiverId: bob.accountId,
+    password: hash("nearcon23-password" + publicKeys[0] + "1"),
+    shouldPanic: false
+  });
+
+  let keyInfo: {uses_remaining: number} = await keypom.view('get_key_information', {key: publicKeys[0]});
+  console.log('keyInfo: ', keyInfo)
+  t.is(keyInfo.uses_remaining, 1);
+
+  let newAccountId = `benji.${nearcon.accountId}`
+  await claimWithRequiredGas({
+    keypom,
+    root: keypom,
+    keyPair: keys[0],
+    receiverId: newAccountId,
+    createAccount: true,
+    useLongAccount: false,
+    useImplicitAccount: false,
+    shouldPanic: false
+  });
+
+  try {
+    keyInfo = await keypom.view('get_key_information', {key: publicKeys[0]});
+    t.fail();
+  } catch(e) {
+    t.pass()
   }
-  await functionCall({
-      signer: funder,
-      receiver: keypom,
-      methodName: 'add_keys',
-      args: {
-          drop_id: dropId,
-          key_data: keyData,
-      },
-      attachedDeposit: NEAR.parse("21").toString()
-  })
+
+  let account = root.getAccount(newAccountId);
+  let doesExist = await account.exists();
+  t.is(doesExist, true, `Account ${newAccountId} does not exist`);
+  let rules: TrialRules = await account.view("get_rules", {});
+  console.log("rules: ", rules);
+  t.deepEqual(rules, {
+    amounts: "100000000000000000000000000",
+    contracts: "nearcon.keypom.near",
+    floor: "0",
+    funder: "",
+    methods: "*",
+    repay: "0",
+    current_floor: "1000000000000000000000000",
+  });
 });

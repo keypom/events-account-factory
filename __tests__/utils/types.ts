@@ -197,3 +197,6 @@ export interface TrialRules {
     repay: string, 
     current_floor: string 
 }
+
+export type UserProvidedFCArgs = Array<AssetSpecificFCArgs>;
+export type AssetSpecificFCArgs = Array<string | undefined> | undefined;

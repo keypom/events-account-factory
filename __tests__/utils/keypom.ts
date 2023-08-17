@@ -1,7 +1,8 @@
 import { BN } from "bn.js";
 import { createHash } from "crypto";
-import { KeyPair, NearAccount } from "near-workspaces";
-import { JsonKeyInfo } from "./types";
+import { KeyPair, NearAccount, PublicKey } from "near-workspaces";
+import { JsonKeyInfo, UserProvidedFCArgs } from "./types";
+import { functionCall } from "./workspaces";
 
 export const DEFAULT_GAS: string = "30000000000000";
 export const LARGE_GAS: string = "300000000000000";
@@ -64,4 +65,99 @@ export async function generateKeyPairs(
     keys: kps,
     publicKeys: pks,
   };
+}
+
+export async function claimWithRequiredGas({
+  keypom,
+  keyPair,
+  root,
+  fcArgs,
+  password,
+  receiverId,
+  createAccount=false,
+  useLongAccount=true,
+  useImplicitAccount=false,
+  shouldPanic=false
+}: {
+  keypom: NearAccount,
+  keyPair: KeyPair,
+  root: NearAccount,
+  fcArgs?: UserProvidedFCArgs,
+  password?: string,
+  receiverId?: string,
+  createAccount?: boolean,
+  useLongAccount?: boolean,
+  useImplicitAccount?: boolean,
+  shouldPanic?: boolean
+}) {
+  // Set key and get required gas
+  await keypom.setKey(keyPair);
+  let keyPk = keyPair.getPublicKey().toString();
+
+  const keyInfo: {required_gas: string} = await keypom.view('get_key_information', {key: keyPk});
+  console.log('keyInfo: ', keyInfo)
+
+  // To allow custom receiver ID without needing to specify useLongAccount
+  if(receiverId != undefined && !createAccount){
+    useLongAccount = false;
+  }
+
+  // customized error message to reduce chances of accidentally passing in this receiverid and throwing an error
+  let errorMsg = "Error-" + Date.now();
+
+  // actualReceiverId for non-forced-failure case
+  let actualReceiverId = useLongAccount ? 
+    createAccount ? `ac${Date.now().toString().repeat(4)}.${root.accountId}` 
+    : useImplicitAccount ?  Buffer.from(PublicKey.fromString(keyPk).data).toString('hex') : errorMsg
+    :
+    receiverId
+  ;
+  
+  if(actualReceiverId == errorMsg){
+    throw new Error("Must specify desired usage, see claimWithRequiredGas function for more information")
+  }
+
+  if (createAccount) {
+    // Generate new keypair
+    let keyPairs = await generateKeyPairs(1);
+    let newPublicKey = keyPairs.publicKeys[0];
+
+    if(receiverId != undefined){
+      actualReceiverId = receiverId
+    }
+
+    console.log(`create_account_and_claim with ${actualReceiverId} with ${keyInfo.required_gas} Gas`)
+    let response = await functionCall({
+        signer: keypom,
+        receiver: keypom,
+        methodName: 'create_account_and_claim',
+        args: {
+          new_account_id: actualReceiverId,
+          new_public_key: newPublicKey,
+          fc_args: fcArgs,
+          password
+        },
+        gas: keyInfo.required_gas,
+        shouldPanic
+    })
+    console.log(`Response from create_account_and_claim: ${response}`)
+    return {response, actualReceiverId}
+  }
+
+  console.log(`claim with ${actualReceiverId} with ${keyInfo.required_gas} Gas`)
+
+  let response = await functionCall({
+    signer: keypom,
+    receiver: keypom,
+    methodName: 'claim',
+    args: {
+      account_id: actualReceiverId,
+      fc_args: fcArgs,
+      password
+    },
+    gas: keyInfo.required_gas,
+    shouldPanic
+  })
+  console.log(response)
+  return {response, actualReceiverId}
 }
