@@ -5,7 +5,8 @@
 	"author": "Ben Kurrek, Matt Lockyer",
 	"scripts": {
 		"build": "cd contract && ./build.sh",
-		"test": "ava __tests__/tests.ava.ts"
+		"test": "ava __tests__/tests.ava.ts",
+		"test:nearcon": "ava __tests__/nearcon/nearcon.ava.ts"
 	},
 	"dependencies": {
 		"@types/bn.js": "^5.1.0",

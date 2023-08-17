@@ -1,6 +1,6 @@
 import anyTest, { TestFn } from "ava";
 import { NEAR, NearAccount, Worker } from "near-workspaces";
-import { TrialRules, generateKeyPairs, parseExecutionResults } from "./utils";
+import { generateKeyPairs, parseExecutionResults } from "./utils";
 const { readFileSync } = require('fs');
 
 const test = anyTest as TestFn<{
