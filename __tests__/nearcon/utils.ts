@@ -1,7 +1,7 @@
 import { BN } from "bn.js";
 import { KeyPair, NEAR, NearAccount } from "near-workspaces";
-import { JsonDrop, JsonKeyInfo, ListingJson } from "../utils/types";
-import { generateKeyPairs, generatePasswordsForKey, getKeyInformation } from "../utils/keypom";
+import { ExtDrop, ExtKeyInfo, ListingJson } from "../utils/types";
+import { addKeys, generateKeyPairs, generatePasswordsForKey, getKeyInformation } from "../utils/keypom";
 import { functionCall } from "../utils/workspaces";
 
 export const sellNFT = async ({
@@ -23,15 +23,12 @@ export const sellNFT = async ({
     t: any;
     tokenId: string;
 }) => {
-    // Now with migration out of the way, we can test the new mintbase contract and sell access keys
-    let initialAllowance = (await getKeyInformation(keypom, sellerKeys.publicKeys[0])).allowance;
-    console.log('initialAllowance: ', initialAllowance)
-
     await keypom.setKey(sellerKeys.keys[0]);
     let new_mintbase_args = JSON.stringify({
         price: NEAR.parse('1').toString(),
         owner_pub_key: seller == keypom ? sellerKeys.publicKeys[0] : undefined
     })
+    console.log('new_mintbase_args: ', new_mintbase_args)
     await keypom.call(keypom, 'nft_approve', {account_id: mintbase.accountId, msg: new_mintbase_args});
     let listing: ListingJson = await mintbase.view('get_listing', {nft_contract_id: keypom, token_id: tokenId});
     t.assert(listing.nft_token_id === tokenId);
@@ -40,29 +37,27 @@ export const sellNFT = async ({
     t.assert(listing.nft_contract_id === keypom.accountId);
     t.assert(listing.currency === 'near');
 
-    // After key is put for sale, its allowance should have decremented
-    let keyInfo: JsonKeyInfo = await getKeyInformation(keypom, sellerKeys.publicKeys[0]);
-    t.assert(new BN(initialAllowance).gt(new BN(keyInfo.allowance)));
-    initialAllowance = keyInfo.allowance;
-
     /// Buyer purchases the key
     await buyer.call(mintbase, 'buy', {nft_contract_id: keypom.accountId, token_id: tokenId, new_pub_key: buyerKeys.publicKeys[0]}, {attachedDeposit: NEAR.parse('1').toString(), gas: '300000000000000'});
 
     // Now that buyer bought the key, his key should have the same allowance as what seller left off with and should have all remaining uses
-    keyInfo = await getKeyInformation(keypom, buyerKeys.publicKeys[0]);
+    let keyInfo = await getKeyInformation(keypom, buyerKeys.publicKeys[0]);
     t.is(keyInfo.owner_id, buyer.accountId);
-    t.is(keyInfo.allowance, initialAllowance)
-    t.is(keyInfo.remaining_uses, 2);
+    t.is(keyInfo.uses_remaining, 2);
 
     try {
         // Seller should now have a simple $NEAR drop with 0.05 $NEAR less than the 1 $NEAR purchase price
-        let sellerNewDrop: JsonDrop = await keypom.view('get_drop_information', {key: sellerKeys.publicKeys[0]});
+        let sellerNewDrop: ExtDrop = await keypom.view('get_drop_information', {key: sellerKeys.publicKeys[0]});
+        console.log('sellerNewDrop: ', sellerNewDrop)
         if (seller == keypom) {
-            t.is(sellerNewDrop.deposit_per_use, NEAR.parse('0.95').toString());
-            t.is(sellerNewDrop.fc, undefined);
-            t.is(sellerNewDrop.ft, undefined);
-            t.is(sellerNewDrop.nft, undefined);
-            t.assert(sellerNewDrop.simple !== undefined);
+            t.is(sellerNewDrop.asset_data.length, 1);
+            t.is(sellerNewDrop.asset_data[0].uses, 1);
+
+            let sellerNewKey: ExtKeyInfo = await keypom.view('get_key_information', {key: sellerKeys.publicKeys[0]});
+            console.log('sellerNewKey: ', sellerNewKey)
+            t.is(sellerNewKey.uses_remaining, 1);
+            t.is(sellerNewKey.owner_id, keypom.accountId);
+            t.is(sellerNewKey.yoctonear, NEAR.parse('0.95').toString())
         } else {
             t.fail();
         }
@@ -71,57 +66,18 @@ export const sellNFT = async ({
     }
 }
 
-export const addKeys = async ({
-    funder,
-    keypom,
-    numKeys,
-    numOwners,
-    dropId
-}: {
-    funder: NearAccount;
-    keypom: NearAccount;
-    numKeys: number;
-    numOwners: number;
-    dropId: string
-  }): Promise<{ keys: KeyPair[]; publicKeys: string[] }> => {
-    let {keys, publicKeys} = await generateKeyPairs(numKeys);
-    let keyData: Array<any> = [];
-    let basePassword = "nearcon23-password"
-    let idx = 0;
-    for (var pk of publicKeys) {
-        let password_by_use = generatePasswordsForKey(pk, [1], basePassword);
-        keyData.push({
-            public_key: pk,
-            password_by_use,
-            key_owner: idx < numOwners ? funder.accountId : null
-        })
-        idx += 1;
-    }
-
-    await functionCall({
-        signer: funder,
-        receiver: keypom,
-        methodName: 'add_keys',
-        args: {
-            drop_id: dropId,
-            key_data: keyData,
-        },
-        attachedDeposit: NEAR.parse("20").toString()
-    })
-
-    return {keys, publicKeys};
-}
-
 export const createNearconDrop = async ({
     funder,
     keypom,
     nearcon,
+    originalTicketOwner,
     numKeys,
     numOwners
   }: {
     funder: NearAccount;
     keypom: NearAccount;
     nearcon: NearAccount;
+    originalTicketOwner: NearAccount;
     numKeys: number;
     numOwners: number;
   }): Promise<{ keys: KeyPair[]; publicKeys: string[] }> => {
@@ -139,7 +95,8 @@ export const createNearconDrop = async ({
           drop_id: dropId,
           key_data: [],
           drop_config: {
-              delete_empty_drop: false
+              delete_empty_drop: false,
+              extra_allowance_per_key: NEAR.parse("0.02")
           },
           asset_data: assetData,
           keep_excess_deposit: true
@@ -156,6 +113,7 @@ export const createNearconDrop = async ({
         let {keys, publicKeys} = await addKeys({
             funder,
             keypom,
+            originalTicketOwner,
             numKeys: Math.min(numKeys - i, 50),
             numOwners: Math.min(numOwners - i, 50),
             dropId
