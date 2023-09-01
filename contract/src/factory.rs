@@ -1,4 +1,4 @@
-use near_sdk::{PublicKey, Promise, Gas, GasWeight};
+use near_sdk::{PublicKey, Promise};
 
 use crate::*;
 
@@ -13,9 +13,6 @@ pub struct KeypomArgs {
     pub funder_id_field: Option<String>,
 }
 
-const TRIAL_CONTRACT: &[u8] = include_bytes!("../../out/trial-accounts.wasm");
-const SETUP_ARGS: &[u8] = include_bytes!("../../out/setup_args.json");
-
 #[near_bindgen]
 impl Contract {
     #[payable]
@@ -25,7 +22,7 @@ impl Contract {
         new_public_key: PublicKey,
         drop_id: String,
         keypom_args: KeypomArgs
-    ) -> Promise { 
+    ) -> Promise {
         self.assert_keypom();
         // Ensure the incoming args are correct from Keypom
         require!(keypom_args.drop_id_field.expect("No keypom args sent") == "drop_id".to_string());
@@ -34,14 +31,12 @@ impl Contract {
         // Get the next available account ID in case the one passed in is taken
         let account_id: AccountId = self.find_available_account_id(new_account_id);
 
-        // Deposit the starting balance into the account and then 
+        // Deposit the starting balance into the account and then create it
         self.internal_deposit_mint(&account_id, self.starting_ncon_balance);
         Promise::new(account_id.clone())
             .create_account()
-            .add_access_key(new_public_key.into(), 0, account_id, "execute,create_account_and_claim".to_string())
             .transfer(self.starting_near_balance)
-            .deploy_contract(TRIAL_CONTRACT.to_vec())
-            .function_call_weight("setup".to_string(), SETUP_ARGS.to_vec(), 0, Gas(10_000_000_000_000), GasWeight(0))
+            .add_full_access_key(new_public_key.into())
     }
 
     /// In the case that multiple people choose the same username (i.e ben.nearcon.near) at the same time

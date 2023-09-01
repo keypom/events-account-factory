@@ -31,10 +31,15 @@ pub struct Contract {
     pub keypom_contract: AccountId,
     pub starting_near_balance: Balance,
     pub starting_ncon_balance: Balance,
+    pub account_id_by_pub_key: LookupMap<PublicKey, AccountId>
 }
 
 #[near_bindgen]
 impl Contract {
+    pub fn recover_account(&self, key: PublicKey) -> AccountId {
+        self.account_id_by_pub_key.get(&key).expect("No account found")
+    }
+
     #[init]
     pub fn new(
         allowed_drop_id: String, 

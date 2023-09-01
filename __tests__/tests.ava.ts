@@ -95,17 +95,10 @@ test("Create Duplicate Accounts", async (t) => {
     let doesExist = await account.exists();
     t.is(doesExist, true, `Account ${expectedAccountId} does not exist`);
 
-    let rules: TrialRules = await account.view("get_rules", {});
-    console.log("rules: ", rules);
-    t.deepEqual(rules, {
-      amounts: "100000000000000000000000000",
-      contracts: "nearcon.keypom.near",
-      floor: "0",
-      funder: "",
-      methods: "*",
-      repay: "0",
-      current_floor: "1000000000000000000000000",
-    });
+    let keyList = await account.viewAccessKeys(expectedAccountId);
+    console.log('keyList: ', keyList)
+    t.assert(keyList.keys.length === 1);
+    t.assert(keyList.keys[0].access_key.permission === "FullAccess");
 
     let ftBalance = await nearcon.view("ft_balance_of", {
       account_id: expectedAccountId,
@@ -164,6 +157,7 @@ test("Adding Vendor Items", async (t) => {
   console.log("items after adding: ", items);
   t.deepEqual(items, [
     {
+      id: "0",
       name: "Benji Burger",
       image: "bafybeihnb36l3xvpehkwpszthta4ic6bygjkyckp5cffxvszbcltzyjcwi",
       price: NEAR.parse("1").toString(),
@@ -211,7 +205,7 @@ test("Purchase vendor items", async (t) => {
     memo: JSON.stringify([0]),
   });
   console.log("response: ", response);
-  t.deepEqual(response, [0]);
+  t.deepEqual(response, NEAR.parse("1").toString());
 
   let buyerFtBalance = await nearcon.view("ft_balance_of", {
     account_id: funder.accountId,

@@ -28,9 +28,13 @@ export const sellNFT = async ({
         price: NEAR.parse('1').toString(),
         owner_pub_key: seller == keypom ? sellerKeys.publicKeys[0] : undefined
     })
-    console.log('new_mintbase_args: ', new_mintbase_args)
-    await keypom.call(keypom, 'nft_approve', {account_id: mintbase.accountId, msg: new_mintbase_args});
-    let listing: ListingJson = await mintbase.view('get_listing', {nft_contract_id: keypom, token_id: tokenId});
+    let nftApproveArgs = {account_id: mintbase.accountId, msg: new_mintbase_args}
+    console.log('nftApproveArgs: ', nftApproveArgs)
+    await keypom.call(keypom, 'nft_approve', nftApproveArgs);
+    let getListingArgs = {nft_contract_id: keypom.accountId, token_id: tokenId}
+    console.log('getListingArgs: ', getListingArgs)
+    let listing: ListingJson = await mintbase.view('get_listing', getListingArgs);
+    console.log('listing: ', listing)
     t.assert(listing.nft_token_id === tokenId);
     t.assert(listing.price === NEAR.parse('1').toString());
     t.assert(listing.nft_owner_id === seller.accountId);
@@ -38,16 +42,26 @@ export const sellNFT = async ({
     t.assert(listing.currency === 'near');
 
     /// Buyer purchases the key
-    await buyer.call(mintbase, 'buy', {nft_contract_id: keypom.accountId, token_id: tokenId, new_pub_key: buyerKeys.publicKeys[0]}, {attachedDeposit: NEAR.parse('1').toString(), gas: '300000000000000'});
+    await functionCall({
+        signer: buyer,
+        receiver: mintbase,
+        methodName: "buy",
+        args: {nft_contract_id: keypom.accountId, token_id: tokenId, new_pub_key: buyerKeys.publicKeys[0]},
+        attachedDeposit: NEAR.parse('1').toString(),
+        gas: '300000000000000',
+        shouldPanic: false,
+    });
 
     // Now that buyer bought the key, his key should have the same allowance as what seller left off with and should have all remaining uses
     let keyInfo = await getKeyInformation(keypom, buyerKeys.publicKeys[0]);
+    console.log('keyInfo after purchase: ', keyInfo)
     t.is(keyInfo.owner_id, buyer.accountId);
     t.is(keyInfo.uses_remaining, 2);
 
     try {
         // Seller should now have a simple $NEAR drop with 0.05 $NEAR less than the 1 $NEAR purchase price
-        let sellerNewDrop: ExtDrop = await keypom.view('get_drop_information', {key: sellerKeys.publicKeys[0]});
+        let dropId = sellerKeys.publicKeys[0].split('ed25519:')[1];
+        let sellerNewDrop: ExtDrop = await keypom.view('get_drop_information', {drop_id: dropId});
         console.log('sellerNewDrop: ', sellerNewDrop)
         if (seller == keypom) {
             t.is(sellerNewDrop.asset_data.length, 1);
@@ -62,6 +76,7 @@ export const sellNFT = async ({
             t.fail();
         }
     } catch(e) {
+        console.log('e: ', e)
         seller == keypom ? t.fail() : t.pass();
     }
 }

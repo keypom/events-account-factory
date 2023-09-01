@@ -172,7 +172,7 @@ export async function claimWithRequiredGas({
   return { response, actualReceiverId };
 }
 
-export const claimAndAssertTrialCreated = async ({
+export const claimAndAssertAccountCreated = async ({
   t,
   keypom,
   nearcon,
@@ -207,17 +207,10 @@ export const claimAndAssertTrialCreated = async ({
   let account = keypom.getAccount(newAccountId);
   let doesExist = await account.exists();
   t.is(doesExist, true, `Account ${newAccountId} does not exist`);
-  let rules: TrialRules = await account.view("get_rules", {});
-  console.log("rules: ", rules);
-  t.deepEqual(rules, {
-    amounts: "100000000000000000000000000",
-    contracts: "nearcon.keypom.near",
-    floor: "0",
-    funder: "",
-    methods: "*",
-    repay: "0",
-    current_floor: "1000000000000000000000000",
-  });
+  let keyList = await account.viewAccessKeys(newAccountId);
+  console.log('keyList: ', keyList)
+  t.assert(keyList.keys.length === 1);
+  t.assert(keyList.keys[0].access_key.permission === "FullAccess");
 };
 
 export const addKeys = async ({

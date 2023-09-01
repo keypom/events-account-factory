@@ -2,7 +2,7 @@ import anyTest, { TestFn } from "ava";
 import { NEAR, NearAccount, Worker } from "near-workspaces";
 import {
   CONTRACT_METADATA,
-  claimAndAssertTrialCreated,
+  claimAndAssertAccountCreated,
   claimWithRequiredGas,
   generateKeyPairs,
   generatePasswordsForKey,
@@ -142,7 +142,7 @@ test("Journey 3: New to NEAR Purchases & Sells on Secondary Marketplace", async 
     buyer: newTicketBuyer,
     sellerKeys,
     buyerKeys,
-    tokenId: `0:0`,
+    tokenId: `nearcon-drop:0`,
   });
 
   // Claim seller key and create new account
@@ -166,7 +166,7 @@ test("Journey 3: New to NEAR Purchases & Sells on Secondary Marketplace", async 
     t.pass();
   }
 
-  await claimAndAssertTrialCreated({
+  await claimAndAssertAccountCreated({
     t,
     keypom,
     nearcon,
@@ -178,21 +178,29 @@ test("Journey 3: New to NEAR Purchases & Sells on Secondary Marketplace", async 
   t.is(nfts.length, 0);
 });
 
-// test('Journey 2: Crypto Native Purchases & Attends Conference', async t => {
-//   const { keypom, funder, nearcon, ticketOwner, root, mintbase } = t.context.accounts;
-//   let {keys, publicKeys} = await createNearconDrop({
-//       funder,
-//       keypom,
-//       nearcon,
-//       ticketOwner,
-//       numKeys: 1,
-//       numOwners: 1
+// test("Journey 2: Crypto Native Purchases & Attends Conference", async (t) => {
+//   const {
+//     keypom,
+//     funder,
+//     nearcon,
+//     newTicketBuyer,
+//     originalTicketOwner,
+//     root,
+//     mintbase,
+//   } = t.context.accounts;
+//   let { keys, publicKeys } = await createNearconDrop({
+//     funder,
+//     keypom,
+//     nearcon,
+//     originalTicketOwner,
+//     numKeys: 1,
+//     numOwners: 1,
 //   });
 
-//   let nfts: Array<ExtNFTKey> = await keypom.view('nft_tokens');
-//   console.log('nfts: ', nfts)
+//   let nfts: Array<ExtNFTKey> = await keypom.view("nft_tokens");
+//   console.log("nfts: ", nfts);
 //   t.is(nfts.length, 1);
-//   t.is(nfts[0].owner_id, ticketOwner.accountId);
+//   t.is(nfts[0].owner_id, originalTicketOwner.accountId);
 
 //   // This should panic because no password is passed in
 //   await claimWithRequiredGas({
@@ -200,7 +208,7 @@ test("Journey 3: New to NEAR Purchases & Sells on Secondary Marketplace", async 
 //     root: keypom,
 //     keyPair: keys[0],
 //     receiverId: "foo",
-//     shouldPanic: true
+//     shouldPanic: true,
 //   });
 
 //   // This should pass because the password is correct
@@ -210,37 +218,48 @@ test("Journey 3: New to NEAR Purchases & Sells on Secondary Marketplace", async 
 //     keyPair: keys[0],
 //     receiverId: "foo",
 //     password: hash("nearcon23-password" + publicKeys[0] + "1"),
-//     shouldPanic: false
+//     shouldPanic: false,
 //   });
 
-//   let keyInfo: ExtKeyInfo = await keypom.view('get_key_information', {key: publicKeys[0]});
-//   console.log('keyInfo: ', keyInfo)
+//   let keyInfo: ExtKeyInfo = await keypom.view("get_key_information", {
+//     key: publicKeys[0],
+//   });
+//   console.log("keyInfo: ", keyInfo);
 //   t.is(keyInfo.uses_remaining, 1);
 
-//   await claimAndAssertTrialCreated({
+//   await claimAndAssertAccountCreated({
 //     t,
 //     keypom,
 //     nearcon,
-//     keyPair: keys[0]
+//     keyPair: keys[0],
 //   });
 
-//   nfts = await keypom.view('nft_tokens');
-//   console.log('nfts: ', nfts)
+//   nfts = await keypom.view("nft_tokens");
+//   console.log("nfts: ", nfts);
 //   t.is(nfts.length, 0);
 // });
 
-// test('Journey 1: New to NEAR Purchases & Attends Conference', async t => {
-//   const { keypom, funder, nearcon, bob, root, mintbase } = t.context.accounts;
-//   let {keys, publicKeys} = await createNearconDrop({
-//       funder,
-//       keypom,
-//       nearcon,
-//       numKeys: 1,
-//       numOwners: 0
+// test("Journey 1: New to NEAR Purchases & Attends Conference", async (t) => {
+//   const {
+//     keypom,
+//     funder,
+//     nearcon,
+//     newTicketBuyer,
+//     originalTicketOwner,
+//     root,
+//     mintbase,
+//   } = t.context.accounts;
+//   let { keys, publicKeys } = await createNearconDrop({
+//     funder,
+//     keypom,
+//     originalTicketOwner,
+//     nearcon,
+//     numKeys: 1,
+//     numOwners: 0,
 //   });
 
-//   let nfts: Array<ExtNFTKey> = await keypom.view('nft_tokens');
-//   console.log('nfts: ', nfts)
+//   let nfts: Array<ExtNFTKey> = await keypom.view("nft_tokens");
+//   console.log("nfts: ", nfts);
 //   t.is(nfts.length, 1);
 //   t.is(nfts[0].owner_id, keypom.accountId);
 
@@ -249,8 +268,8 @@ test("Journey 3: New to NEAR Purchases & Sells on Secondary Marketplace", async 
 //     keypom,
 //     root: keypom,
 //     keyPair: keys[0],
-//     receiverId: bob.accountId,
-//     shouldPanic: true
+//     receiverId: "foo",
+//     shouldPanic: true,
 //   });
 
 //   // This should pass because the password is correct
@@ -258,42 +277,55 @@ test("Journey 3: New to NEAR Purchases & Sells on Secondary Marketplace", async 
 //     keypom,
 //     root: keypom,
 //     keyPair: keys[0],
-//     receiverId: bob.accountId,
+//     receiverId: "foo",
 //     password: hash("nearcon23-password" + publicKeys[0] + "1"),
-//     shouldPanic: false
+//     shouldPanic: false,
 //   });
 
-//   let keyInfo: ExtKeyInfo = await keypom.view('get_key_information', {key: publicKeys[0]});
-//   console.log('keyInfo: ', keyInfo)
+//   let keyInfo: ExtKeyInfo = await keypom.view("get_key_information", {
+//     key: publicKeys[0],
+//   });
+//   console.log("keyInfo: ", keyInfo);
 //   t.is(keyInfo.uses_remaining, 1);
 
-//   await claimAndAssertTrialCreated({
+//   await claimAndAssertAccountCreated({
 //     t,
 //     keypom,
 //     nearcon,
-//     keyPair: keys[0]
+//     keyPair: keys[0],
 //   });
-// nfts = await keypom.view('nft_tokens');
-//   console.log('nfts: ', nfts)
+//   nfts = await keypom.view("nft_tokens");
+//   console.log("nfts: ", nfts);
 //   t.is(nfts.length, 0);
 // });
 
 // test("Creating Lots of Keys & Claiming", async (t) => {
-//   const { keypom, funder, nearcon, bob, root, mintbase } = t.context.accounts;
-//   let {keys, publicKeys} = await createNearconDrop({
-//       funder,
-//       keypom,
-//       nearcon,
-//       numKeys: 75,
-//       numOwners: 25
+//   const {
+//     keypom,
+//     funder,
+//     nearcon,
+//     newTicketBuyer,
+//     originalTicketOwner,
+//     root,
+//     mintbase,
+//   } = t.context.accounts;
+//   let { keys, publicKeys } = await createNearconDrop({
+//     funder,
+//     keypom,
+//     nearcon,
+//     originalTicketOwner,
+//     numKeys: 75,
+//     numOwners: 25,
 //   });
 
-//   let numNfts = await keypom.view('nft_total_supply');
-//   console.log('numNfts: ', numNfts)
+//   let numNfts = await keypom.view("nft_total_supply");
+//   console.log("numNfts: ", numNfts);
 //   t.is(numNfts, "75");
 
-//   let nftsOwned = await keypom.view('nft_supply_for_owner', {account_id: funder.accountId});
-//   console.log('nftsOwned: ', nftsOwned)
+//   let nftsOwned = await keypom.view("nft_supply_for_owner", {
+//     account_id: originalTicketOwner.accountId,
+//   });
+//   console.log("nftsOwned: ", nftsOwned);
 //   t.is(nftsOwned, "25");
 
 //   // This should panic because no password is passed in
@@ -301,14 +333,22 @@ test("Journey 3: New to NEAR Purchases & Sells on Secondary Marketplace", async 
 //     keypom,
 //     root: keypom,
 //     keyPair: keys[0],
-//     receiverId: bob.accountId,
-//     shouldPanic: true
+//     receiverId: "foo",
+//     shouldPanic: true,
 //   });
 
-//   await claimAndAssertTrialCreated({
+//   await claimWithRequiredGas({
+//     keypom,
+//     root: keypom,
+//     keyPair: keys[0],
+//     receiverId: "foo",
+//     password: hash("nearcon23-password" + publicKeys[0] + "1"),
+//   });
+
+//   await claimAndAssertAccountCreated({
 //     t,
 //     keypom,
 //     nearcon,
-//     keyPair: keys[0]
+//     keyPair: keys[0],
 //   });
 // });
