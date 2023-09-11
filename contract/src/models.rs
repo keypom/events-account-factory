@@ -4,6 +4,7 @@ use near_sdk::CryptoHash;
 #[derive(BorshSerialize, BorshStorageKey)]
 pub enum StorageKeys {
     DataByVendor,
+    AccountIdByPubKey,
     VendorItems { vendor_id_hash: CryptoHash },
     AdminAccounts,
     BalanceByAccount

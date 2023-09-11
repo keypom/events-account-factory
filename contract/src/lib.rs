@@ -2,7 +2,7 @@ use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::{UnorderedMap, LookupSet, LookupMap};
 use near_sdk::json_types::U128;
 use near_sdk::serde::{Serialize, Deserialize};
-use near_sdk::{near_bindgen, BorshStorageKey, PanicOnDefault, AccountId, require, env, Balance};
+use near_sdk::{near_bindgen, BorshStorageKey, PanicOnDefault, AccountId, require, env, Balance, PublicKey};
 
 mod models;
 mod events;
@@ -36,6 +36,7 @@ pub struct Contract {
 
 #[near_bindgen]
 impl Contract {
+    /// Allows 
     pub fn recover_account(&self, key: PublicKey) -> AccountId {
         self.account_id_by_pub_key.get(&key).expect("No account found")
     }
@@ -67,6 +68,7 @@ impl Contract {
             keypom_contract,
             starting_near_balance: starting_near_balance.into(),
             starting_ncon_balance: starting_ncon_balance.into(),
+            account_id_by_pub_key: LookupMap::new(StorageKeys::AccountIdByPubKey)
         }
     }
 

@@ -31,6 +31,9 @@ impl Contract {
         // Get the next available account ID in case the one passed in is taken
         let account_id: AccountId = self.find_available_account_id(new_account_id);
 
+        near_sdk::log!("Creating account: {} with starting balance: {}", account_id, self.starting_near_balance);
+        // Add the account ID to the map
+        self.account_id_by_pub_key.insert(&new_public_key, &account_id);
         // Deposit the starting balance into the account and then create it
         self.internal_deposit_mint(&account_id, self.starting_ncon_balance);
         Promise::new(account_id.clone())

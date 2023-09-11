@@ -100,7 +100,6 @@ export const createNearconDrop = async ({
   let assetData = [
       {uses: 1, assets: [null], config: {permissions: "claim"}}, // Password protected scan into the event
       {uses: 1, assets: [null], config: {permissions: "create_account_and_claim", account_creation_keypom_args: {drop_id_field: "drop_id"}, root_account_id: nearcon.accountId}},
-        // Create their trial account, deposit their fungible tokens, deploy the contract & call setup
     ];
   await functionCall({
       signer: funder,

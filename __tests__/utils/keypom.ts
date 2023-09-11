@@ -35,7 +35,9 @@ export function generatePasswordsForKey(
 
   // Loop through usesWithPassword
   for (var use of usesWithPassword) {
-    passwords[use] = hash(hash(basePassword + pubKey + use.toString()), true);
+    let pw = basePassword + pubKey + use.toString()
+    console.log('pw: ', pw)
+    passwords[use] = hash(hash(pw), true);
   }
 
   return passwords;
@@ -233,7 +235,7 @@ export const addKeys = async ({
   let basePassword = "nearcon23-password";
   let idx = 0;
   for (var pk of publicKeys) {
-    let password_by_use = generatePasswordsForKey(pk, [1], basePassword);
+    let password_by_use = generatePasswordsForKey(idx.toString(), [1], basePassword);
     keyData.push({
       public_key: pk,
       password_by_use,
