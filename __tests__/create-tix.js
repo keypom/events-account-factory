@@ -14,7 +14,7 @@ const NETWORK_ID = 'testnet';
 const funderAccountId = 'benjiman.testnet';
 const mintbaseContract = "keypom.market.mintspace2.testnet";
 const nearconFactory = "keypom-factory.keypom.testnet";
-const keypomContract = "ncon23.keypom.testnet";
+const keypomContract = "nearcon2023.keypom.testnet";
 
 const originalTicketOwner = "benjiman.testnet";
 const createDrop = false;

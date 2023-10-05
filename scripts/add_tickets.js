@@ -12,7 +12,6 @@ const { parseNearAmount } = require('@near-js/utils');
 const NETWORK_ID = 'testnet';
 
 const funderAccountId = 'benjiman.testnet';
-const nearconFactory = "keypom-factory.keypom.testnet";
 const keypomContract = "ncon23.keypom.testnet";
 
 // 3 tickets will be added. The first two will not be owned by anyone and the last will be owned by benjiman.testnet

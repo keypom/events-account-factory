@@ -12,7 +12,7 @@ const { parseNearAmount } = require('@near-js/utils');
 const NETWORK_ID = 'testnet';
 
 const funderAccountId = 'benjiman.testnet'; // INSERT VERIKEN'S ACCOUNT ID HERE
-const nearconFactory = "keypom-factory.keypom.testnet";
+const nearconFactory = "ncon-factory.keypom.testnet";
 const keypomContract = "ncon23.keypom.testnet";
 const dropId = "nearcon2023";
 
