@@ -9,11 +9,11 @@ const { Account } = require('@near-js/accounts');
 const { connect, Near } = require("@near-js/wallet-account");
 const { parseNearAmount } = require('@near-js/utils');
 
-const NETWORK_ID = 'testnet';
+const NETWORK_ID = 'mainnet';
 
-const funderAccountId = 'benjiman.testnet'; // INSERT VERIKEN'S ACCOUNT ID HERE
-const nearconFactory = "ncon-factory.keypom.testnet";
-const keypomContract = "ncon23.keypom.testnet";
+const funderAccountId = 'keypom.near'; // INSERT VERIKEN'S ACCOUNT ID HERE
+const nearconFactory = "nearcon23.near";
+const keypomContract = "ncon23.keypom.near";
 const dropId = "nearcon2023";
 
 const main = async () => {
@@ -59,6 +59,9 @@ const createNearconDrop = async ({
           key_data: [],
           drop_config: {
               delete_empty_drop: false
+          },
+          drop_config: {
+            add_key_allowlist: ["2023.nearcontickets.near"]
           },
           asset_data: assetData,
           keep_excess_deposit: true

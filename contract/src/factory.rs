@@ -1,7 +1,6 @@
-use near_sdk::{PublicKey, Promise};
+use near_sdk::{Promise, PublicKey};
 
 use crate::*;
-
 
 /// Keypom Args struct to be sent to external contracts
 #[derive(Serialize, Deserialize, Debug, BorshDeserialize, BorshSerialize, Clone)]
@@ -21,21 +20,41 @@ impl Contract {
         new_account_id: AccountId,
         new_public_key: PublicKey,
         drop_id: String,
-        keypom_args: KeypomArgs
+        keypom_args: KeypomArgs,
     ) -> Promise {
+        let initial_storage_usage = env::storage_usage();
+
         self.assert_keypom();
         // Ensure the incoming args are correct from Keypom
         require!(keypom_args.drop_id_field.expect("No keypom args sent") == "drop_id".to_string());
-        require!(drop_id == self.allowed_drop_id, "Invalid drop ID");
+        if let Some(required_drop_id) = self.allowed_drop_id.clone() {
+            require!(drop_id == required_drop_id, "Invalid drop ID");
+        }
 
         // Get the next available account ID in case the one passed in is taken
         let account_id: AccountId = self.find_available_account_id(new_account_id);
 
-        near_sdk::log!("Creating account: {} with starting balance: {}", account_id, self.starting_near_balance);
+        near_sdk::log!(
+            "Creating account: {} with starting balance: {}",
+            account_id,
+            self.starting_near_balance
+        );
         // Add the account ID to the map
-        self.account_id_by_pub_key.insert(&new_public_key, &account_id);
+        self.account_id_by_pub_key
+            .insert(&new_public_key, &account_id);
+        let drop_set = UnorderedMap::new(StorageKeys::DropsClaimedByAccountInner {
+            account_id_hash: env::sha256_array(account_id.as_bytes()),
+        });
+        self.drops_claimed_by_account.insert(&account_id, &drop_set);
         // Deposit the starting balance into the account and then create it
         self.internal_deposit_mint(&account_id, self.starting_ncon_balance);
+
+        let final_storage_usage = env::storage_usage();
+        near_sdk::log!(
+            "Storage used: {}",
+            final_storage_usage - initial_storage_usage
+        );
+
         Promise::new(account_id.clone())
             .create_account()
             .transfer(self.starting_near_balance)
@@ -62,8 +81,10 @@ impl Contract {
             }
 
             i += 1;
-            account_id = format!("{}-{}.{}", prefix, i, env::current_account_id()).parse().unwrap();
-        };
+            account_id = format!("{}-{}.{}", prefix, i, env::current_account_id())
+                .parse()
+                .unwrap();
+        }
 
         new_account_id
     }
@@ -81,7 +102,7 @@ impl Contract {
     }
 
     /// Update the drop ID that is allowed to create accounts
-    pub fn update_drop_id(&mut self, new_drop_id: String) {
+    pub fn update_drop_id(&mut self, new_drop_id: Option<String>) {
         self.assert_admin();
         self.allowed_drop_id = new_drop_id;
     }
@@ -97,7 +118,8 @@ impl Contract {
         let caller = env::predecessor_account_id();
         if caller != env::current_account_id() {
             require!(
-                env::predecessor_account_id() == self.keypom_contract, "Only Keypom can call this method"
+                env::predecessor_account_id() == self.keypom_contract,
+                "Only Keypom can call this method"
             );
         }
     }

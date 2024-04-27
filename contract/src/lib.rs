@@ -1,18 +1,20 @@
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
-use near_sdk::collections::{UnorderedMap, LookupSet, LookupMap};
+use near_sdk::collections::{LookupMap, LookupSet, UnorderedMap};
 use near_sdk::json_types::U128;
-use near_sdk::serde::{Serialize, Deserialize};
-use near_sdk::{near_bindgen, BorshStorageKey, PanicOnDefault, AccountId, require, env, Balance, PublicKey};
+use near_sdk::serde::{Deserialize, Serialize};
+use near_sdk::{
+    env, near_bindgen, require, AccountId, Balance, BorshStorageKey, PanicOnDefault, PublicKey,
+};
 
-mod models;
 mod events;
-mod fungible_tokens;
 mod factory;
+mod fungible_tokens;
+mod models;
 mod vendors;
 
-use models::*;
-use fungible_tokens::*;
 use events::*;
+use fungible_tokens::*;
+use models::*;
 
 #[near_bindgen]
 #[derive(BorshSerialize, BorshDeserialize, PanicOnDefault)]
@@ -25,33 +27,37 @@ pub struct Contract {
     pub balance_by_account: LookupMap<AccountId, Balance>,
     pub total_supply: Balance,
     pub metadata: FungibleTokenMetadata,
+    pub drop_by_id: LookupMap<String, InternalDropData>,
+    pub drops_claimed_by_account: LookupMap<AccountId, UnorderedMap<String, Vec<String>>>,
 
     // ------------------------ Account Factory ------------------------ //
-    pub allowed_drop_id: String,
+    pub allowed_drop_id: Option<String>,
     pub keypom_contract: AccountId,
     pub starting_near_balance: Balance,
     pub starting_ncon_balance: Balance,
-    pub account_id_by_pub_key: LookupMap<PublicKey, AccountId>
+    pub account_id_by_pub_key: LookupMap<PublicKey, AccountId>,
 }
 
 #[near_bindgen]
 impl Contract {
-    /// Allows 
+    /// Allows
     pub fn recover_account(&self, key: PublicKey) -> AccountId {
-        self.account_id_by_pub_key.get(&key).expect("No account found")
+        self.account_id_by_pub_key
+            .get(&key)
+            .expect("No account found")
     }
 
     #[init]
     pub fn new(
-        allowed_drop_id: String, 
+        allowed_drop_id: Option<String>,
         keypom_contract: AccountId,
         starting_near_balance: U128,
-        starting_ncon_balance: U128
+        starting_ncon_balance: U128,
     ) -> Self {
         Self {
             data_by_vendor: UnorderedMap::new(StorageKeys::DataByVendor),
             admin_accounts: LookupSet::new(StorageKeys::AdminAccounts),
-            
+
             balance_by_account: LookupMap::new(StorageKeys::BalanceByAccount),
             total_supply: 0,
             metadata: FungibleTokenMetadata {
@@ -63,12 +69,14 @@ impl Contract {
                 reference_hash: None,
                 decimals: 24,
             },
+            drop_by_id: LookupMap::new(StorageKeys::DropById),
+            drops_claimed_by_account: LookupMap::new(StorageKeys::DropsClaimedByAccount),
 
             allowed_drop_id,
             keypom_contract,
             starting_near_balance: starting_near_balance.into(),
             starting_ncon_balance: starting_ncon_balance.into(),
-            account_id_by_pub_key: LookupMap::new(StorageKeys::AccountIdByPubKey)
+            account_id_by_pub_key: LookupMap::new(StorageKeys::AccountIdByPubKey),
         }
     }
 
