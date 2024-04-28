@@ -27,7 +27,7 @@ pub struct Contract {
     pub balance_by_account: LookupMap<AccountId, Balance>,
     pub total_supply: Balance,
     pub metadata: FungibleTokenMetadata,
-    pub drop_by_id: LookupMap<String, InternalDropData>,
+    pub drop_by_id: UnorderedMap<String, InternalDropData>,
     pub drops_claimed_by_account: LookupMap<AccountId, UnorderedMap<String, Vec<String>>>,
 
     // ------------------------ Account Factory ------------------------ //
@@ -69,7 +69,7 @@ impl Contract {
                 reference_hash: None,
                 decimals: 24,
             },
-            drop_by_id: LookupMap::new(StorageKeys::DropById),
+            drop_by_id: UnorderedMap::new(StorageKeys::DropById),
             drops_claimed_by_account: LookupMap::new(StorageKeys::DropsClaimedByAccount),
 
             allowed_drop_id,

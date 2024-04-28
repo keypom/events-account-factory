@@ -5,10 +5,19 @@ use crate::*;
 #[near_bindgen]
 impl Contract {
     /// Allows an admin to create a drop so people can scan a QR code and get the amount of tokens
-    pub fn create_drop(&mut self, drop_data: InternalDropData) {
+    pub fn create_drop(&mut self, drop: InternalDropData) {
         self.assert_admin();
-        let drop_id = drop_data.get_id();
-        self.drop_by_id.insert(&drop_id, &drop_data);
+        let drop_id = drop.get_id();
+        self.drop_by_id.insert(&drop_id, &drop);
+    }
+
+    /// Allows an admin to create a drop so people can scan a QR code and get the amount of tokens
+    pub fn create_drop_batch(&mut self, drops: Vec<InternalDropData>) {
+        self.assert_admin();
+        for drop in drops {
+            let drop_id = drop.get_id();
+            self.drop_by_id.insert(&drop_id, &drop);
+        }
     }
 
     /// Allows a user to claim an existing drop (if they haven't already)
@@ -78,6 +87,31 @@ impl Contract {
         scavenger_id: Option<String>,
         claimed_drops: &mut UnorderedMap<String, Vec<String>>,
     ) {
+        match data.scavenger_ids {
+            Some(scavenger_ids) => {
+                let mut claimed_scavenger_ids = claimed_drops.get(&data.id).unwrap_or(Vec::new());
+
+                let scav_id = scavenger_id.expect("Scavenger ID is required");
+                require!(
+                    !claimed_scavenger_ids.contains(&scav_id),
+                    "Scavenger item already claimed"
+                );
+                claimed_scavenger_ids.push(scav_id);
+                claimed_drops.insert(&data.id, &claimed_scavenger_ids);
+                if scavenger_ids.len() == claimed_scavenger_ids.len() {
+                    // TODO: actually mint NFT
+                }
+            }
+            None => {
+                // Directly claim if no scavenger IDs
+                require!(
+                    claimed_drops.get(&data.id).is_none(),
+                    "Drop already claimed"
+                );
+                claimed_drops.insert(&data.id, &vec![data.id.clone()]);
+                // TODO: actually mint NFT
+            }
+        }
     }
 
     /// Query for the total amount of tokens currently circulating.
@@ -112,5 +146,34 @@ impl Contract {
         }
 
         result
+    }
+
+    pub fn get_nfts_for_account(&self, account_id: AccountId) -> Vec<NFTWithOwnership> {
+        let mut result_nfts = Vec::new();
+        let claimed_drops = self.drops_claimed_by_account.get(&account_id);
+
+        for (_, drop_data) in self.drop_by_id.iter() {
+            if let InternalDropData::nft(nft_data) = drop_data {
+                near_sdk::log!("Found NFT: {:?}", &nft_data);
+                let scavenger_ids_len = nft_data.scavenger_ids.as_ref().map_or(0, Vec::len);
+                near_sdk::log!("Scavenger IDs length: {:?}", &scavenger_ids_len);
+                let claimed_len = claimed_drops
+                    .as_ref()
+                    .and_then(|drops| drops.get(&nft_data.id))
+                    .map_or(0, |claimed_ids| claimed_ids.len());
+                near_sdk::log!("Claimed length: {:?}", &claimed_len);
+
+                let is_owned = if scavenger_ids_len == 0 {
+                    claimed_len > 0
+                } else {
+                    claimed_len == scavenger_ids_len
+                };
+                result_nfts.push(NFTWithOwnership {
+                    nft: nft_data.clone(),
+                    is_owned,
+                });
+            }
+        }
+        result_nfts
     }
 }

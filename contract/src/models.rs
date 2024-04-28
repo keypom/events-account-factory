@@ -94,22 +94,27 @@ pub struct TokenDropData  {
     pub amount: U128,
 
     pub name: String,
-    pub description: String,
     pub image: String
 }
 
 // Allows users to claim NFTs. If scavenger_ids are set, all the ids need to be claimed
 // before the user gets the NFT
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, Debug)]
 #[serde(crate = "near_sdk::serde")]
 pub struct NFTDropData {
     pub id: String,
     pub scavenger_ids: Option<Vec<String>>,
     pub name: String,
-    pub description: String,
     pub image: String,
 
     pub contract_id: String,
     pub method: String,
     pub args: String,
+}
+
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
+#[serde(crate = "near_sdk::serde")]
+pub struct NFTWithOwnership {
+    pub nft: NFTDropData,
+    pub is_owned: bool,
 }
