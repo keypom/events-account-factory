@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::{LookupMap, LookupSet, UnorderedMap};
 use near_sdk::json_types::U128;
@@ -33,8 +35,8 @@ pub struct Contract {
     // ------------------------ Account Factory ------------------------ //
     pub allowed_drop_id: Option<String>,
     pub keypom_contract: AccountId,
-    pub starting_near_balance: Balance,
-    pub starting_ncon_balance: Balance,
+    pub starting_near_balance: LookupMap<String, Balance>,
+    pub starting_token_balance: LookupMap<String, Balance>,
     pub account_id_by_pub_key: LookupMap<PublicKey, AccountId>,
 }
 
@@ -51,9 +53,23 @@ impl Contract {
     pub fn new(
         allowed_drop_id: Option<String>,
         keypom_contract: AccountId,
-        starting_near_balance: U128,
-        starting_ncon_balance: U128,
+        starting_near_balance: HashMap<String, U128>,
+        starting_token_balance: HashMap<String, U128>,
+        token_name: Option<String>,
+        symbol: Option<String>,
+        icon: Option<String>,
     ) -> Self {
+        let mut token_balance_map: LookupMap<String, Balance> =
+            LookupMap::new(StorageKeys::StartingTokenBalance);
+        for (drop_id, amount) in starting_token_balance.into_iter() {
+            token_balance_map.insert(&drop_id, &amount.0);
+        }
+        let mut near_balance_map: LookupMap<String, Balance> =
+            LookupMap::new(StorageKeys::StartingNEARBalance);
+        for (drop_id, amount) in starting_near_balance.into_iter() {
+            near_balance_map.insert(&drop_id, &amount.0);
+        }
+
         Self {
             data_by_vendor: UnorderedMap::new(StorageKeys::DataByVendor),
             admin_accounts: LookupSet::new(StorageKeys::AdminAccounts),
@@ -62,20 +78,21 @@ impl Contract {
             total_supply: 0,
             metadata: FungibleTokenMetadata {
                 spec: "ft-1.0.0".to_string(),
-                name: "NEARCon Fungible Token".to_string(),
-                symbol: "NCON".to_string(),
-                icon: Some(DATA_IMAGE_SVG_GT_ICON.to_string()),
+                name: token_name.unwrap_or("NEARCon Fungible Token".to_string()),
+                symbol: symbol.unwrap_or("token".to_string()),
+                icon: icon.or(Some(DATA_IMAGE_SVG_GT_ICON.to_string())),
                 reference: None,
                 reference_hash: None,
                 decimals: 24,
+                minted_per_claim: None,
             },
             drop_by_id: UnorderedMap::new(StorageKeys::DropById),
             drops_claimed_by_account: LookupMap::new(StorageKeys::DropsClaimedByAccount),
 
             allowed_drop_id,
             keypom_contract,
-            starting_near_balance: starting_near_balance.into(),
-            starting_ncon_balance: starting_ncon_balance.into(),
+            starting_near_balance: near_balance_map,
+            starting_token_balance: token_balance_map,
             account_id_by_pub_key: LookupMap::new(StorageKeys::AccountIdByPubKey),
         }
     }

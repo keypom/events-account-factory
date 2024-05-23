@@ -11,6 +11,8 @@ pub enum StorageKeys {
     DropById,
     AdminAccounts,
     BalanceByAccount,
+    StartingNEARBalance,
+    StartingTokenBalance,
 }
 
 /// For each vendor, there's a store-front and list of items for sale
@@ -29,7 +31,7 @@ pub struct InternalVendorItem {
     pub id: String,
     pub name: String,
     pub image: String,
-    /// Price in $NCON
+    /// Price in $TOKENS
     pub price: U128,
     /// Is the item currently purchasable?
     pub in_stock: bool,
@@ -41,7 +43,7 @@ pub struct InternalVendorItem {
 pub struct ExtVendorItem {
     pub name: String,
     pub image: String,
-    /// Price in $NCON
+    /// Price in $TOKENS
     pub price: U128,
     /// Is the item currently purchasable?
     pub in_stock: bool,
@@ -56,7 +58,6 @@ pub struct VendorMetadata {
     /// Must be IPFS CID
     pub cover_image: String,
 }
-
 
 // Outlines the different types of drops that can be created and claimed
 #[allow(non_camel_case_types)]
@@ -82,19 +83,33 @@ impl InternalDropData {
             InternalDropData::nft(data) => data.scavenger_ids.clone(),
         }
     }
+
+    pub fn get_name(&self) -> String {
+        match self {
+            InternalDropData::token(data) => data.name.clone(),
+            InternalDropData::nft(data) => data.name.clone(),
+        }
+    }
+
+    pub fn get_image(&self) -> String {
+        match self {
+            InternalDropData::token(data) => data.image.clone(),
+            InternalDropData::nft(data) => data.image.clone(),
+        }
+    }
 }
 
 // Allows users to claim a set of tokens. If scavenger_ids are set, all the ids need to be claimed
 // before the user gets the `amount`
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
-pub struct TokenDropData  {
+pub struct TokenDropData {
     pub id: String,
     pub scavenger_ids: Option<Vec<String>>,
     pub amount: U128,
 
     pub name: String,
-    pub image: String
+    pub image: String,
 }
 
 // Allows users to claim NFTs. If scavenger_ids are set, all the ids need to be claimed
@@ -117,4 +132,14 @@ pub struct NFTDropData {
 pub struct NFTWithOwnership {
     pub nft: NFTDropData,
     pub is_owned: bool,
+}
+
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
+#[serde(crate = "near_sdk::serde")]
+pub struct ScavengerHuntWithOwnership {
+    pub id: String,
+    pub scavenger_ids: Vec<String>,
+    pub found: Vec<String>,
+    pub name: String,
+    pub image: String,
 }

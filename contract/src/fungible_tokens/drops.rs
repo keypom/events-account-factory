@@ -130,22 +130,27 @@ impl Contract {
     pub fn get_scavengers_for_account(
         &self,
         account_id: AccountId,
-    ) -> HashMap<String, Vec<String>> {
-        let mut result = HashMap::new();
-
+    ) -> Vec<ScavengerHuntWithOwnership> {
+        let mut result_scavs = Vec::new();
         if let Some(claimed_drops) = self.drops_claimed_by_account.get(&account_id) {
-            for (drop_id, claimed) in claimed_drops.iter() {
-                if let Some(drop_data) = self.drop_by_id.get(&drop_id) {
-                    if let Some(scavenger_ids) = drop_data.get_scavenger_ids() {
-                        result.insert(drop_id, claimed);
-                    }
+            for (_, drop_data) in self.drop_by_id.iter() {
+                if let Some(scav_ids) = drop_data.get_scavenger_ids() {
+                    let id = drop_data.get_id();
+                    let name = drop_data.get_name();
+                    let image = drop_data.get_image();
+                    let claimed = claimed_drops.get(&id).unwrap_or(Vec::new());
+
+                    result_scavs.push(ScavengerHuntWithOwnership {
+                        id,
+                        scavenger_ids: scav_ids,
+                        found: claimed,
+                        name,
+                        image,
+                    });
                 }
             }
-        } else {
-            panic!("Account not registered");
         }
-
-        result
+        result_scavs
     }
 
     pub fn get_nfts_for_account(&self, account_id: AccountId) -> Vec<NFTWithOwnership> {
