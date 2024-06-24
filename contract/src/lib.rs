@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
-use near_sdk::collections::{LookupMap, LookupSet, UnorderedMap};
+use near_sdk::collections::{LookupMap, UnorderedMap};
 use near_sdk::json_types::U128;
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{
@@ -51,7 +51,6 @@ impl Contract {
 
     #[init]
     pub fn new(
-        allowed_drop_id: Option<String>,
         keypom_contract: AccountId,
         ticket_data: HashMap<DropId, TicketType>,
         token_name: Option<String>,
