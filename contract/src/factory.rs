@@ -40,7 +40,7 @@ impl Contract {
 
         match ticket_data.account_type {
             AccountStatus::Sponsor => {
-                self.account_status_by_id.insert(&account_id, &AccountStatus::Admin);
+                self.account_status_by_id.insert(&account_id, &AccountStatus::Sponsor);
             }
             AccountStatus::Admin => {
                 self.account_status_by_id.insert(&account_id, &AccountStatus::Admin);
