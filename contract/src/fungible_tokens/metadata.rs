@@ -17,22 +17,13 @@ pub struct FungibleTokenMetadata {
     pub icon: Option<String>, // Icon of the fungible token.
     pub reference: Option<String>, // A link to a valid JSON file containing various keys offering supplementary details on the token
     pub reference_hash: Option<Base64VecU8>, // The base64-encoded sha256 hash of the JSON file contained in the reference field. This is to guard against off-chain tampering.
-    pub decimals: u8, // used in frontends to show the proper significant digits of a token. This concept is explained well in this OpenZeppelin post. https://docs.openzeppelin.com/contracts/3.x/erc20#a-note-on-decimals
-    pub minted_per_claim: Option<U128>, // The number of tokens that will be minted per claim (depends on drop ID passed in)
+    pub decimals: u8, // used in frontends to show the proper significant digits of a token. This concept is explained well in this OpenZeppelin post. https://docs.openzeppelin.com/contracts/3.x/erc20#a-note-on-decimals}
 }
 
 #[near_bindgen]
 impl Contract {
-    pub fn ft_metadata(&self, drop_id: Option<String>) -> FungibleTokenMetadata {
-        let mut metadata = self.metadata.clone();
-        if let Some(id) = drop_id {
-            metadata.minted_per_claim = Some(U128(
-                self.starting_token_balance
-                    .get(&id)
-                    .expect("no drop id found"),
-            ));
-        }
-        metadata
+    pub fn ft_metadata(&self) -> FungibleTokenMetadata {
+        self.metadata.clone()
     }
 
     #[private]

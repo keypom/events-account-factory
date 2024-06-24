@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
-use near_sdk::collections::{LookupMap, LookupSet, UnorderedMap};
+use near_sdk::collections::{LookupMap, UnorderedMap};
 use near_sdk::json_types::U128;
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{
@@ -23,20 +23,20 @@ use models::*;
 pub struct Contract {
     // ------------------------ Vendor Information ------------------------ //
     pub data_by_vendor: UnorderedMap<AccountId, VendorInformation>,
-    pub admin_accounts: LookupSet<AccountId>,
+    pub account_status_by_id: LookupMap<AccountId, AccountStatus>,
 
     // ------------------------ Fungible Tokens ------------------------ //
     pub balance_by_account: LookupMap<AccountId, Balance>,
     pub total_supply: Balance,
     pub metadata: FungibleTokenMetadata,
-    pub drop_by_id: UnorderedMap<String, InternalDropData>,
-    pub drops_claimed_by_account: LookupMap<AccountId, UnorderedMap<String, Vec<String>>>,
+
+    pub drop_by_id: UnorderedMap<DropId, InternalDropData>,
+    pub drops_claimed_by_account: LookupMap<AccountId, UnorderedMap<DropId, Vec<ScavengerId>>>,
 
     // ------------------------ Account Factory ------------------------ //
-    pub allowed_drop_id: Option<String>,
+    pub ticket_data_by_id: LookupMap<DropId, TicketType>,
     pub keypom_contract: AccountId,
-    pub starting_near_balance: LookupMap<String, Balance>,
-    pub starting_token_balance: LookupMap<String, Balance>,
+
     pub account_id_by_pub_key: LookupMap<PublicKey, AccountId>,
 }
 
@@ -51,28 +51,22 @@ impl Contract {
 
     #[init]
     pub fn new(
-        allowed_drop_id: Option<String>,
         keypom_contract: AccountId,
-        starting_near_balance: HashMap<String, U128>,
-        starting_token_balance: HashMap<String, U128>,
+        ticket_data: HashMap<DropId, TicketType>,
         token_name: Option<String>,
         symbol: Option<String>,
         icon: Option<String>,
     ) -> Self {
-        let mut token_balance_map: LookupMap<String, Balance> =
-            LookupMap::new(StorageKeys::StartingTokenBalance);
-        for (drop_id, amount) in starting_token_balance.into_iter() {
-            token_balance_map.insert(&drop_id, &amount.0);
-        }
-        let mut near_balance_map: LookupMap<String, Balance> =
-            LookupMap::new(StorageKeys::StartingNEARBalance);
-        for (drop_id, amount) in starting_near_balance.into_iter() {
-            near_balance_map.insert(&drop_id, &amount.0);
+        let mut ticket_data_by_id: LookupMap<String, TicketType> =
+            LookupMap::new(StorageKeys::TicketDataById);
+
+        for (drop_id, ticket_type) in ticket_data.into_iter() {
+            ticket_data_by_id.insert(&drop_id, &ticket_type);
         }
 
         Self {
             data_by_vendor: UnorderedMap::new(StorageKeys::DataByVendor),
-            admin_accounts: LookupSet::new(StorageKeys::AdminAccounts),
+            account_status_by_id: LookupMap::new(StorageKeys::AccontStatusById),
 
             balance_by_account: LookupMap::new(StorageKeys::BalanceByAccount),
             total_supply: 0,
@@ -84,30 +78,25 @@ impl Contract {
                 reference: None,
                 reference_hash: None,
                 decimals: 24,
-                minted_per_claim: None,
             },
             drop_by_id: UnorderedMap::new(StorageKeys::DropById),
             drops_claimed_by_account: LookupMap::new(StorageKeys::DropsClaimedByAccount),
 
-            allowed_drop_id,
             keypom_contract,
-            starting_near_balance: near_balance_map,
-            starting_token_balance: token_balance_map,
+            ticket_data_by_id,
             account_id_by_pub_key: LookupMap::new(StorageKeys::AccountIdByPubKey),
         }
     }
 
     #[private]
-    pub fn add_admin(&mut self, account_ids: Vec<AccountId>) {
-        for account_id in account_ids {
-            self.admin_accounts.insert(&account_id);
-        }
+    pub fn add_account_status(&mut self, account_id: AccountId, status: AccountStatus) {
+        self.account_status_by_id.insert(&account_id, &status);
     }
 
     #[private]
-    pub fn remove_admin(&mut self, account_ids: Vec<AccountId>) {
+    pub fn remove_accont_status(&mut self, account_ids: Vec<AccountId>) {
         for account_id in account_ids {
-            self.admin_accounts.remove(&account_id);
+            self.account_status_by_id.remove(&account_id);
         }
     }
 }

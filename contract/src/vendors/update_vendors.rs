@@ -24,7 +24,7 @@ impl Contract {
 
     /// Adds a vendor to the list of vendors
     pub fn update_vendor(&mut self, vendor_id: AccountId, vendor_metadata: VendorMetadata) {
-        self.assert_admin();
+        self.assert_vendor();
 
         let mut vendor_info= self.data_by_vendor.get(&vendor_id).expect("No vendor found");
         vendor_info.metadata = vendor_metadata;
@@ -33,7 +33,7 @@ impl Contract {
 
     /// Adds a list of items to a specific vendor's store-front
     pub fn add_item_to_vendor(&mut self, vendor_id: AccountId, items: Vec<ExtVendorItem>) {
-        self.assert_admin_or_vendor(&vendor_id);
+        self.assert_vendor();
         
         let mut vendor_info = self.data_by_vendor.get(&vendor_id).expect("No vendor found");
         let mut next_id = vendor_info.item_by_id.len() as u64;
@@ -55,7 +55,7 @@ impl Contract {
 
     /// Update a specific item in a vendor's store-front
     pub fn update_vendor_item(&mut self, vendor_id: AccountId, item_id: u64, new_item: ExtVendorItem) {
-        self.assert_admin_or_vendor(&vendor_id);
+        self.assert_vendor();
         
         let mut vendor_info = self.data_by_vendor.get(&vendor_id).expect("No vendor found");
         let internal_item = InternalVendorItem {
@@ -71,14 +71,19 @@ impl Contract {
 
     pub(crate) fn assert_admin(&self) {
         if env::predecessor_account_id() != env::current_account_id() {
-            require!(self.admin_accounts.contains(&env::predecessor_account_id()), "Unauthorized");
+            require!(self.account_status_by_id.get(&env::predecessor_account_id()).expect("Unauthorized").is_admin(), "Unauthorized");
         }
     }
 
-    pub(crate) fn assert_admin_or_vendor(&self, vendor_id: &AccountId) {
-        // If the caller isn't the vendor, ensure they're an admin
-        if env::predecessor_account_id() != vendor_id.clone() && env::predecessor_account_id() != env::current_account_id() {
-            self.assert_admin();
+    pub(crate) fn assert_vendor(&self) {
+        if env::predecessor_account_id() != env::current_account_id() {
+            require!(self.account_status_by_id.get(&env::predecessor_account_id()).expect("Unauthorized").is_vendor(), "Unauthorized");
+        }
+    }
+
+    pub(crate) fn assert_sponsor(&self) {
+        if env::predecessor_account_id() != env::current_account_id() {
+            require!(self.account_status_by_id.get(&env::predecessor_account_id()).expect("Unauthorized").is_sponsor(), "Unauthorized");
         }
     }
 }
