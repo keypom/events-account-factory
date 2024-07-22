@@ -56,7 +56,7 @@ impl AccountStatus {
     }
 }
 
-/// For each vendor, there's a store-front and list of items for sale
+/// Data for each ticket such as the account status, starting balances, etc...
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
 #[serde(crate = "near_sdk::serde")]
 pub struct TicketType {
