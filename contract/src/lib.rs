@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
-use near_sdk::collections::{LookupMap, UnorderedMap};
+use near_sdk::collections::{LookupMap, UnorderedMap, UnorderedSet};
 use near_sdk::json_types::U128;
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{
@@ -9,6 +9,7 @@ use near_sdk::{
 };
 
 mod events;
+mod drops;
 mod factory;
 mod fungible_tokens;
 mod models;
@@ -16,7 +17,9 @@ mod vendors;
 
 use events::*;
 use fungible_tokens::*;
+use vendors::*;
 use models::*;
+use drops::*;
 
 #[near_bindgen]
 #[derive(BorshSerialize, BorshDeserialize, PanicOnDefault)]
@@ -30,8 +33,10 @@ pub struct Contract {
     pub total_supply: Balance,
     pub metadata: FungibleTokenMetadata,
 
+    pub drop_ids_by_creator: LookupMap<AccountId, UnorderedSet<DropId>>,
+    
     pub drop_by_id: UnorderedMap<DropId, InternalDropData>,
-    pub drops_claimed_by_account: LookupMap<AccountId, UnorderedMap<DropId, Vec<ScavengerId>>>,
+    pub claims_by_account: LookupMap<AccountId, UnorderedMap<DropId, InternalClaimedDropData>>,
 
     // ------------------------ Account Factory ------------------------ //
     pub ticket_data_by_id: LookupMap<DropId, TicketType>,
@@ -67,6 +72,7 @@ impl Contract {
         Self {
             data_by_vendor: UnorderedMap::new(StorageKeys::DataByVendor),
             account_status_by_id: LookupMap::new(StorageKeys::AccontStatusById),
+            drop_ids_by_creator: LookupMap::new(StorageKeys::DropIdsByCreator),
 
             balance_by_account: LookupMap::new(StorageKeys::BalanceByAccount),
             total_supply: 0,
@@ -80,7 +86,7 @@ impl Contract {
                 decimals: 24,
             },
             drop_by_id: UnorderedMap::new(StorageKeys::DropById),
-            drops_claimed_by_account: LookupMap::new(StorageKeys::DropsClaimedByAccount),
+            claims_by_account: LookupMap::new(StorageKeys::DropsClaimedByAccount),
 
             keypom_contract,
             ticket_data_by_id,

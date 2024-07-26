@@ -70,20 +70,14 @@ impl Contract {
     }
 
     pub(crate) fn assert_admin(&self) {
-        if env::predecessor_account_id() != env::current_account_id() {
-            require!(self.account_status_by_id.get(&env::predecessor_account_id()).expect("Unauthorized").is_admin(), "Unauthorized");
-        }
+        require!(self.account_status_by_id.get(&env::predecessor_account_id()).expect("Unauthorized").is_admin(), "Unauthorized");
     }
 
     pub(crate) fn assert_vendor(&self) {
-        if env::predecessor_account_id() != env::current_account_id() {
-            require!(self.account_status_by_id.get(&env::predecessor_account_id()).expect("Unauthorized").is_vendor(), "Unauthorized");
-        }
+        require!(self.account_status_by_id.get(&env::predecessor_account_id()).expect("Unauthorized").is_vendor(), "Unauthorized");
     }
 
     pub(crate) fn assert_sponsor(&self) {
-        if env::predecessor_account_id() != env::current_account_id() {
-            require!(self.account_status_by_id.get(&env::predecessor_account_id()).expect("Unauthorized").is_sponsor(), "Unauthorized");
-        }
+        require!(self.account_status_by_id.get(&env::predecessor_account_id()).expect("Unauthorized").is_sponsor(), "Unauthorized");
     }
 }

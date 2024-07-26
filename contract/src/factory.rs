@@ -111,7 +111,7 @@ impl Contract {
         let drop_set = UnorderedMap::new(StorageKeys::DropsClaimedByAccountInner {
             account_id_hash: env::sha256_array(new_account_id.as_bytes()),
         });
-        self.drops_claimed_by_account.insert(&new_account_id, &drop_set);
+        self.claims_by_account.insert(&new_account_id, &drop_set);
         // Deposit the starting balance into the account and then create it
         self.internal_deposit_mint(&new_account_id, tokens_to_start.0);
 
@@ -129,12 +129,9 @@ impl Contract {
 
     /// Assert that the caller is either keypom or the current account
     pub(crate) fn assert_keypom(&self) {
-        let caller = env::predecessor_account_id();
-        if caller != env::current_account_id() {
-            require!(
-                env::predecessor_account_id() == self.keypom_contract,
-                "Only Keypom can call this method"
-            );
-        }
+        require!(
+            env::predecessor_account_id() == self.keypom_contract,
+            "Only Keypom can call this method"
+        );
     }
 }
