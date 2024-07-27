@@ -15,6 +15,7 @@ pub enum StorageKeys {
     AccontStatusById,
     BalanceByAccount,
     DropIdsByCreator,
+    DropIdsByCreatorInner { account_id_hash: CryptoHash },
     TicketDataById,
 }
 

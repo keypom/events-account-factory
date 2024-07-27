@@ -69,15 +69,21 @@ impl Contract {
         self.data_by_vendor.insert(&vendor_id, &vendor_info);
     }
 
-    pub(crate) fn assert_admin(&self) {
-        require!(self.account_status_by_id.get(&env::predecessor_account_id()).expect("Unauthorized").is_admin(), "Unauthorized");
+    pub(crate) fn assert_admin(&self) -> AccountId {
+        let caller_id = env::predecessor_account_id();
+        require!(self.account_status_by_id.get(&caller_id).expect("Unauthorized").is_admin(), "Unauthorized");
+        caller_id
     }
 
-    pub(crate) fn assert_vendor(&self) {
-        require!(self.account_status_by_id.get(&env::predecessor_account_id()).expect("Unauthorized").is_vendor(), "Unauthorized");
+    pub(crate) fn assert_vendor(&self) -> AccountId {
+        let caller_id = env::predecessor_account_id();
+        require!(self.account_status_by_id.get(&caller_id).expect("Unauthorized").is_vendor(), "Unauthorized");
+        caller_id
     }
 
-    pub(crate) fn assert_sponsor(&self) {
-        require!(self.account_status_by_id.get(&env::predecessor_account_id()).expect("Unauthorized").is_sponsor(), "Unauthorized");
+    pub(crate) fn assert_sponsor(&self) -> AccountId {
+        let caller_id = env::predecessor_account_id();
+        require!(self.account_status_by_id.get(&caller_id).expect("Unauthorized").is_sponsor(), "Unauthorized");
+        caller_id
     }
 }
