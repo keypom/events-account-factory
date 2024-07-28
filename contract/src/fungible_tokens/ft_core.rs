@@ -2,17 +2,45 @@ use crate::*;
 
 #[near_bindgen]
 impl Contract {
-    /// Allows an admin to mint an amount of tokens to a desired account ID.
-    /// Useful for dropping tokens to users for things like attending talks
+    /// Allows an admin to mint an amount of tokens to a specified account ID.
+    ///
+    /// This function is useful for minting tokens to users by an admin for various reasons,
+    /// such as rewarding them for attending talks or participating in events.
+    ///
+    /// # Arguments
+    ///
+    /// * `account_id` - The account ID to which the tokens will be minted.
+    /// * `amount` - The amount of tokens to mint, represented as a `U128`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the caller is not an admin.
     pub fn ft_mint(&mut self, account_id: AccountId, amount: U128) {
         self.assert_admin();
-        self.internal_deposit_mint(&account_id, amount.0);
+        self.internal_deposit_ft_mint(&account_id, amount.0);
     }
 
-    /// Allows a user to specify a list of items for a specific vendor to purchase.
-    /// This will transfer their tokens to the vendor (assuming they have enough).
-    /// Alternatively, if no memo is specified, the user can simply transfer tokens to another account.
-    /// The receiving account *must* either be a valid vendor or a sub-account of this contract.
+    /// Allows a user to transfer tokens to another account or purchase items from a vendor.
+    ///
+    /// This function facilitates the transfer of tokens between users. If a memo is provided, it specifies
+    /// a list of items to purchase from a vendor, and the user's tokens will be transferred to the vendor
+    /// accordingly, provided the user has sufficient tokens. If no memo is specified, the user can simply
+    /// transfer tokens to another account. The receiving account must either be a valid vendor or a sub-account
+    /// of this contract.
+    ///
+    /// # Arguments
+    ///
+    /// * `receiver_id` - The account ID of the receiver.
+    /// * `memo` - An optional string memo that specifies the items to purchase.
+    /// * `amount` - An optional amount of tokens to transfer.
+    ///
+    /// # Returns
+    ///
+    /// Returns the amount of tokens transferred, wrapped in a `Result<U128, String>`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the memo is invalid or if the receiver ID is not valid when no memo is provided.
     #[handle_result]
     pub fn ft_transfer(&mut self, receiver_id: AccountId, memo: Option<String>, amount: Option<U128>) -> Result<U128, String> {
         let amount_to_transfer = if let Some(memo) = memo {
@@ -34,21 +62,33 @@ impl Contract {
         };
 
         // Transfer the tokens to the vendor
-        let sender_id = env::predecessor_account_id();
-        self.internal_transfer(&sender_id, &receiver_id, amount_to_transfer);
+        let sender_id = self.caller_id_by_signing_pk();
+        self.internal_ft_transfer(&sender_id, &receiver_id, amount_to_transfer);
 
         Ok(U128(amount_to_transfer))
     }
 
-    /// Query for the total amount of tokens currently circulating.
+    /// Queries for the total amount of tokens currently circulating.
+    ///
+    /// # Returns
+    ///
+    /// Returns the total supply of tokens as a `U128`.
     pub fn ft_total_supply(&self) -> U128 {
         // Return the total supply casted to a U128
-        self.total_supply.into()
+        self.ft_total_supply.into()
     }
 
-    /// Query for the balance of tokens for a specific account.
+    /// Queries for the balance of tokens for a specific account.
+    ///
+    /// # Arguments
+    ///
+    /// * `account_id` - The account ID for which to query the balance.
+    ///
+    /// # Returns
+    ///
+    /// Returns the balance of tokens for the specified account as a `U128`.
     pub fn ft_balance_of(&self, account_id: AccountId) -> U128 {
         // Return the balance of the account casted to a U128
-        self.balance_by_account.get(&account_id).unwrap_or(0).into()
+        self.ft_balance_by_account.get(&account_id).unwrap_or(0).into()
     }
 }

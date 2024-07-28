@@ -1,89 +1,30 @@
 use crate::*;
 
-/// Represents the different types of drops that can be created and claimed.
-#[allow(non_camel_case_types)]
-#[derive(BorshSerialize, BorshDeserialize, Deserialize, Serialize, Clone)]
-#[serde(crate = "near_sdk::serde")]
-#[serde(tag = "type")]
-pub enum InternalDropData {
-    token(InternalTokenDropData),
-    nft(InternalNFTDropData),
-}
-
-impl InternalDropData {
-    /// Returns the ID of the drop.
-    pub fn get_id(&self) -> String {
-        match self {
-            InternalDropData::token(data) => data.base.base.id.clone(),
-            InternalDropData::nft(data) => data.base.base.id.clone(),
-        }
-    }
-
-    /// Returns the scavenger IDs associated with the drop.
-    pub fn get_scavenger_ids(&self) -> Option<Vec<String>> {
-        match self {
-            InternalDropData::token(data) => data.base.base.scavenger_ids.clone(),
-            InternalDropData::nft(data) => data.base.base.scavenger_ids.clone(),
-        }
-    }
-
-    /// Returns the name of the drop.
-    pub fn get_name(&self) -> String {
-        match self {
-            InternalDropData::token(data) => data.base.base.name.clone(),
-            InternalDropData::nft(data) => data.base.base.name.clone(),
-        }
-    }
-
-    /// Returns the image URL of the drop.
-    pub fn get_image(&self) -> String {
-        match self {
-            InternalDropData::token(data) => data.base.base.image.clone(),
-            InternalDropData::nft(data) => data.base.base.image.clone(),
-        }
-    }
-}
+pub type ScavengerHuntIds = Option<Vec<String>>;
 
 /// Base struct for external claimed drop data.
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, Debug)]
 #[serde(crate = "near_sdk::serde")]
-pub struct ExtClaimedDropBase {
-    pub id: String,
-    pub scavenger_ids: Option<Vec<String>>,
+pub struct DropBase {
+    pub scavenger_ids: ScavengerHuntIds,
     pub name: String,
     pub image: String,
-}
-
-/// Base struct for internal drop data, extends the external claimed drop base with creator ID.
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, Debug)]
-#[serde(crate = "near_sdk::serde")]
-pub struct InternalDropBase {
-    pub base: ExtClaimedDropBase,
-    pub creator_id: AccountId,
 }
 
 /// Represents the internal data for a token drop.
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, Debug)]
 #[serde(crate = "near_sdk::serde")]
-pub struct InternalTokenDropData {
-    pub base: InternalDropBase,
+pub struct TokenDropData {
+    pub base: DropBase,
     pub amount: U128,
 }
 
-/// Represents the internal data for an NFT drop.
+/// Represents the internal data for a token drop.
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, Debug)]
 #[serde(crate = "near_sdk::serde")]
-pub struct InternalNFTDropData {
-    pub base: InternalDropBase,
-    pub series_id: String,
-}
-
-/// Represents the data for a claimed drop.
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
-#[serde(crate = "near_sdk::serde")]
-pub struct InternalClaimedDropData {
-    pub id: String,
-    pub scavenger_ids: Option<Vec<String>>,
+pub struct NFTDropData {
+    pub base: DropBase,
+    pub series_id: SeriesId
 }
 
 /// Represents the different types of claimed drops to be returned to the frontend.
@@ -91,91 +32,80 @@ pub struct InternalClaimedDropData {
 #[derive(BorshSerialize, BorshDeserialize, Deserialize, Serialize, Clone)]
 #[serde(crate = "near_sdk::serde")]
 #[serde(tag = "type")]
-pub enum ExtClaimedDropData {
-    token(ExtClaimedTokenDropData),
-    nft(ExtClaimedNFTDropData),
+pub enum DropData {
+    token(TokenDropData),
+    nft(NFTDropData),
 }
 
-impl ExtClaimedDropData {
-    /// Returns the ID of the claimed drop.
-    pub fn get_id(&self) -> String {
-        match self {
-            ExtClaimedDropData::token(data) => data.base.id.clone(),
-            ExtClaimedDropData::nft(data) => data.base.id.clone(),
-        }
-    }
-
+impl DropData {
     /// Returns the scavenger IDs associated with the claimed drop.
     pub fn get_scavenger_ids(&self) -> Option<Vec<String>> {
         match self {
-            ExtClaimedDropData::token(data) => data.base.scavenger_ids.clone(),
-            ExtClaimedDropData::nft(data) => data.base.scavenger_ids.clone(),
+            DropData::token(data) => data.base.scavenger_ids.clone(),
+            DropData::nft(data) => data.base.scavenger_ids.clone(),
         }
     }
 
     /// Returns the name of the claimed drop.
     pub fn get_name(&self) -> String {
         match self {
-            ExtClaimedDropData::token(data) => data.base.name.clone(),
-            ExtClaimedDropData::nft(data) => data.base.name.clone(),
+            DropData::token(data) => data.base.name.clone(),
+            DropData::nft(data) => data.base.name.clone(),
         }
     }
 
     /// Returns the image URL of the claimed drop.
     pub fn get_image(&self) -> String {
         match self {
-            ExtClaimedDropData::token(data) => data.base.image.clone(),
-            ExtClaimedDropData::nft(data) => data.base.image.clone(),
+            DropData::token(data) => data.base.image.clone(),
+            DropData::nft(data) => data.base.image.clone(),
         }
     }
+}
 
-    /// Converts external drop data to internal drop data with a hard-coded creator ID.
-    pub fn convert_to_internal(&self, creator_id: AccountId) -> InternalDropData {
+/// Represents what the user has claimed for a specific drop. If scavenger IDs is none, the drop contains no scavengers
+/// If scavengers is Some, the drop needs X amount of scavenger Ids to be found before the reward is allocated
+/// On the frontend, query for drop data to see how many are needed and cross reference with this data structure to see
+/// how many more IDs are left to be found
+/// This is done to optimize the contract and not require duplicate data to be stored
+#[allow(non_camel_case_types)]
+#[derive(BorshSerialize, BorshDeserialize, Deserialize, Serialize, Clone)]
+#[serde(crate = "near_sdk::serde")]
+#[serde(tag = "type")]
+pub enum ClaimedDropData {
+    token(ScavengerHuntIds),
+    nft(ScavengerHuntIds),
+}
+
+impl ClaimedDropData {
+     /// Returns the scavenger IDs associated with the claimed drop.
+     pub fn get_found_scavenger_ids(&self) -> ScavengerHuntIds {
         match self {
-            ExtClaimedDropData::token(ext_data) => {
-                InternalDropData::token(InternalTokenDropData {
-                    base: InternalDropBase {
-                        base: ExtClaimedDropBase {
-                            id: ext_data.base.id.clone(),
-                            scavenger_ids: ext_data.base.scavenger_ids.clone(),
-                            name: ext_data.base.name.clone(),
-                            image: ext_data.base.image.clone(),
-                        },
-                        creator_id: creator_id.clone(),
-                    },
-                    amount: ext_data.amount,
-                })
-            }
-            ExtClaimedDropData::nft(ext_data) => {
-                InternalDropData::nft(InternalNFTDropData {
-                    base: InternalDropBase {
-                        base: ExtClaimedDropBase {
-                            id: ext_data.base.id.clone(),
-                            scavenger_ids: ext_data.base.scavenger_ids.clone(),
-                            name: ext_data.base.name.clone(),
-                            image: ext_data.base.image.clone(),
-                        },
-                        creator_id: creator_id.clone(),
-                    },
-                    series_id: ext_data.series_id.clone(),
-                })
-            }
+            ClaimedDropData::token(token_drop_scavs) => token_drop_scavs.clone(),
+            ClaimedDropData::nft(nft_drop_scavs) => nft_drop_scavs.clone()
         }
     }
-}
 
-/// Represents the data for a claimed token drop.
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
-#[serde(crate = "near_sdk::serde")]
-pub struct ExtClaimedTokenDropData {
-    pub base: ExtClaimedDropBase,
-    pub amount: U128,
-}
+    /// Adds a scavenger ID to the list of found scavenger IDs.
+    ///
+    /// # Arguments
+    ///
+    /// * `scavenger_id` - The scavenger ID to be added.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the scavenger ID has already been claimed.
+    pub fn add_scavenger_id(&mut self, scavenger_id: String) {
+        let mut found_scavs = self.get_found_scavenger_ids().unwrap_or_else(Vec::new);
+        require!(
+            !found_scavs.contains(&scavenger_id),
+            "Scavenger item already claimed"
+        );
+        found_scavs.push(scavenger_id);
 
-/// Represents the data for a claimed NFT drop.
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
-#[serde(crate = "near_sdk::serde")]
-pub struct ExtClaimedNFTDropData {
-    pub base: ExtClaimedDropBase,
-    pub series_id: String,
+        match self {
+            ClaimedDropData::token(ref mut token_drop_scavs) => *token_drop_scavs = Some(found_scavs),
+            ClaimedDropData::nft(ref mut nft_drop_scavs) => *nft_drop_scavs = Some(found_scavs),
+        }
+    }
 }

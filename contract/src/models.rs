@@ -2,7 +2,6 @@ use crate::*;
 use near_sdk::CryptoHash;
 
 pub type DropId = String;
-pub type ScavengerId = String;
 
 #[derive(BorshSerialize, BorshStorageKey)]
 pub enum StorageKeys {
@@ -12,11 +11,16 @@ pub enum StorageKeys {
     DropsClaimedByAccount,
     DropsClaimedByAccountInner { account_id_hash: CryptoHash },
     DropById,
-    AccontStatusById,
+    AccountStatusById,
     BalanceByAccount,
     DropIdsByCreator,
     DropIdsByCreatorInner { account_id_hash: CryptoHash },
     TicketDataById,
+    SeriesById,
+    SeriesByIdInner { account_id_hash: CryptoHash },
+    TokensPerOwner,
+    TokenPerOwnerInner { account_id_hash: CryptoHash },
+    TokensById,
 }
 
 
