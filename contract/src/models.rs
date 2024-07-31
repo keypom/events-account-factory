@@ -5,21 +5,15 @@ pub type DropId = String;
 
 #[derive(BorshSerialize, BorshStorageKey)]
 pub enum StorageKeys {
-    DataByVendor,
     AccountIdByPubKey,
     VendorItems { vendor_id_hash: CryptoHash },
     AccountDetailsById,
-    DropsClaimedByAccount,
     DropsClaimedByAccountInner { account_id_hash: CryptoHash },
     DropById,
-    AccountStatusById,
-    BalanceByAccount,
-    DropIdsByCreator,
     DropIdsByCreatorInner { account_id_hash: CryptoHash },
     TicketDataById,
     SeriesById,
     SeriesByIdInner { account_id_hash: CryptoHash },
-    TokensPerOwner,
     TokenPerOwnerInner { account_id_hash: CryptoHash },
     TokensById,
 }
