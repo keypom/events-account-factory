@@ -16,10 +16,8 @@ impl Contract {
         let drop_data = self.drop_by_id.get(&drop_id).expect("Drop not found");
 
         let receiver_id = self.caller_id_by_signing_pk();
-        let mut claimed_drops = self
-            .claims_by_account
-            .get(&receiver_id)
-            .expect("User not registered");
+        let mut account_details = self.account_details_by_id.get(&receiver_id).unwrap_or(AccountDetails::new(&receiver_id));
+        let mut claimed_drops = account_details.drops_claimed;
 
         match drop_data {
             DropData::token(data) => {
@@ -29,7 +27,8 @@ impl Contract {
                 self.handle_claim_nft_drop(data, &drop_id, &receiver_id, scavenger_id, &mut claimed_drops);
             }
         }
-        self.claims_by_account.insert(&receiver_id, &claimed_drops);
+        account_details.drops_claimed = claimed_drops;
+        self.account_details_by_id.insert(&receiver_id, &account_details);
     }
 
     /// Handles the claim process for a token drop.
@@ -140,7 +139,8 @@ impl Contract {
         receiver_id: &AccountId,
     ) {
         let drop_creator = parse_drop_id(drop_id);
-        let creator_status = self.account_status_by_id.get(&drop_creator).expect("Unknown drop creator status");
+        let mut account_details = self.account_details_by_id.get(&drop_creator).expect("Drop creator not found in map");
+        let creator_status = account_details.account_status.expect("Drop creator not found");
 
         let amount_to_claim = drop.amount.0;
 
@@ -149,7 +149,7 @@ impl Contract {
             self.internal_deposit_ft_mint(&receiver_id, amount_to_claim);
         } else if creator_status.is_sponsor() {
             // Get the current token balance of the creator
-            let mut cur_creator_tokens = self.ft_balance_of(drop_creator.clone()).0;
+            let mut cur_creator_tokens = account_details.ft_balance;
 
             // Check if the creator has enough tokens to cover the amount to be claimed
             require!(
@@ -159,9 +159,10 @@ impl Contract {
 
             // Decrement the tokens from the creator's balance
             cur_creator_tokens -= amount_to_claim;
-
+        
             // Update the creator's balance in the contract
-            self.ft_balance_by_account.insert(&drop_creator, &cur_creator_tokens.into());
+            account_details.ft_balance = cur_creator_tokens;
+            self.account_details_by_id.insert(&drop_creator, &account_details);
 
             // Perform FT transfer from the drop creator to the receiver
             self.internal_ft_transfer(&drop_creator, &receiver_id, amount_to_claim);

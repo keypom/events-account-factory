@@ -5,11 +5,13 @@ impl Contract {
     /// Internal method for depositing some amount of FTs into an account and updating the total supply.
     pub(crate) fn internal_deposit_ft_mint(&mut self, account_id: &AccountId, amount: Balance) {
         // Get the current balance of the account. If they're not registered, panic.
-        let balance = self.ft_balance_by_account.get(account_id).unwrap_or(0);
+        let mut account_details = self.account_details_by_id.get(account_id).expect("Receiver not found in map");
+        let balance = account_details.ft_balance;
         
         // Add the amount to the balance and insert the new balance into the accounts map
         if let Some(new_balance) = balance.checked_add(amount) {
-            self.ft_balance_by_account.insert(account_id, &new_balance);
+            account_details.ft_balance = new_balance;
+            self.account_details_by_id.insert(account_id, &account_details);
         } else {
             env::panic_str("Balance overflow");
         }
@@ -29,12 +31,14 @@ impl Contract {
 
     /// Internal method for depositing some amount of FTs into an account. 
     pub(crate) fn internal_ft_deposit(&mut self, account_id: &AccountId, amount: Balance) {
-        // Get the current balance of the account.
-        let balance = self.ft_balance_by_account.get(&account_id).unwrap_or(0);
+        // Get the current balance of the account. If they're not registered, panic.
+        let mut account_details = self.account_details_by_id.get(account_id).expect("Receiver not found in map");
+        let balance = account_details.ft_balance;
         
         // Add the amount to the balance and insert the new balance into the accounts map
         if let Some(new_balance) = balance.checked_add(amount) {
-            self.ft_balance_by_account.insert(account_id, &new_balance);
+            account_details.ft_balance = new_balance;
+            self.account_details_by_id.insert(account_id, &account_details);
         } else {
             env::panic_str("Balance overflow");
         }
@@ -42,12 +46,14 @@ impl Contract {
 
     /// Internal method for withdrawing some amount of FTs from an account. 
     pub(crate) fn internal_ft_withdraw(&mut self, account_id: &AccountId, amount: Balance) {
-        // Get the current balance of the account.
-        let balance = self.ft_balance_by_account.get(&account_id).unwrap_or(0);
+        // Get the current balance of the account. If they're not registered, panic.
+        let mut account_details = self.account_details_by_id.get(account_id).expect("Receiver not found in map");
+        let balance = account_details.ft_balance;
         
         // Decrease the amount from the balance and insert the new balance into the accounts map
         if let Some(new_balance) = balance.checked_sub(amount) {
-            self.ft_balance_by_account.insert(account_id, &new_balance);
+            account_details.ft_balance = new_balance;
+            self.account_details_by_id.insert(account_id, &account_details);
         } else {
             env::panic_str("The account doesn't have enough balance");
         }

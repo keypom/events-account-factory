@@ -7,7 +7,7 @@ impl Contract {
             .series_by_id
             .len();
 
-        let tokens = UnorderedSet::new(StorageKeys::SeriesByIdInner { account_id_hash: env::sha256_array(format!("{}{}", creator_id, series_id).as_bytes()), });
+        let tokens = UnorderedSet::new(StorageKeys::SeriesByIdInner { account_id_hash: hash_string(&format!("{}{}", creator_id, series_id)), });
         let series = Series {
             metadata: nft_metadata.clone(),
             royalty: None,

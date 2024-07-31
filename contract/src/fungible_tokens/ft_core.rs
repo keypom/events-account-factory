@@ -45,7 +45,7 @@ impl Contract {
     pub fn ft_transfer(&mut self, receiver_id: AccountId, memo: Option<String>, amount: Option<U128>) -> Result<U128, String> {
         let amount_to_transfer = if let Some(memo) = memo {
             let item_ids: Vec<u64> = serde_json::from_str(&memo).expect("Failed to parse memo");
-            let vendor_data = self.data_by_vendor.get(&receiver_id).expect("No vendor found");
+            let vendor_data = self.account_details_by_id.get(&receiver_id).expect("No receiver account details found").vendor_data.expect("No vendor data found for receiver");
     
             // Tally the total price across all the items being purchased
             let mut total_price = 0;
@@ -89,6 +89,6 @@ impl Contract {
     /// Returns the balance of tokens for the specified account as a `U128`.
     pub fn ft_balance_of(&self, account_id: AccountId) -> U128 {
         // Return the balance of the account casted to a U128
-        self.ft_balance_by_account.get(&account_id).unwrap_or(0).into()
+        self.account_details_by_id.get(&account_id).and_then(|d| Some(d.ft_balance)).unwrap_or(0).into()
     }
 }

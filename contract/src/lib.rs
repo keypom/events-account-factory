@@ -5,7 +5,7 @@ use near_sdk::collections::{LookupMap, UnorderedMap, UnorderedSet};
 use near_sdk::json_types::U128;
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{
-    env, near_bindgen, require, AccountId, Balance, BorshStorageKey, PanicOnDefault, PublicKey,
+    env, near_bindgen, require, AccountId, Balance, BorshStorageKey, CryptoHash, PanicOnDefault, PublicKey
 };
 
 mod events;
@@ -15,8 +15,10 @@ mod fungible_tokens;
 mod models;
 mod vendors;
 mod non_fungible_tokens;
+mod internals;
 
 use events::*;
+use internals::*;
 use fungible_tokens::*;
 use non_fungible_tokens::*;
 use vendors::*;
@@ -33,27 +35,20 @@ pub const DROP_DELIMITER: &str = "||";
 #[near_bindgen]
 #[derive(BorshSerialize, BorshDeserialize, PanicOnDefault)]
 pub struct Contract {
-    // ------------------------ Vendor Information ------------------------- //
-    pub data_by_vendor: UnorderedMap<AccountId, VendorInformation>,
-    pub account_status_by_id: LookupMap<AccountId, AccountStatus>,
-
+    pub account_details_by_id: LookupMap<AccountId, AccountDetails>,
     // ------------------------ Fungible Tokens ---------------------------- //
-    pub ft_balance_by_account: LookupMap<AccountId, Balance>,
     pub ft_total_supply: Balance,
     pub ft_metadata: FungibleTokenMetadata,
 
     // ------------------------ Non Fungible Tokens ------------------------ //
     pub tokens_by_id: UnorderedMap<TokenId, Token>,
-    pub tokens_per_owner: LookupMap<AccountId, UnorderedSet<TokenId>>,
     pub series_by_id: UnorderedMap<SeriesId, Series>,
     pub nft_metadata: NFTContractMetadata,
 
-    // ------------------------ Drops ==========---------------------------- //
-    pub drop_ids_by_creator: LookupMap<AccountId, UnorderedSet<DropId>>,
+    // ------------------------ Drops -------------------------------------- //
     pub drop_by_id: UnorderedMap<DropId, DropData>,
-    pub claims_by_account: LookupMap<AccountId, UnorderedMap<DropId, ClaimedDropData>>,
 
-    // ------------------------ Account Factory ------------------------ //
+    // ------------------------ Account Factory ---------------------------- //
     pub ticket_data_by_id: LookupMap<DropId, TicketType>,
     pub keypom_contract: AccountId,
 
@@ -110,10 +105,7 @@ impl Contract {
         }
 
         Self {
-            data_by_vendor: UnorderedMap::new(StorageKeys::DataByVendor),
-            account_status_by_id: LookupMap::new(StorageKeys::AccountStatusById),
-            
-            ft_balance_by_account: LookupMap::new(StorageKeys::BalanceByAccount),
+            account_details_by_id: LookupMap::new(StorageKeys::AccountDetailsById),
             ft_total_supply: 0,
             ft_metadata: FungibleTokenMetadata {
                 spec: "ft-1.0.0".to_string(),
@@ -126,7 +118,6 @@ impl Contract {
             },
 
             series_by_id: UnorderedMap::new(StorageKeys::SeriesById),
-            tokens_per_owner: LookupMap::new(StorageKeys::TokensPerOwner),
             tokens_by_id: UnorderedMap::new(StorageKeys::TokensById),
             nft_metadata: NFTContractMetadata {
                 spec: "nft-1.0.0".to_string(),
@@ -139,8 +130,6 @@ impl Contract {
             },
 
             drop_by_id: UnorderedMap::new(StorageKeys::DropById),
-            claims_by_account: LookupMap::new(StorageKeys::DropsClaimedByAccount),
-            drop_ids_by_creator: LookupMap::new(StorageKeys::DropIdsByCreator),
 
             keypom_contract,
             ticket_data_by_id,
@@ -160,7 +149,9 @@ impl Contract {
     /// Panics if the caller is not an admin.
     pub fn add_account_status(&mut self, account_id: AccountId, status: AccountStatus) {
         self.assert_admin();
-        self.account_status_by_id.insert(&account_id, &status);
+        let mut account_details = self.account_details_by_id.get(&account_id).unwrap_or(AccountDetails::new(&account_id));
+        account_details.account_status = Some(status);
+        self.account_details_by_id.insert(&account_id, &account_details);
     }
 
     /// Removes the account status for the given list of account IDs.
@@ -175,7 +166,9 @@ impl Contract {
     pub fn remove_account_status(&mut self, account_ids: Vec<AccountId>) {
         self.assert_admin();
         for account_id in account_ids {
-            self.account_status_by_id.remove(&account_id);
+            let mut account_details = self.account_details_by_id.get(&account_id).unwrap_or(AccountDetails::new(&account_id));
+            account_details.account_status = None;
+            self.account_details_by_id.insert(&account_id, &account_details);
         }
     }
 

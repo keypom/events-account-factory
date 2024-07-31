@@ -45,7 +45,7 @@ impl Contract {
         account_id: AccountId,
     ) -> Vec<ExtClaimedDrop> {
         let mut result_scavs = Vec::new();
-        if let Some(claimed_drops) = self.claims_by_account.get(&account_id) {
+        if let Some(claimed_drops) = self.account_details_by_id.get(&account_id).map(|d| d.drops_claimed) {
             for (drop_id, claimed_drop) in claimed_drops.iter() {
                 match claimed_drop {
                     ClaimedDropData::nft(found_scavenger_ids) => {
@@ -76,7 +76,7 @@ impl Contract {
     /// A vector of `DropData` containing the claimed NFT drops for the account.
     pub fn get_claimed_nfts_for_account(&self, account_id: AccountId) -> Vec<ExtClaimedDrop> {
         let mut result_nfts = Vec::new();
-        if let Some(claimed_drops) = self.claims_by_account.get(&account_id) {
+        if let Some(claimed_drops) = self.account_details_by_id.get(&account_id).map(|d| d.drops_claimed) {
             for (drop_id, claimed_drop) in claimed_drops.iter() {
 
                 if let ClaimedDropData::nft(found_scavenger_ids) = claimed_drop {

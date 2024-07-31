@@ -54,23 +54,15 @@ impl Contract {
         token_id: &TokenId,
     ) {
         //get the set of tokens for the given account
-        let mut tokens_set = self.tokens_per_owner.get(account_id).unwrap_or_else(|| {
-            //if the account doesn't have any tokens, we create a new unordered set
-            UnorderedSet::new(
-                StorageKeys::TokenPerOwnerInner {
-                    //we get a new unique prefix for the collection
-                    account_id_hash: env::sha256_array(&account_id.to_string().as_bytes()),
-                }
-                .try_to_vec()
-                .unwrap(),
-            )
-        });
+        let mut account_details = self.account_details_by_id.get(account_id).expect("Trying to send NFTs to a non registered account");
+        let mut tokens_set = account_details.nft_tokens;
 
         //we insert the token ID into the set
         tokens_set.insert(token_id);
+        account_details.nft_tokens = tokens_set;
 
         //we insert that set for the given account ID.
-        self.tokens_per_owner.insert(account_id, &tokens_set);
+        self.account_details_by_id.insert(account_id, &account_details);
     }
 
     //remove a token from an owner (internal method and can't be called directly via CLI).
@@ -80,22 +72,14 @@ impl Contract {
         token_id: &TokenId,
     ) {
         //we get the set of tokens that the owner has
-        let mut tokens_set = self
-            .tokens_per_owner
-            .get(account_id)
-            //if there is no set of tokens for the owner, we panic with the following message:
-            .expect("Token should be owned by the sender");
+        let mut account_details = self.account_details_by_id.get(account_id).expect("Trying to send NFTs to a non registered account");
+        let mut tokens_set = account_details.nft_tokens;
 
         //we remove the the token_id from the set of tokens
         tokens_set.remove(token_id);
+        account_details.nft_tokens = tokens_set;
 
-        //if the token set is now empty, we remove the owner from the tokens_per_owner collection
-        if tokens_set.is_empty() {
-            self.tokens_per_owner.remove(account_id);
-        } else {
-            //if the token set is not empty, we simply insert it back for the account ID.
-            self.tokens_per_owner.insert(account_id, &tokens_set);
-        }
+        self.account_details_by_id.insert(account_id, &account_details);
     }
 
     //transfers the NFT to the receiver_id (internal method and can't be called directly via CLI).

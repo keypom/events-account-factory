@@ -70,7 +70,7 @@ impl Contract {
         let mut i = 0;
 
         loop {
-            let is_new_account = !self.ft_balance_by_account.contains_key(&account_id);
+            let is_new_account = !self.account_details_by_id.contains_key(&account_id);
 
             if is_new_account {
                 return account_id;
@@ -105,13 +105,14 @@ impl Contract {
 
         let tokens_to_start = ticket_data.starting_token_balance;
         let near_to_start = ticket_data.starting_near_balance;
-
+        
+        let mut account_details = AccountDetails::new(&new_account_id);
         match ticket_data.account_type {
             AccountStatus::Sponsor => {
-                self.account_status_by_id.insert(&new_account_id, &AccountStatus::Sponsor);
+                account_details.account_status = Some(AccountStatus::Sponsor);
             }
             AccountStatus::Admin => {
-                self.account_status_by_id.insert(&new_account_id, &AccountStatus::Admin);
+                account_details.account_status = Some(AccountStatus::Admin);
             }
             _ => {
                 // Do nothing for other cases, including AccountStatus::Basic
@@ -127,10 +128,7 @@ impl Contract {
         // Add the account ID to the map
         self.account_id_by_pub_key
             .insert(&new_public_key, &new_account_id);
-        let drop_set = UnorderedMap::new(StorageKeys::DropsClaimedByAccountInner {
-            account_id_hash: env::sha256_array(new_account_id.as_bytes()),
-        });
-        self.claims_by_account.insert(&new_account_id, &drop_set);
+        self.account_details_by_id.insert(&new_account_id, &account_details);
 
         // Deposit the starting balance into the account and then create it
         self.internal_deposit_ft_mint(&new_account_id, tokens_to_start.0);
