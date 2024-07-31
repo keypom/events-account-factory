@@ -46,5 +46,5 @@ pub struct KeypomDropCreationLog {
 pub struct KeypomDropClaimLog {
     pub receiver_id: String,
     pub drop_name: String,
-    pub scavenger
+    pub scavenger: String
 }

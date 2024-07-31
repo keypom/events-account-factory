@@ -140,7 +140,7 @@ impl Contract {
     ) {
         let drop_creator = parse_drop_id(drop_id);
         let mut account_details = self.account_details_by_id.get(&drop_creator).expect("Drop creator not found in map");
-        let creator_status = account_details.account_status.expect("Drop creator not found");
+        let creator_status = account_details.account_status.as_ref().expect("Drop creator not found");
 
         let amount_to_claim = drop.amount.0;
 
