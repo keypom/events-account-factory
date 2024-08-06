@@ -40,8 +40,14 @@ impl Contract {
     ) -> Promise {
         self.assert_keypom();
         // Ensure the incoming args are correct from Keypom
-        require!(keypom_args.drop_id_field.expect("No keypom args sent") == "drop_id".to_string(), "Invalid Keypom arguments");
-        require!(self.ticket_data_by_id.get(&drop_id).is_some(), "Invalid drop ID");
+        require!(
+            keypom_args.drop_id_field.expect("No keypom args sent") == "drop_id".to_string(),
+            "Invalid Keypom arguments"
+        );
+        require!(
+            self.ticket_data_by_id.get(&drop_id).is_some(),
+            "Invalid drop ID"
+        );
 
         // Get the next available account ID in case the one passed in is taken
         let account_id: AccountId = self.find_available_account_id(new_account_id);
@@ -95,17 +101,18 @@ impl Contract {
     /// # Returns
     ///
     /// Returns a promise to create the new account.
-    fn internal_create_account(
+    pub fn internal_create_account(
         &mut self,
         new_account_id: AccountId,
         new_public_key: PublicKey,
-        ticket_data: TicketType
+        ticket_data: TicketType,
     ) -> Promise {
+        self.assert_admin();
         let initial_storage_usage = env::storage_usage();
 
         let tokens_to_start = ticket_data.starting_token_balance;
         let near_to_start = ticket_data.starting_near_balance;
-        
+
         let mut account_details = AccountDetails::new(&new_account_id);
         match ticket_data.account_type {
             AccountStatus::Sponsor => {
@@ -128,7 +135,8 @@ impl Contract {
         // Add the account ID to the map
         self.account_id_by_pub_key
             .insert(&new_public_key, &new_account_id);
-        self.account_details_by_id.insert(&new_account_id, &account_details);
+        self.account_details_by_id
+            .insert(&new_account_id, &account_details);
 
         // Deposit the starting balance into the account and then create it
         self.internal_deposit_ft_mint(&new_account_id, tokens_to_start.0);
@@ -146,7 +154,7 @@ impl Contract {
             env::current_account_id(),
             GLOBAL_KEY_METHOD_NAMES.to_string(),
         );
-        
+
         // Add the same full access key to the account so that they can offboard later
         Promise::new(new_account_id.clone())
             .create_account()

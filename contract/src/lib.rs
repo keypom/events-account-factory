@@ -5,32 +5,31 @@ use near_sdk::collections::{LookupMap, UnorderedMap, UnorderedSet};
 use near_sdk::json_types::U128;
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{
-    env, near_bindgen, require, AccountId, Balance, BorshStorageKey, CryptoHash, PanicOnDefault, PublicKey
+    env, near_bindgen, require, AccountId, Balance, BorshStorageKey, CryptoHash, PanicOnDefault,
+    PublicKey,
 };
 
-mod events;
 mod drops;
+mod events;
 mod factory;
 mod fungible_tokens;
-mod models;
-mod vendors;
-mod non_fungible_tokens;
 mod internals;
+mod models;
+mod non_fungible_tokens;
+mod vendors;
 
+use drops::*;
 use events::*;
-use internals::*;
 use fungible_tokens::*;
+use internals::*;
+use models::*;
 use non_fungible_tokens::*;
 use vendors::*;
-use models::*;
-use drops::*;
 
 // ------------------------ Access Key Method Names ------------------------ //
-pub const GLOBAL_KEY_METHOD_NAMES: &str =
-    "claim_drop,ft_transfer";
+pub const GLOBAL_KEY_METHOD_NAMES: &str = "claim_drop,ft_transfer";
 
 pub const DROP_DELIMITER: &str = "||";
-
 
 #[near_bindgen]
 #[derive(BorshSerialize, BorshDeserialize, PanicOnDefault)]
@@ -96,6 +95,7 @@ impl Contract {
         token_name: Option<String>,
         symbol: Option<String>,
         icon: Option<String>,
+        admin: Vec<AccountId>,
     ) -> Self {
         let mut ticket_data_by_id: LookupMap<String, TicketType> =
             LookupMap::new(StorageKeys::TicketDataById);
@@ -104,8 +104,16 @@ impl Contract {
             ticket_data_by_id.insert(&drop_id, &ticket_type);
         }
 
+        let mut account_details_by_id: LookupMap<AccountId, AccountDetails> =
+            LookupMap::new(StorageKeys::AccountDetailsById);
+        for account in admin {
+            let mut account_details = AccountDetails::new(&account);
+            account_details.account_status = Some(AccountStatus::Admin);
+            account_details_by_id.insert(&account, &account_details);
+        }
+
         Self {
-            account_details_by_id: LookupMap::new(StorageKeys::AccountDetailsById),
+            account_details_by_id,
             ft_total_supply: 0,
             ft_metadata: FungibleTokenMetadata {
                 spec: "ft-1.0.0".to_string(),
@@ -149,9 +157,13 @@ impl Contract {
     /// Panics if the caller is not an admin.
     pub fn add_account_status(&mut self, account_id: AccountId, status: AccountStatus) {
         self.assert_admin();
-        let mut account_details = self.account_details_by_id.get(&account_id).unwrap_or(AccountDetails::new(&account_id));
+        let mut account_details = self
+            .account_details_by_id
+            .get(&account_id)
+            .unwrap_or(AccountDetails::new(&account_id));
         account_details.account_status = Some(status);
-        self.account_details_by_id.insert(&account_id, &account_details);
+        self.account_details_by_id
+            .insert(&account_id, &account_details);
     }
 
     /// Removes the account status for the given list of account IDs.
@@ -166,9 +178,13 @@ impl Contract {
     pub fn remove_account_status(&mut self, account_ids: Vec<AccountId>) {
         self.assert_admin();
         for account_id in account_ids {
-            let mut account_details = self.account_details_by_id.get(&account_id).unwrap_or(AccountDetails::new(&account_id));
+            let mut account_details = self
+                .account_details_by_id
+                .get(&account_id)
+                .unwrap_or(AccountDetails::new(&account_id));
             account_details.account_status = None;
-            self.account_details_by_id.insert(&account_id, &account_details);
+            self.account_details_by_id
+                .insert(&account_id, &account_details);
         }
     }
 
@@ -184,6 +200,8 @@ impl Contract {
     ///
     /// Panics if no account ID is found for the given public key.
     fn caller_id_by_signing_pk(&self) -> AccountId {
-        self.account_id_by_pub_key.get(&env::signer_account_pk()).expect("No associated account ID found for the given public key")
+        self.account_id_by_pub_key
+            .get(&env::signer_account_pk())
+            .expect("No associated account ID found for the given public key")
     }
 }
