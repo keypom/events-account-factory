@@ -13,7 +13,7 @@ pub enum ExtClaimedDrop {
 #[serde(crate = "near_sdk::serde")]
 pub struct ExtClaimedDropData {
     pub found_scavenger_ids: ScavengerHuntIds,
-    pub drop_id: DropId
+    pub drop_id: DropId,
 }
 
 #[near_bindgen]
@@ -40,26 +40,32 @@ impl Contract {
     /// # Returns
     ///
     /// A vector of `DropData` containing the drops that have at least one scavenger item found.
-    pub fn get_claimed_scavengers_for_account(
-        &self,
-        account_id: AccountId,
-    ) -> Vec<ExtClaimedDrop> {
+    pub fn get_claimed_scavengers_for_account(&self, account_id: AccountId) -> Vec<ExtClaimedDrop> {
         let mut result_scavs = Vec::new();
-        if let Some(claimed_drops) = self.account_details_by_id.get(&account_id).map(|d| d.drops_claimed) {
+        if let Some(claimed_drops) = self
+            .account_details_by_id
+            .get(&account_id)
+            .map(|d| d.drops_claimed)
+        {
             for (drop_id, claimed_drop) in claimed_drops.iter() {
                 match claimed_drop {
                     ClaimedDropData::nft(found_scavenger_ids) => {
                         if found_scavenger_ids.is_some() {
-                            result_scavs.push(ExtClaimedDrop::nft(ExtClaimedDropData { found_scavenger_ids, drop_id }));
+                            result_scavs.push(ExtClaimedDrop::nft(ExtClaimedDropData {
+                                found_scavenger_ids,
+                                drop_id,
+                            }));
                         }
                     }
                     ClaimedDropData::token(found_scavenger_ids) => {
                         if found_scavenger_ids.is_some() {
-                            result_scavs.push(ExtClaimedDrop::token(ExtClaimedDropData { found_scavenger_ids, drop_id }));
+                            result_scavs.push(ExtClaimedDrop::token(ExtClaimedDropData {
+                                found_scavenger_ids,
+                                drop_id,
+                            }));
                         }
                     }
                 }
-                
             }
         }
         result_scavs
@@ -76,14 +82,41 @@ impl Contract {
     /// A vector of `DropData` containing the claimed NFT drops for the account.
     pub fn get_claimed_nfts_for_account(&self, account_id: AccountId) -> Vec<ExtClaimedDrop> {
         let mut result_nfts = Vec::new();
-        if let Some(claimed_drops) = self.account_details_by_id.get(&account_id).map(|d| d.drops_claimed) {
+        if let Some(claimed_drops) = self
+            .account_details_by_id
+            .get(&account_id)
+            .map(|d| d.drops_claimed)
+        {
             for (drop_id, claimed_drop) in claimed_drops.iter() {
-
                 if let ClaimedDropData::nft(found_scavenger_ids) = claimed_drop {
-                    result_nfts.push(ExtClaimedDrop::nft(ExtClaimedDropData { found_scavenger_ids, drop_id }));
+                    result_nfts.push(ExtClaimedDrop::nft(ExtClaimedDropData {
+                        found_scavenger_ids,
+                        drop_id,
+                    }));
                 }
             }
         }
         result_nfts
+    }
+
+    /// Retrieves all the drops created by a given account
+    ///
+    /// # Arguments
+    ///
+    /// * `account_id` - The ID of the account that created the drops
+    ///
+    /// # Returns
+    ///
+    /// A vector of `DropData` containing the drops created by the account
+    pub fn get_drops_created_by_account(&self, account_id: AccountId) -> Vec<DropData> {
+        let mut drops_created = Vec::new();
+        let account_details = self
+            .account_details_by_id
+            .get(&account_id)
+            .expect("no account found");
+        for drop in account_details.drops_created.iter() {
+            drops_created.push(self.drop_by_id.get(&drop).unwrap());
+        }
+        drops_created
     }
 }
