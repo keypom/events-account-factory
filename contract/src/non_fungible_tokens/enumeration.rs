@@ -1,4 +1,3 @@
-use crate::nft_core::NonFungibleTokenCore;
 use crate::*;
 
 #[near_bindgen]
@@ -30,7 +29,11 @@ impl Contract {
     //get the total supply of NFTs for a given owner
     pub fn nft_supply_for_owner(&self, account_id: AccountId) -> U128 {
         //if there is some set of tokens, we'll return the length as a U128
-        if let Some(tokens_for_owner_set) = self.account_details_by_id.get(&account_id).map(|d| d.nft_tokens) {
+        if let Some(tokens_for_owner_set) = self
+            .account_details_by_id
+            .get(&account_id)
+            .map(|d| d.nft_tokens)
+        {
             U128(tokens_for_owner_set.len() as u128)
         } else {
             //if there isn't a set of tokens for the passed in account ID, we'll return 0
@@ -46,7 +49,11 @@ impl Contract {
         limit: Option<u64>,
     ) -> Vec<JsonToken> {
         //if there is some set of tokens, we'll set the tokens variable equal to that set
-        let tokens = if let Some(tokens_for_owner_set) = self.account_details_by_id.get(&account_id).map(|d| d.nft_tokens) {
+        let tokens = if let Some(tokens_for_owner_set) = self
+            .account_details_by_id
+            .get(&account_id)
+            .map(|d| d.nft_tokens)
+        {
             tokens_for_owner_set
         } else {
             //if there is no set of tokens, we'll simply return an empty vector.
@@ -69,3 +76,4 @@ impl Contract {
             .collect()
     }
 }
+

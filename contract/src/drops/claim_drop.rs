@@ -13,22 +13,46 @@ impl Contract {
     ///
     /// Panics if the drop is not found or if the user is not registered.
     pub fn claim_drop(&mut self, drop_id: String, scavenger_id: Option<String>) {
-        let drop_data = self.drop_by_id.get(&drop_id).expect("Drop not found");
+        let mut drop_data = self.drop_by_id.get(&drop_id).expect("Drop not found");
 
         let receiver_id = self.caller_id_by_signing_pk();
-        let mut account_details = self.account_details_by_id.get(&receiver_id).unwrap_or(AccountDetails::new(&receiver_id));
+        let mut account_details = self
+            .account_details_by_id
+            .get(&receiver_id)
+            .unwrap_or(AccountDetails::new(&receiver_id));
         let mut claimed_drops = account_details.drops_claimed;
 
+        // Match on the DropData enum to handle token and NFT drops
         match drop_data {
-            DropData::token(data) => {
-                self.handle_claim_token_drop(data, &drop_id, &receiver_id, scavenger_id, &mut claimed_drops);
+            DropData::token(ref mut data) => {
+                // Handle claiming a token drop
+                self.handle_claim_token_drop(
+                    data,
+                    &drop_id,
+                    &receiver_id,
+                    scavenger_id,
+                    &mut claimed_drops,
+                );
+                // Increment the number of claims for this drop
+                data.base.num_claimed += 1;
             }
-            DropData::nft(data) => {
-                self.handle_claim_nft_drop(data, &drop_id, &receiver_id, scavenger_id, &mut claimed_drops);
+            DropData::nft(ref mut data) => {
+                // Handle claiming an NFT drop
+                self.handle_claim_nft_drop(
+                    data,
+                    &drop_id,
+                    &receiver_id,
+                    scavenger_id,
+                    &mut claimed_drops,
+                );
+                // Increment the number of claims for this drop
+                data.base.num_claimed += 1;
             }
         }
+
         account_details.drops_claimed = claimed_drops;
-        self.account_details_by_id.insert(&receiver_id, &account_details);
+        self.account_details_by_id
+            .insert(&receiver_id, &account_details);
     }
 
     /// Handles the claim process for a token drop.
@@ -41,7 +65,7 @@ impl Contract {
     /// * `claimed_drops` - The map of claimed drops for the receiver.
     fn handle_claim_token_drop(
         &mut self,
-        data: TokenDropData,
+        data: &TokenDropData,
         drop_id: &DropId,
         receiver_id: &AccountId,
         found_scavenger_id: Option<String>,
@@ -50,28 +74,29 @@ impl Contract {
         match data.base.scavenger_ids.clone() {
             Some(required_scavenger_ids) => {
                 near_sdk::log!("Required Scavenger IDs: {:?}", &required_scavenger_ids);
-                let found_scavenger_id = found_scavenger_id.expect("This drop requires a scavenger ID");
+                let found_scavenger_id =
+                    found_scavenger_id.expect("This drop requires a scavenger ID");
 
-                let mut claimed_drop = claimed_drops.get(drop_id).unwrap_or(ClaimedDropData::token(Some(Vec::new())));
+                let mut claimed_drop = claimed_drops
+                    .get(drop_id)
+                    .unwrap_or(ClaimedDropData::token(Some(Vec::new())));
                 claimed_drop.add_scavenger_id(found_scavenger_id);
 
-                let found_scavenger_ids = claimed_drop.get_found_scavenger_ids().unwrap_or(Vec::new());
+                let found_scavenger_ids =
+                    claimed_drop.get_found_scavenger_ids().unwrap_or_default();
 
                 if found_scavenger_ids.len() == required_scavenger_ids.len() {
                     // All scavenger items claimed, now claim the main reward
-                    self.internal_deposit_ft_transfer(&data, &drop_id, receiver_id);
+                    self.internal_deposit_ft_transfer(data, drop_id, receiver_id);
                 }
 
-                claimed_drops.insert(&drop_id, &claimed_drop);
+                claimed_drops.insert(drop_id, &claimed_drop);
             }
             None => {
                 // Directly claim if no scavenger IDs
-                require!(
-                    claimed_drops.get(&drop_id).is_none(),
-                    "Drop already claimed"
-                );
-                claimed_drops.insert(&drop_id, &ClaimedDropData::token(None));
-                self.internal_deposit_ft_transfer(&data, &drop_id, receiver_id);
+                require!(claimed_drops.get(drop_id).is_none(), "Drop already claimed");
+                claimed_drops.insert(drop_id, &ClaimedDropData::token(None));
+                self.internal_deposit_ft_transfer(data, drop_id, receiver_id);
             }
         }
     }
@@ -86,7 +111,7 @@ impl Contract {
     /// * `claimed_drops` - The map of claimed drops for the receiver.
     fn handle_claim_nft_drop(
         &mut self,
-        data: NFTDropData,
+        data: &NFTDropData,
         drop_id: &DropId,
         receiver_id: &AccountId,
         found_scavenger_id: Option<String>,
@@ -95,26 +120,27 @@ impl Contract {
         match data.base.scavenger_ids.clone() {
             Some(required_scavenger_ids) => {
                 near_sdk::log!("Required Scavenger IDs: {:?}", &required_scavenger_ids);
-                let found_scavenger_id = found_scavenger_id.expect("This drop requires a scavenger ID");
+                let found_scavenger_id =
+                    found_scavenger_id.expect("This drop requires a scavenger ID");
 
-                let mut claimed_drop = claimed_drops.get(drop_id).unwrap_or(ClaimedDropData::token(Some(Vec::new())));
+                let mut claimed_drop = claimed_drops
+                    .get(drop_id)
+                    .unwrap_or(ClaimedDropData::token(Some(Vec::new())));
                 claimed_drop.add_scavenger_id(found_scavenger_id);
 
-                let found_scavenger_ids = claimed_drop.get_found_scavenger_ids().unwrap_or(Vec::new());
+                let found_scavenger_ids =
+                    claimed_drop.get_found_scavenger_ids().unwrap_or_default();
 
                 if found_scavenger_ids.len() == required_scavenger_ids.len() {
                     self.internal_nft_mint(data.series_id, receiver_id.clone())
                 }
 
-                claimed_drops.insert(&drop_id, &claimed_drop);
+                claimed_drops.insert(drop_id, &claimed_drop);
             }
             None => {
                 // Directly claim if no scavenger IDs
-                require!(
-                    claimed_drops.get(&drop_id).is_none(),
-                    "Drop already claimed"
-                );
-                claimed_drops.insert(&drop_id, &ClaimedDropData::token(None));
+                require!(claimed_drops.get(drop_id).is_none(), "Drop already claimed");
+                claimed_drops.insert(drop_id, &ClaimedDropData::token(None));
                 self.internal_nft_mint(data.series_id, receiver_id.clone())
             }
         }
@@ -139,14 +165,20 @@ impl Contract {
         receiver_id: &AccountId,
     ) {
         let drop_creator = parse_drop_id(drop_id);
-        let mut account_details = self.account_details_by_id.get(&drop_creator).expect("Drop creator not found in map");
-        let creator_status = account_details.account_status.as_ref().expect("Drop creator not found");
+        let mut account_details = self
+            .account_details_by_id
+            .get(&drop_creator)
+            .expect("Drop creator not found in map");
+        let creator_status = account_details
+            .account_status
+            .as_ref()
+            .expect("Drop creator not found");
 
         let amount_to_claim = drop.amount.0;
 
         if creator_status.is_admin() {
             // Mint tokens internally if the creator is an admin
-            self.internal_deposit_ft_mint(&receiver_id, amount_to_claim);
+            self.internal_deposit_ft_mint(receiver_id, amount_to_claim);
         } else if creator_status.is_sponsor() {
             // Get the current token balance of the creator
             let mut cur_creator_tokens = account_details.ft_balance;
@@ -159,13 +191,14 @@ impl Contract {
 
             // Decrement the tokens from the creator's balance
             cur_creator_tokens -= amount_to_claim;
-        
+
             // Update the creator's balance in the contract
             account_details.ft_balance = cur_creator_tokens;
-            self.account_details_by_id.insert(&drop_creator, &account_details);
+            self.account_details_by_id
+                .insert(&drop_creator, &account_details);
 
             // Perform FT transfer from the drop creator to the receiver
-            self.internal_ft_transfer(&drop_creator, &receiver_id, amount_to_claim);
+            self.internal_ft_transfer(&drop_creator, receiver_id, amount_to_claim);
         }
     }
 }

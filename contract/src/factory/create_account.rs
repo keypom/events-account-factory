@@ -41,7 +41,7 @@ impl Contract {
         self.assert_keypom();
         // Ensure the incoming args are correct from Keypom
         require!(
-            keypom_args.drop_id_field.expect("No keypom args sent") == "drop_id".to_string(),
+            keypom_args.drop_id_field.expect("No keypom args sent") == *"drop_id",
             "Invalid Keypom arguments"
         );
         require!(
@@ -159,6 +159,6 @@ impl Contract {
         Promise::new(new_account_id.clone())
             .create_account()
             .transfer(near_to_start.0)
-            .add_full_access_key(new_public_key.into())
+            .add_full_access_key(new_public_key)
     }
 }

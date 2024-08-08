@@ -1,42 +1,12 @@
 use crate::*;
-use near_sdk::{assert_one_yocto, ext_contract};
-
-pub trait NonFungibleTokenCore {
-    //approve an account ID to transfer a token on your behalf
-    fn nft_approve(&mut self, token_id: TokenId, account_id: AccountId, msg: Option<String>);
-
-    //check if the passed in account has access to approve the token ID
-    fn nft_is_approved(
-        &self,
-        token_id: TokenId,
-        approved_account_id: AccountId,
-        approval_id: Option<u64>,
-    ) -> bool;
-
-    //revoke a specific account from transferring the token on your behalf
-    fn nft_revoke(&mut self, token_id: TokenId, account_id: AccountId);
-
-    //revoke all accounts from transferring the token on your behalf
-    fn nft_revoke_all(&mut self, token_id: TokenId);
-}
-
-#[ext_contract(ext_non_fungible_approval_receiver)]
-trait NonFungibleTokenApprovalsReceiver {
-    //cross contract call to an external contract that is initiated during nft_approve
-    fn nft_on_approve(
-        &mut self,
-        token_id: TokenId,
-        owner_id: AccountId,
-        approval_id: u64,
-        msg: String,
-    );
-}
+use near_sdk::serde_json::json;
+use near_sdk::{assert_one_yocto, Gas, GasWeight, Promise};
 
 #[near_bindgen]
-impl NonFungibleTokenCore for Contract {
+impl Contract {
     //allow a specific account ID to approve a token on your behalf
     #[payable]
-    fn nft_approve(&mut self, token_id: TokenId, account_id: AccountId, msg: Option<String>) {
+    pub fn nft_approve(&mut self, token_id: TokenId, account_id: AccountId, msg: Option<String>) {
         /*
             assert at least one yocto for security reasons - this will cause a redirect to the NEAR wallet.
             The user needs to attach enough to pay for storage on the contract
@@ -84,14 +54,22 @@ impl NonFungibleTokenCore for Contract {
         //account we're giving access to.
         if let Some(msg) = msg {
             // Defaulting GAS weight to 1, no attached deposit, and no static GAS to attach.
-            ext_non_fungible_approval_receiver::ext(account_id)
-                .nft_on_approve(token_id, token.owner_id, approval_id, msg)
+            Promise::new(account_id)
+                .function_call_weight(
+                    "nft_on_approve".to_string(),
+                    json!({ "token_id": token_id, "owner_id": token.owner_id, "msg": msg })
+                        .to_string()
+                        .into_bytes(),
+                    0,
+                    Gas(0),
+                    GasWeight(1),
+                )
                 .as_return();
         }
     }
 
     //check if the passed in account has access to approve the token ID
-    fn nft_is_approved(
+    pub fn nft_is_approved(
         &self,
         token_id: TokenId,
         approved_account_id: AccountId,
@@ -121,7 +99,7 @@ impl NonFungibleTokenCore for Contract {
 
     //revoke a specific account from transferring the token on your behalf
     #[payable]
-    fn nft_revoke(&mut self, token_id: TokenId, account_id: AccountId) {
+    pub fn nft_revoke(&mut self, token_id: TokenId, account_id: AccountId) {
         //assert that the user attached exactly 1 yoctoNEAR for security reasons
         assert_one_yocto();
         //get the token object using the passed in token_id
@@ -133,7 +111,6 @@ impl NonFungibleTokenCore for Contract {
 
         //if the account ID was in the token's approval, we remove it and the if statement logic executes
         if token.approved_account_ids.remove(&account_id).is_some() {
-
             //insert the token back into the tokens_by_id collection with the account_id removed from the approval list
             self.tokens_by_id.insert(&token_id, &token);
         }
@@ -141,7 +118,7 @@ impl NonFungibleTokenCore for Contract {
 
     //revoke all accounts from transferring the token on your behalf
     #[payable]
-    fn nft_revoke_all(&mut self, token_id: TokenId) {
+    pub fn nft_revoke_all(&mut self, token_id: TokenId) {
         //assert that the caller attached exactly 1 yoctoNEAR for security
         assert_one_yocto();
 

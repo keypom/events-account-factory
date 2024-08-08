@@ -18,14 +18,13 @@ pub enum StorageKeys {
     TokensById,
 }
 
-
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
 #[serde(crate = "near_sdk::serde")]
 pub enum AccountStatus {
     Basic,
     Vendor,
     Sponsor,
-    Admin
+    Admin,
 }
 
 impl AccountStatus {
@@ -63,7 +62,7 @@ impl AccountStatus {
 pub struct TicketType {
     pub starting_near_balance: U128,
     pub starting_token_balance: U128,
-    pub account_type: AccountStatus
+    pub account_type: AccountStatus,
 }
 
 /// Data for each ticket such as the account status, starting balances, etc...
@@ -81,22 +80,29 @@ pub struct AccountDetails {
 
     // ------------------------ Drops -------------------------------------- //
     pub drops_created: UnorderedSet<DropId>,
-    pub drops_claimed: UnorderedMap<DropId, ClaimedDropData>
+    pub drops_claimed: UnorderedMap<DropId, ClaimedDropData>,
 }
 
 impl AccountDetails {
     pub fn new(account_id: &AccountId) -> AccountDetails {
-        let nft_tokens = UnorderedSet::new(StorageKeys::TokenPerOwnerInner { account_id_hash: hash_string(&account_id.to_string()) });
-        let drops_created = UnorderedSet::new(StorageKeys::DropIdsByCreatorInner { account_id_hash: hash_string(&account_id.to_string()) });
-        let drops_claimed = UnorderedMap::new(StorageKeys::DropsClaimedByAccountInner { account_id_hash: hash_string(&account_id.to_string()) });
+        let nft_tokens = UnorderedSet::new(StorageKeys::TokenPerOwnerInner {
+            account_id_hash: hash_string(&account_id.to_string()),
+        });
+        let drops_created = UnorderedSet::new(StorageKeys::DropIdsByCreatorInner {
+            account_id_hash: hash_string(&account_id.to_string()),
+        });
+        let drops_claimed = UnorderedMap::new(StorageKeys::DropsClaimedByAccountInner {
+            account_id_hash: hash_string(&account_id.to_string()),
+        });
 
-        return AccountDetails { 
-            ft_balance: 0, 
-            vendor_data: None, 
-            account_status: None, 
-            nft_tokens, 
-            drops_created, 
-            drops_claimed
+        AccountDetails {
+            ft_balance: 0,
+            vendor_data: None,
+            account_status: None,
+            nft_tokens,
+            drops_created,
+            drops_claimed,
         }
     }
 }
+

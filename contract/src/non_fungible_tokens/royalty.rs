@@ -28,7 +28,7 @@ impl Contract {
         if royalty_option.is_none() {
             let mut payout = HashMap::new();
             payout.insert(owner_id, balance);
-            return Payout { payout: payout };
+            return Payout { payout };
         }
         let royalty = royalty_option.unwrap();
 
@@ -81,7 +81,6 @@ impl Contract {
         let previous_token =
             self.internal_transfer(&sender_id, &receiver_id, &token_id, Some(approval_id), memo);
 
-
         //get the owner of the token
         let owner_id = previous_token.owner_id;
         //keep track of the total perpetual royalties
@@ -102,7 +101,7 @@ impl Contract {
         if royalty_option.is_none() {
             let mut payout = HashMap::new();
             payout.insert(owner_id, balance);
-            return Payout { payout: payout };
+            return Payout { payout };
         }
         let royalty = royalty_option.unwrap();
 
@@ -136,3 +135,4 @@ impl Contract {
         payout_object
     }
 }
+

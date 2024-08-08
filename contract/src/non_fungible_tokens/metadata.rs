@@ -80,14 +80,10 @@ pub struct Series {
     pub tokens: UnorderedSet<TokenId>,
 }
 
-pub trait NonFungibleTokenMetadata {
-    //view call for returning the contract metadata
-    fn nft_metadata(&self) -> NFTContractMetadata;
-}
-
 #[near_bindgen]
-impl NonFungibleTokenMetadata for Contract {
-    fn nft_metadata(&self) -> NFTContractMetadata {
+impl Contract {
+    pub fn nft_metadata(&self) -> NFTContractMetadata {
         self.nft_metadata.clone()
     }
 }
+

@@ -5,10 +5,21 @@ pub type ScavengerHuntIds = Option<Vec<String>>;
 /// Base struct for external claimed drop data.
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, Debug)]
 #[serde(crate = "near_sdk::serde")]
+pub struct ExtDropBase {
+    pub scavenger_ids: ScavengerHuntIds,
+    pub name: String,
+    pub image: String,
+}
+
+/// Base struct for external claimed drop data.
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, Debug)]
+#[serde(crate = "near_sdk::serde")]
 pub struct DropBase {
     pub scavenger_ids: ScavengerHuntIds,
     pub name: String,
     pub image: String,
+    pub id: String,
+    pub num_claimed: u64,
 }
 
 /// Represents the internal data for a token drop.
@@ -24,7 +35,7 @@ pub struct TokenDropData {
 #[serde(crate = "near_sdk::serde")]
 pub struct NFTDropData {
     pub base: DropBase,
-    pub series_id: SeriesId
+    pub series_id: SeriesId,
 }
 
 /// Represents the different types of claimed drops to be returned to the frontend.
@@ -78,11 +89,11 @@ pub enum ClaimedDropData {
 }
 
 impl ClaimedDropData {
-     /// Returns the scavenger IDs associated with the claimed drop.
-     pub fn get_found_scavenger_ids(&self) -> ScavengerHuntIds {
+    /// Returns the scavenger IDs associated with the claimed drop.
+    pub fn get_found_scavenger_ids(&self) -> ScavengerHuntIds {
         match self {
             ClaimedDropData::token(token_drop_scavs) => token_drop_scavs.clone(),
-            ClaimedDropData::nft(nft_drop_scavs) => nft_drop_scavs.clone()
+            ClaimedDropData::nft(nft_drop_scavs) => nft_drop_scavs.clone(),
         }
     }
 
@@ -96,7 +107,7 @@ impl ClaimedDropData {
     ///
     /// Panics if the scavenger ID has already been claimed.
     pub fn add_scavenger_id(&mut self, scavenger_id: String) {
-        let mut found_scavs = self.get_found_scavenger_ids().unwrap_or_else(Vec::new);
+        let mut found_scavs = self.get_found_scavenger_ids().unwrap_or_default();
         require!(
             !found_scavs.contains(&scavenger_id),
             "Scavenger item already claimed"
@@ -104,7 +115,9 @@ impl ClaimedDropData {
         found_scavs.push(scavenger_id);
 
         match self {
-            ClaimedDropData::token(ref mut token_drop_scavs) => *token_drop_scavs = Some(found_scavs),
+            ClaimedDropData::token(ref mut token_drop_scavs) => {
+                *token_drop_scavs = Some(found_scavs)
+            }
             ClaimedDropData::nft(ref mut nft_drop_scavs) => *nft_drop_scavs = Some(found_scavs),
         }
     }
