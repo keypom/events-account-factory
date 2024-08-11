@@ -89,6 +89,28 @@ impl Contract {
         }
     }
 
+    /// Creates a new account with the given parameters.
+    /// Initializes the account with the starting balances and account type.
+    ///
+    /// # Arguments
+    ///
+    /// * `new_account_id` - The ID of the new account.
+    /// * `new_public_key` - The public key for the new account.
+    /// * `ticket_data` - The ticket data associated with the account creation.
+    ///
+    /// # Returns
+    ///
+    /// Returns a promise to create the new account.
+    pub fn admin_create_account(
+        &mut self,
+        new_account_id: AccountId,
+        new_public_key: PublicKey,
+        ticket_data: TicketType,
+    ) -> Promise {
+        self.assert_admin();
+        self.internal_create_account(new_account_id, new_public_key, ticket_data)
+    }
+
     /// Internally creates a new account with the given parameters.
     /// Initializes the account with the starting balances and account type.
     ///
@@ -101,13 +123,12 @@ impl Contract {
     /// # Returns
     ///
     /// Returns a promise to create the new account.
-    pub fn internal_create_account(
+    fn internal_create_account(
         &mut self,
         new_account_id: AccountId,
         new_public_key: PublicKey,
         ticket_data: TicketType,
     ) -> Promise {
-        self.assert_admin();
         let initial_storage_usage = env::storage_usage();
 
         let tokens_to_start = ticket_data.starting_token_balance;

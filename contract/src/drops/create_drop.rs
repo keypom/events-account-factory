@@ -12,7 +12,7 @@ impl Contract {
     /// # Panics
     ///
     /// Panics if the sponsor is not authorized.
-    pub fn create_token_drop(&mut self, drop_data: ExtDropBase, token_amount: U128) {
+    pub fn create_token_drop(&mut self, drop_data: ExtDropBase, token_amount: U128) -> String {
         let drop_creator = self.assert_sponsor();
 
         let mut account_details = self
@@ -33,7 +33,7 @@ impl Contract {
                             name: drop_data.name,
                             num_claimed: 0,
                             image: drop_data.image,
-                            scavenger_ids: drop_data.scavenger_ids,
+                            scavenger_hunt: drop_data.scavenger_hunt,
                             id: drop_id.clone()
                         },
                         amount: token_amount
@@ -48,6 +48,7 @@ impl Contract {
         account_details.drops_created = creator_drop_ids;
         self.account_details_by_id
             .insert(&drop_creator, &account_details);
+        drop_id
     }
 
     /// Allows a sponsor or admin to create an NFT drop so people can scan a QR code and mint that NFT
@@ -60,7 +61,11 @@ impl Contract {
     /// # Panics
     ///
     /// Panics if the sponsor is not authorized.
-    pub fn create_nft_drop(&mut self, drop_data: ExtDropBase, nft_metadata: TokenMetadata) {
+    pub fn create_nft_drop(
+        &mut self,
+        drop_data: ExtDropBase,
+        nft_metadata: TokenMetadata,
+    ) -> String {
         let drop_creator = self.assert_sponsor();
 
         let mut account_details = self
@@ -83,7 +88,7 @@ impl Contract {
                             name: drop_data.name,
                             num_claimed: 0,
                             image: drop_data.image,
-                            scavenger_ids: drop_data.scavenger_ids,
+                            scavenger_hunt: drop_data.scavenger_hunt,
                             id: drop_id.clone()
                         },
                         series_id
@@ -98,6 +103,7 @@ impl Contract {
         account_details.drops_created = creator_drop_ids;
         self.account_details_by_id
             .insert(&drop_creator, &account_details);
+        drop_id
     }
 
     /// Deletes a drop if the requestor is the creator or an admin.

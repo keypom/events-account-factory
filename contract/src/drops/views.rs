@@ -12,7 +12,7 @@ pub enum ExtClaimedDrop {
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, Debug)]
 #[serde(crate = "near_sdk::serde")]
 pub struct ExtClaimedDropData {
-    pub found_scavenger_ids: ScavengerHuntIds,
+    pub found_scavenger_ids: Option<Vec<String>>,
     pub drop_id: DropId,
 }
 

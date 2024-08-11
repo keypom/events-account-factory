@@ -71,7 +71,7 @@ impl Contract {
         found_scavenger_id: Option<String>,
         claimed_drops: &mut UnorderedMap<DropId, ClaimedDropData>,
     ) {
-        match data.base.scavenger_ids.clone() {
+        match data.base.scavenger_hunt.clone() {
             Some(required_scavenger_ids) => {
                 near_sdk::log!("Required Scavenger IDs: {:?}", &required_scavenger_ids);
                 let found_scavenger_id =
@@ -117,7 +117,7 @@ impl Contract {
         found_scavenger_id: Option<String>,
         claimed_drops: &mut UnorderedMap<DropId, ClaimedDropData>,
     ) {
-        match data.base.scavenger_ids.clone() {
+        match data.base.scavenger_hunt.clone() {
             Some(required_scavenger_ids) => {
                 near_sdk::log!("Required Scavenger IDs: {:?}", &required_scavenger_ids);
                 let found_scavenger_id =

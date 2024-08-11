@@ -1,12 +1,17 @@
 use crate::*;
 
-pub type ScavengerHuntIds = Option<Vec<String>>;
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, Debug)]
+#[serde(crate = "near_sdk::serde")]
+pub struct ScavengerHuntData {
+    pub piece: String,
+    pub description: String,
+}
 
 /// Base struct for external claimed drop data.
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, Debug)]
 #[serde(crate = "near_sdk::serde")]
 pub struct ExtDropBase {
-    pub scavenger_ids: ScavengerHuntIds,
+    pub scavenger_hunt: Option<Vec<ScavengerHuntData>>,
     pub name: String,
     pub image: String,
 }
@@ -15,7 +20,7 @@ pub struct ExtDropBase {
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, Debug)]
 #[serde(crate = "near_sdk::serde")]
 pub struct DropBase {
-    pub scavenger_ids: ScavengerHuntIds,
+    pub scavenger_hunt: Option<Vec<ScavengerHuntData>>,
     pub name: String,
     pub image: String,
     pub id: String,
@@ -52,8 +57,16 @@ impl DropData {
     /// Returns the scavenger IDs associated with the claimed drop.
     pub fn get_scavenger_ids(&self) -> Option<Vec<String>> {
         match self {
-            DropData::token(data) => data.base.scavenger_ids.clone(),
-            DropData::nft(data) => data.base.scavenger_ids.clone(),
+            DropData::token(data) => data
+                .base
+                .scavenger_hunt
+                .as_ref()
+                .map(|h| h.iter().map(|i| i.piece.clone()).collect()),
+            DropData::nft(data) => data
+                .base
+                .scavenger_hunt
+                .as_ref()
+                .map(|h| h.iter().map(|i| i.piece.clone()).collect()),
         }
     }
 
@@ -84,13 +97,13 @@ impl DropData {
 #[serde(crate = "near_sdk::serde")]
 #[serde(tag = "type")]
 pub enum ClaimedDropData {
-    token(ScavengerHuntIds),
-    nft(ScavengerHuntIds),
+    token(Option<Vec<String>>),
+    nft(Option<Vec<String>>),
 }
 
 impl ClaimedDropData {
     /// Returns the scavenger IDs associated with the claimed drop.
-    pub fn get_found_scavenger_ids(&self) -> ScavengerHuntIds {
+    pub fn get_found_scavenger_ids(&self) -> Option<Vec<String>> {
         match self {
             ClaimedDropData::token(token_drop_scavs) => token_drop_scavs.clone(),
             ClaimedDropData::nft(nft_drop_scavs) => nft_drop_scavs.clone(),
