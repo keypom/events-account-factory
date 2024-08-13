@@ -71,14 +71,14 @@ impl Contract {
     }
 
     pub(crate) fn assert_vendor(&self) -> AccountId {
-        let caller_id = env::predecessor_account_id();
+        let caller_id = self.caller_id_by_signing_pk();
         let account_details = self.account_details_by_id.get(&caller_id).expect("Unauthorized");
         require!(account_details.account_status.expect("Unauthorized").is_vendor(), "Unauthorized");
         caller_id
     }
 
     pub(crate) fn assert_sponsor(&self) -> AccountId {
-        let caller_id = env::predecessor_account_id();
+        let caller_id = self.caller_id_by_signing_pk();
         let account_details = self.account_details_by_id.get(&caller_id).expect("Unauthorized");
         require!(account_details.account_status.expect("Unauthorized").is_sponsor(), "Unauthorized");
         caller_id
