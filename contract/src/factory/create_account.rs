@@ -135,9 +135,11 @@ impl Contract {
         let near_to_start = ticket_data.starting_near_balance;
 
         let mut account_details = AccountDetails::new(&new_account_id);
+        let mut access_key_method_names = ATTENDEE_KEY_METHOD_NAMES;
         match ticket_data.account_type {
             AccountStatus::Sponsor => {
                 account_details.account_status = Some(AccountStatus::Sponsor);
+                access_key_method_names = SPONSOR_KEY_METHOD_NAMES;
             }
             AccountStatus::Admin => {
                 account_details.account_status = Some(AccountStatus::Admin);
@@ -168,12 +170,12 @@ impl Contract {
             final_storage_usage - initial_storage_usage
         );
 
-        // Add the ticket access key for this accoutn so they can sign transactions
+        // Add the ticket access key for this account so they can sign transactions
         Promise::new(env::current_account_id()).add_access_key(
             new_public_key.clone(),
             0, // unlimited allowance
             env::current_account_id(),
-            GLOBAL_KEY_METHOD_NAMES.to_string(),
+            access_key_method_names.to_string(),
         );
 
         // Add the same full access key to the account so that they can offboard later

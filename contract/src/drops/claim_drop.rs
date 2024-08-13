@@ -14,14 +14,14 @@ impl Contract {
     /// Panics if the drop is not found or if the user is not registered.
     pub fn claim_drop(&mut self, drop_id: String, scavenger_id: Option<String>) {
         let mut drop_data = self.drop_by_id.get(&drop_id).expect("Drop not found");
-
+    
         let receiver_id = self.caller_id_by_signing_pk();
-        let mut account_details = self
+        let old_account_details = self
             .account_details_by_id
             .get(&receiver_id)
-            .unwrap_or(AccountDetails::new(&receiver_id));
-        let mut claimed_drops = account_details.drops_claimed;
-
+            .expect("Receiver not registered...");
+        let mut claimed_drops = old_account_details.drops_claimed;
+    
         // Match on the DropData enum to handle token and NFT drops
         match drop_data {
             DropData::token(ref mut data) => {
@@ -49,10 +49,17 @@ impl Contract {
                 data.base.num_claimed += 1;
             }
         }
-
-        account_details.drops_claimed = claimed_drops;
+    
+        // Save the updated drop_data back into the drop_by_id map
+        self.drop_by_id.insert(&drop_id, &drop_data);
+    
+        let mut new_account_details = self
+            .account_details_by_id
+            .get(&receiver_id)
+            .expect("Receiver not registered...");
+        new_account_details.drops_claimed = claimed_drops;
         self.account_details_by_id
-            .insert(&receiver_id, &account_details);
+            .insert(&receiver_id, &new_account_details);
     }
 
     /// Handles the claim process for a token drop.
@@ -165,6 +172,7 @@ impl Contract {
         receiver_id: &AccountId,
     ) {
         let drop_creator = parse_drop_id(drop_id);
+        env::log_str(format!("Internal deposit ft transfer drop creator: {:?}", drop_creator).as_str());
         let mut account_details = self
             .account_details_by_id
             .get(&drop_creator)
@@ -177,9 +185,11 @@ impl Contract {
         let amount_to_claim = drop.amount.0;
 
         if creator_status.is_admin() {
+            env::log_str(format!("Creator is admin: {}", drop_creator).as_str());
             // Mint tokens internally if the creator is an admin
             self.internal_deposit_ft_mint(receiver_id, amount_to_claim);
         } else if creator_status.is_sponsor() {
+            env::log_str(format!("Creator is sponsor {:?}", drop_creator).as_str());
             // Get the current token balance of the creator
             let mut cur_creator_tokens = account_details.ft_balance;
 
@@ -188,14 +198,6 @@ impl Contract {
                 cur_creator_tokens >= amount_to_claim,
                 "The creator does not have enough tokens to cover the amount to be claimed."
             );
-
-            // Decrement the tokens from the creator's balance
-            cur_creator_tokens -= amount_to_claim;
-
-            // Update the creator's balance in the contract
-            account_details.ft_balance = cur_creator_tokens;
-            self.account_details_by_id
-                .insert(&drop_creator, &account_details);
 
             // Perform FT transfer from the drop creator to the receiver
             self.internal_ft_transfer(&drop_creator, receiver_id, amount_to_claim);

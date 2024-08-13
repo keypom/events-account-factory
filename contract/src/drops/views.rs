@@ -31,6 +31,43 @@ impl Contract {
         self.drop_by_id.get(&drop_id)
     }
 
+    /// Retrieves any drops that have been claimed for a specific account.
+    ///
+    /// # Arguments
+    ///
+    /// * `account_id` - The ID of the account to retrieve the drops for.
+    ///
+    /// # Returns
+    ///
+    /// A vector of `ExtClaimedDrop` containing the drops that have have been claimed for a specific account.
+    pub fn get_claimed_drops_for_account(&self, account_id: AccountId) -> Vec<ExtClaimedDrop> {
+        let mut result_drops = Vec::new();
+
+        if let Some(claimed_drops) = self
+            .account_details_by_id
+            .get(&account_id)
+            .map(|d| d.drops_claimed)
+        {
+            for (drop_id, claimed_drop) in claimed_drops.iter() {
+                match claimed_drop {
+                    ClaimedDropData::nft(found_scavenger_ids) => {
+                        result_drops.push(ExtClaimedDrop::nft(ExtClaimedDropData {
+                            found_scavenger_ids,
+                            drop_id,
+                        }));
+                    }
+                    ClaimedDropData::token(found_scavenger_ids) => {
+                        result_drops.push(ExtClaimedDrop::token(ExtClaimedDropData {
+                            found_scavenger_ids,
+                            drop_id,
+                        }));
+                    }
+                }
+            }
+        }
+        result_drops
+    }
+
     /// Retrieves any drops that have some number of claimed scavenger items for a specific account.
     ///
     /// # Arguments
@@ -39,7 +76,7 @@ impl Contract {
     ///
     /// # Returns
     ///
-    /// A vector of `DropData` containing the drops that have at least one scavenger item found.
+    /// A vector of `ExtClaimedDrop` containing the drops that have at least one scavenger item found.
     pub fn get_claimed_scavengers_for_account(&self, account_id: AccountId) -> Vec<ExtClaimedDrop> {
         let mut result_scavs = Vec::new();
         if let Some(claimed_drops) = self
@@ -79,7 +116,7 @@ impl Contract {
     ///
     /// # Returns
     ///
-    /// A vector of `DropData` containing the claimed NFT drops for the account.
+    /// A vector of `ExtClaimedDrop` containing the claimed NFT drops for the account.
     pub fn get_claimed_nfts_for_account(&self, account_id: AccountId) -> Vec<ExtClaimedDrop> {
         let mut result_nfts = Vec::new();
         if let Some(claimed_drops) = self

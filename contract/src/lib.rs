@@ -27,7 +27,8 @@ use non_fungible_tokens::*;
 use vendors::*;
 
 // ------------------------ Access Key Method Names ------------------------ //
-pub const GLOBAL_KEY_METHOD_NAMES: &str = "claim_drop,ft_transfer";
+pub const ATTENDEE_KEY_METHOD_NAMES: &str = "claim_drop,ft_transfer";
+pub const SPONSOR_KEY_METHOD_NAMES: &str = "create_token_drop,create_nft_drop,delete_drop";
 
 pub const DROP_DELIMITER: &str = "||";
 
