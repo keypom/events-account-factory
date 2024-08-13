@@ -233,7 +233,6 @@ impl Contract {
             // Filter out the drops that are not NFTs
             .filter_map(|drop_id| {
                 self.get_drop_information(drop_id.clone())
-                    .filter(|drop| drop.is_nft_drop())
                     .map(|drop| {
                         match drop {
                             DropData::nft(nft_data) => {
