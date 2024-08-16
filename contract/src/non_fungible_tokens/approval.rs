@@ -14,7 +14,7 @@ impl Contract {
         assert_at_least_one_yocto();
 
         //get the token object from the token ID
-        let mut token = self.tokens_by_id.get(&token_id).expect("No token");
+        let mut token = self.nft_tokens_by_id.get(&token_id).expect("No token");
 
         //make sure that the person calling the function is the owner of the token
         assert_eq!(
@@ -44,8 +44,8 @@ impl Contract {
 
         //increment the token's next approval ID by 1
         token.next_approval_id += 1;
-        //insert the token back into the tokens_by_id collection
-        self.tokens_by_id.insert(&token_id, &token);
+        //insert the token back into the nft_tokens_by_id collection
+        self.nft_tokens_by_id.insert(&token_id, &token);
 
         //refund any excess storage attached by the user. If the user didn't attach enough, panic.
         refund_deposit(storage_used);
@@ -76,7 +76,7 @@ impl Contract {
         approval_id: Option<u64>,
     ) -> bool {
         //get the token object from the token_id
-        let token = self.tokens_by_id.get(&token_id).expect("No token");
+        let token = self.nft_tokens_by_id.get(&token_id).expect("No token");
 
         //get the approval number for the passed in account ID
         let approval = token.approved_account_ids.get(&approved_account_id);
@@ -103,7 +103,7 @@ impl Contract {
         //assert that the user attached exactly 1 yoctoNEAR for security reasons
         assert_one_yocto();
         //get the token object using the passed in token_id
-        let mut token = self.tokens_by_id.get(&token_id).expect("No token");
+        let mut token = self.nft_tokens_by_id.get(&token_id).expect("No token");
 
         //get the caller of the function and assert that they are the owner of the token
         let predecessor_account_id = env::predecessor_account_id();
@@ -111,8 +111,8 @@ impl Contract {
 
         //if the account ID was in the token's approval, we remove it and the if statement logic executes
         if token.approved_account_ids.remove(&account_id).is_some() {
-            //insert the token back into the tokens_by_id collection with the account_id removed from the approval list
-            self.tokens_by_id.insert(&token_id, &token);
+            //insert the token back into the nft_tokens_by_id collection with the account_id removed from the approval list
+            self.nft_tokens_by_id.insert(&token_id, &token);
         }
     }
 
@@ -123,7 +123,7 @@ impl Contract {
         assert_one_yocto();
 
         //get the token object from the passed in token ID
-        let mut token = self.tokens_by_id.get(&token_id).expect("No token");
+        let mut token = self.nft_tokens_by_id.get(&token_id).expect("No token");
         //get the caller and make sure they are the owner of the tokens
         let predecessor_account_id = env::predecessor_account_id();
         assert_eq!(&predecessor_account_id, &token.owner_id);
@@ -132,8 +132,8 @@ impl Contract {
         if !token.approved_account_ids.is_empty() {
             //clear the approved account IDs
             token.approved_account_ids.clear();
-            //insert the token back into the tokens_by_id collection with the approved account IDs cleared
-            self.tokens_by_id.insert(&token_id, &token);
+            //insert the token back into the nft_tokens_by_id collection with the approved account IDs cleared
+            self.nft_tokens_by_id.insert(&token_id, &token);
         }
     }
 }

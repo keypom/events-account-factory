@@ -7,7 +7,7 @@ impl Contract {
     //calculates the payout for a token given the passed in balance. This is a view method
     pub fn nft_payout(&self, token_id: TokenId, balance: U128, max_len_payout: u32) -> Payout {
         //get the token object
-        let token = self.tokens_by_id.get(&token_id).expect("No token");
+        let token = self.nft_tokens_by_id.get(&token_id).expect("No token");
 
         //get the owner of the token
         let owner_id = token.owner_id;

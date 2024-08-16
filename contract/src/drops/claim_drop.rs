@@ -13,6 +13,7 @@ impl Contract {
     ///
     /// Panics if the drop is not found or if the user is not registered.
     pub fn claim_drop(&mut self, drop_id: String, scavenger_id: Option<String>) {
+        self.assert_no_freeze();
         let mut drop_data = self.drop_by_id.get(&drop_id).expect("Drop not found");
     
         let receiver_id = self.caller_id_by_signing_pk();

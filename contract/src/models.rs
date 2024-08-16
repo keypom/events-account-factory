@@ -10,11 +10,12 @@ pub enum StorageKeys {
     AccountDetailsById,
     DropsClaimedByAccountInner { account_id_hash: CryptoHash },
     DropById,
+    TokensForOwner,
+    TokensForOwnerInner { account_id_hash: CryptoHash },
     DropIdsByCreatorInner { account_id_hash: CryptoHash },
     TicketDataById,
     SeriesById,
     SeriesByIdInner { account_id_hash: CryptoHash },
-    TokenPerOwnerInner { account_id_hash: CryptoHash },
     TokensById,
 }
 
@@ -59,6 +60,18 @@ impl AccountStatus {
 /// Data for each ticket such as the account status, starting balances, etc...
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
 #[serde(crate = "near_sdk::serde")]
+pub struct ExtAccountDetails {
+    pub account_id: String,
+    pub ft_balance: U128,
+
+    // ------------------------ Vendor Information ------------------------- //
+    pub vendor_data: Option<VendorMetadata>,
+    pub account_status: Option<AccountStatus>,
+}
+
+/// Data for each ticket such as the account status, starting balances, etc...
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
+#[serde(crate = "near_sdk::serde")]
 pub struct TicketType {
     pub starting_near_balance: U128,
     pub starting_token_balance: U128,
@@ -75,9 +88,6 @@ pub struct AccountDetails {
     pub vendor_data: Option<VendorInformation>,
     pub account_status: Option<AccountStatus>,
 
-    // ------------------------ Non Fungible Tokens ------------------------ //
-    pub nft_tokens: UnorderedSet<TokenId>,
-
     // ------------------------ Drops -------------------------------------- //
     pub drops_created: UnorderedSet<DropId>,
     pub drops_claimed: UnorderedMap<DropId, ClaimedDropData>,
@@ -85,9 +95,6 @@ pub struct AccountDetails {
 
 impl AccountDetails {
     pub fn new(account_id: &AccountId) -> AccountDetails {
-        let nft_tokens = UnorderedSet::new(StorageKeys::TokenPerOwnerInner {
-            account_id_hash: hash_string(&account_id.to_string()),
-        });
         let drops_created = UnorderedSet::new(StorageKeys::DropIdsByCreatorInner {
             account_id_hash: hash_string(&account_id.to_string()),
         });
@@ -99,7 +106,6 @@ impl AccountDetails {
             ft_balance: 0,
             vendor_data: None,
             account_status: None,
-            nft_tokens,
             drops_created,
             drops_claimed,
         }

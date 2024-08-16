@@ -38,6 +38,7 @@ impl Contract {
         drop_id: String,
         keypom_args: KeypomArgs,
     ) -> Promise {
+        self.assert_no_freeze();
         self.assert_keypom();
         // Ensure the incoming args are correct from Keypom
         require!(
@@ -76,7 +77,7 @@ impl Contract {
         let mut i = 0;
 
         loop {
-            let is_new_account = !self.account_details_by_id.contains_key(&account_id);
+            let is_new_account = self.account_details_by_id.get(&account_id).is_none();
 
             if is_new_account {
                 return account_id;
@@ -107,6 +108,7 @@ impl Contract {
         new_public_key: PublicKey,
         ticket_data: TicketType,
     ) -> Promise {
+        self.assert_no_freeze();
         self.assert_admin();
         self.internal_create_account(new_account_id, new_public_key, ticket_data)
     }

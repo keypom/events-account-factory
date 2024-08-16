@@ -53,16 +53,14 @@ impl Contract {
         account_id: &AccountId,
         token_id: &TokenId,
     ) {
-        //get the set of tokens for the given account
-        let mut account_details = self.account_details_by_id.get(account_id).expect("Trying to send NFTs to a non registered account");
-        let mut tokens_set = account_details.nft_tokens;
+
+        let mut token_set = self.nft_tokens_per_owner.get(account_id).unwrap_or_else(|| UnorderedSet::new(StorageKeys::TokensForOwnerInner {
+            account_id_hash: hash_string(&account_id.to_string()),
+        }));
 
         //we insert the token ID into the set
-        tokens_set.insert(token_id);
-        account_details.nft_tokens = tokens_set;
-
-        //we insert that set for the given account ID.
-        self.account_details_by_id.insert(account_id, &account_details);
+        token_set.insert(token_id);
+        self.nft_tokens_per_owner.insert(account_id, &token_set);
     }
 
     //remove a token from an owner (internal method and can't be called directly via CLI).
@@ -72,14 +70,11 @@ impl Contract {
         token_id: &TokenId,
     ) {
         //we get the set of tokens that the owner has
-        let mut account_details = self.account_details_by_id.get(account_id).expect("Trying to send NFTs to a non registered account");
-        let mut tokens_set = account_details.nft_tokens;
+        let mut token_set = self.nft_tokens_per_owner.get(account_id).expect("Trying to send NFTs to a non registered account");
 
         //we remove the the token_id from the set of tokens
-        tokens_set.remove(token_id);
-        account_details.nft_tokens = tokens_set;
-
-        self.account_details_by_id.insert(account_id, &account_details);
+        token_set.remove(token_id);
+        self.nft_tokens_per_owner.insert(account_id, &token_set);
     }
 
     //transfers the NFT to the receiver_id (internal method and can't be called directly via CLI).
@@ -93,7 +88,7 @@ impl Contract {
         memo: Option<String>,
     ) -> Token {
         //get the token object by passing in the token_id
-        let token = self.tokens_by_id.get(token_id).expect("No token");
+        let token = self.nft_tokens_by_id.get(token_id).expect("No token");
 
         //if the sender doesn't equal the owner, we check if the sender is in the approval list
         if sender_id != &token.owner_id {
@@ -139,8 +134,8 @@ impl Contract {
             approved_account_ids: Default::default(),
             next_approval_id: token.next_approval_id,
         };
-        //insert that new token into the tokens_by_id, replacing the old entry
-        self.tokens_by_id.insert(token_id, &new_token);
+        //insert that new token into the nft_tokens_by_id, replacing the old entry
+        self.nft_tokens_by_id.insert(token_id, &new_token);
 
         //if there was some memo attached, we log it.
         if let Some(memo) = memo.as_ref() {

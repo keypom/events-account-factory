@@ -5,7 +5,7 @@ impl Contract {
     //Query for the total supply of NFTs on the contract
     pub fn nft_total_supply(&self) -> U128 {
         //return the length of the token metadata by ID
-        U128(self.tokens_by_id.len() as u128)
+        U128(self.nft_tokens_by_id.len() as u128)
     }
 
     //Query for nft tokens on the contract regardless of the owner using pagination
@@ -14,7 +14,7 @@ impl Contract {
         let start = u128::from(from_index.unwrap_or(U128(0)));
 
         //iterate through each token using an iterator
-        self.tokens_by_id
+        self.nft_tokens_by_id
             .keys()
             //skip to the index we specified in the start variable
             .skip(start as usize)
@@ -29,12 +29,11 @@ impl Contract {
     //get the total supply of NFTs for a given owner
     pub fn nft_supply_for_owner(&self, account_id: AccountId) -> U128 {
         //if there is some set of tokens, we'll return the length as a U128
-        if let Some(tokens_for_owner_set) = self
-            .account_details_by_id
+        if let Some(nft_tokens_per_owner_set) = self
+            .nft_tokens_per_owner
             .get(&account_id)
-            .map(|d| d.nft_tokens)
         {
-            U128(tokens_for_owner_set.len() as u128)
+            U128(nft_tokens_per_owner_set.len() as u128)
         } else {
             //if there isn't a set of tokens for the passed in account ID, we'll return 0
             U128(0)
@@ -42,19 +41,18 @@ impl Contract {
     }
 
     //Query for all the tokens for an owner
-    pub fn nft_tokens_for_owner(
+    pub fn nft_nft_tokens_per_owner(
         &self,
         account_id: AccountId,
         from_index: Option<U128>,
         limit: Option<u64>,
     ) -> Vec<JsonToken> {
         //if there is some set of tokens, we'll set the tokens variable equal to that set
-        let tokens = if let Some(tokens_for_owner_set) = self
-            .account_details_by_id
+        let tokens = if let Some(nft_tokens_per_owner_set) = self
+            .nft_tokens_per_owner
             .get(&account_id)
-            .map(|d| d.nft_tokens)
         {
-            tokens_for_owner_set
+            nft_tokens_per_owner_set
         } else {
             //if there is no set of tokens, we'll simply return an empty vector.
             return vec![];

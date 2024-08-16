@@ -13,6 +13,7 @@ impl Contract {
     ///
     /// Panics if the sponsor is not authorized.
     pub fn create_token_drop(&mut self, drop_data: ExtDropBase, token_amount: U128) -> String {
+        self.assert_no_freeze();
         let drop_creator = self.assert_sponsor();
 
         let mut account_details = self

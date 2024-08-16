@@ -91,8 +91,8 @@ impl Contract {
 
     //get the information for a specific token ID
     pub fn nft_token(&self, token_id: TokenId) -> Option<JsonToken> {
-        //if there is some token ID in the tokens_by_id collection
-        if let Some(token) = self.tokens_by_id.get(&token_id) {
+        //if there is some token ID in the nft_tokens_by_id collection
+        if let Some(token) = self.nft_tokens_by_id.get(&token_id) {
             let cur_series = self
                 .series_by_id
                 .get(&token.series_id)
@@ -119,7 +119,7 @@ impl Contract {
                 royalty: cur_series.royalty,
             })
         } else {
-            //if there wasn't a token ID in the tokens_by_id collection, we return None
+            //if there wasn't a token ID in the nft_tokens_by_id collection, we return None
             None
         }
     }
@@ -156,7 +156,7 @@ impl Contract {
         }
 
         //get the token object if there is some token object
-        let mut token = if let Some(token) = self.tokens_by_id.get(&token_id) {
+        let mut token = if let Some(token) = self.nft_tokens_by_id.get(&token_id) {
             if token.owner_id != receiver_id {
                 // The token is not owner by the receiver anymore. Can't return it.
                 return true;
@@ -178,8 +178,8 @@ impl Contract {
         //reset the approved account IDs to what they were before the transfer
         token.approved_account_ids = approved_account_ids;
 
-        //we inset the token back into the tokens_by_id collection
-        self.tokens_by_id.insert(&token_id, &token);
+        //we inset the token back into the nft_tokens_by_id collection
+        self.nft_tokens_by_id.insert(&token_id, &token);
 
         /*
             We need to log that the NFT was reverted back to the original owner.

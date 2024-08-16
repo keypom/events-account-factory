@@ -52,7 +52,7 @@ impl Contract {
 
         //insert the token ID and token struct and make sure that the token doesn't exist
         require!(
-            self.tokens_by_id.insert(&token_id, &token).is_none(),
+            self.nft_tokens_by_id.insert(&token_id, &token).is_none(),
             "Token already exists"
         );
 

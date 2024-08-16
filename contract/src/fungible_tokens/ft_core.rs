@@ -16,6 +16,7 @@ impl Contract {
     ///
     /// Panics if the caller is not an admin.
     pub fn ft_mint(&mut self, account_id: AccountId, amount: U128) {
+        self.assert_no_freeze();
         self.assert_admin();
         self.internal_deposit_ft_mint(&account_id, amount.0);
     }
@@ -48,6 +49,7 @@ impl Contract {
         memo: Option<String>,
         amount: Option<U128>,
     ) -> Result<U128, String> {
+        self.assert_no_freeze();
         let amount_to_transfer = if let Some(memo) = memo {
             let item_ids: Vec<u64> = serde_json::from_str(&memo).expect("Failed to parse memo");
             let vendor_data = self
