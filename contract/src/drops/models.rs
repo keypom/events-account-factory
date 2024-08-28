@@ -57,14 +57,14 @@ impl DropData {
     pub fn is_nft_drop(&self) -> bool {
         match self {
             DropData::token(_) => false,
-            DropData::nft(_) => true
+            DropData::nft(_) => true,
         }
     }
 
     pub fn is_token_drop(&self) -> bool {
         match self {
             DropData::token(_) => true,
-            DropData::nft(_) => false
+            DropData::nft(_) => false,
         }
     }
 

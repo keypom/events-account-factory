@@ -17,6 +17,12 @@ pub enum EventLogVariant {
     // Non Fungible Tokens
     NftMint(Vec<NftMintLog>),
     NftTransfer(Vec<NftTransferLog>),
+
+    // Keypom Specific Events
+    KeypomTokenMint(KeypomTokenMintLog),
+    KeypomTokenTransfer(KeypomTokenTransferLog),
+    KeypomDropCreation(KeypomDropCreationLog),
+    KeypomDropClaim(KeypomDropClaimLog),
 }
 
 /// Interface to capture data about an event
