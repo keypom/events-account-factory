@@ -164,7 +164,7 @@ impl Contract {
             .insert(&new_account_id, &account_details);
 
         // Deposit the starting balance into the account and then create it
-        self.internal_deposit_ft_mint(&new_account_id, tokens_to_start.0);
+        self.internal_deposit_ft_mint(&new_account_id, tokens_to_start.0, None);
 
         let final_storage_usage = env::storage_usage();
         near_sdk::log!(

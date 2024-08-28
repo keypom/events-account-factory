@@ -18,7 +18,7 @@ impl Contract {
     pub fn ft_mint(&mut self, account_id: AccountId, amount: U128) {
         self.assert_no_freeze();
         self.assert_admin();
-        self.internal_deposit_ft_mint(&account_id, amount.0);
+        self.internal_deposit_ft_mint(&account_id, amount.0, None);
     }
 
     /// Allows a user to transfer tokens to another account or purchase items from a vendor.
@@ -113,4 +113,3 @@ impl Contract {
             .into()
     }
 }
-

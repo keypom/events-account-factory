@@ -1,3 +1,5 @@
+use std::convert::TryInto;
+
 use crate::*;
 
 #[near_bindgen]
@@ -34,7 +36,7 @@ impl Contract {
                             name: drop_data.name,
                             num_claimed: 0,
                             image: drop_data.image,
-                            scavenger_hunt: drop_data.scavenger_hunt,
+                            scavenger_hunt: drop_data.scavenger_hunt.clone(),
                             id: drop_id.clone()
                         },
                         amount: token_amount
@@ -49,6 +51,23 @@ impl Contract {
         account_details.drops_created = creator_drop_ids;
         self.account_details_by_id
             .insert(&drop_creator, &account_details);
+
+        let drop_creation_log: EventLog = EventLog {
+            standard: KEYPOM_STANDARD_NAME.to_string(),
+            version: KEYPOM_CONFERENCE_METADATA_SPEC.to_string(),
+            event: EventLogVariant::KeypomDropCreation(KeypomDropCreationLog {
+                creator_id: drop_creator.to_string(),
+                drop_reward: DropClaimReward::Token(token_amount),
+                num_scavengers: drop_data.scavenger_hunt.map(|scavs| {
+                    scavs
+                        .len()
+                        .try_into()
+                        .expect("Too many scavs to fit in u16")
+                }),
+            }),
+        };
+        env::log_str(&drop_creation_log.to_string());
+
         drop_id
     }
 
@@ -89,7 +108,7 @@ impl Contract {
                             name: drop_data.name,
                             num_claimed: 0,
                             image: drop_data.image,
-                            scavenger_hunt: drop_data.scavenger_hunt,
+                            scavenger_hunt: drop_data.scavenger_hunt.clone(),
                             id: drop_id.clone()
                         },
                         series_id
@@ -104,6 +123,22 @@ impl Contract {
         account_details.drops_created = creator_drop_ids;
         self.account_details_by_id
             .insert(&drop_creator, &account_details);
+
+        let drop_creation_log: EventLog = EventLog {
+            standard: KEYPOM_STANDARD_NAME.to_string(),
+            version: KEYPOM_CONFERENCE_METADATA_SPEC.to_string(),
+            event: EventLogVariant::KeypomDropCreation(KeypomDropCreationLog {
+                creator_id: drop_creator.to_string(),
+                drop_reward: DropClaimReward::NFT,
+                num_scavengers: drop_data.scavenger_hunt.map(|scavs| {
+                    scavs
+                        .len()
+                        .try_into()
+                        .expect("Too many scavs to fit in u16")
+                }),
+            }),
+        };
+        env::log_str(&drop_creation_log.to_string());
         drop_id
     }
 
@@ -131,9 +166,7 @@ impl Contract {
                 .get(&nft_drop.series_id)
                 .expect("No series found for drop");
 
-            if series.tokens.is_empty() {
-                self.internal_delete_series(nft_drop.series_id);
-            }
+            self.internal_delete_series(nft_drop.series_id);
         }
         // Remove the drop ID from the creator's list of drop IDs
         let mut account_details = self

@@ -270,7 +270,7 @@ impl Contract {
         if creator_status.is_admin() {
             env::log_str(format!("Creator is admin: {}", drop_creator).as_str());
             // Mint tokens internally if the creator is an admin
-            self.internal_deposit_ft_mint(receiver_id, amount_to_claim);
+            self.internal_deposit_ft_mint(receiver_id, amount_to_claim, Some(drop_id.clone()));
         } else if creator_status.is_sponsor() {
             env::log_str(format!("Creator is sponsor {:?}", drop_creator).as_str());
             // Get the current token balance of the creator
