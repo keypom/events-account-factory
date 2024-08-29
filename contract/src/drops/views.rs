@@ -7,6 +7,7 @@ use crate::*;
 pub enum ExtClaimedDrop {
     token(ExtClaimedTokenDropData),
     nft(ExtClaimedNFTDropData),
+    multichain(ExtClaimedNFTDropData),
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, Debug)]
@@ -36,6 +37,7 @@ pub struct ExtClaimedTokenDropData {
 pub enum ExtDropData {
     token(ExtTokenDropData),
     nft(ExtNFTDropData),
+    multichain(ExtNFTDropData),
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, Debug)]
@@ -57,7 +59,6 @@ pub struct ExtTokenDropData {
     pub amount: U128,
     pub drop_id: DropId,
 }
-
 
 #[near_bindgen]
 impl Contract {
@@ -99,25 +100,48 @@ impl Contract {
             // Iterate over the claimed drops
             for (drop_id, claimed_drop) in claimed_drops.iter() {
                 // Get the drop information associated with the drop ID
-                let drop_data = self.get_drop_information(drop_id.clone()).expect("No drop ID found");
+                let drop_data = self
+                    .get_drop_information(drop_id.clone())
+                    .expect("No drop ID found");
 
                 // Apply the filter to determine if this drop should be included
                 if filter(&drop_data, &claimed_drop.get_found_scavenger_ids()) {
                     // Match the drop data to either NFT or Token and push the result to the vector
                     match claimed_drop {
-                        ClaimedDropData::nft(found_scavenger_ids) => {
-                            if let DropData::nft(nft_data) = drop_data {
+                        ClaimedDropData::Multichain(found_scavenger_ids) => {
+                            if let DropData::Multichain(nft_data) = drop_data {
+                                result_drops.push(ExtClaimedDrop::multichain(
+                                    ExtClaimedNFTDropData {
+                                        found_scavenger_ids: found_scavenger_ids.clone(),
+                                        name: nft_data.base.name.clone(),
+                                        image: nft_data.base.image.clone(),
+                                        nft_metadata: self
+                                            .series_by_id
+                                            .get(&nft_data.series_id)
+                                            .unwrap()
+                                            .metadata,
+                                        drop_id: drop_id.clone(),
+                                    },
+                                ));
+                            }
+                        }
+                        ClaimedDropData::Nft(found_scavenger_ids) => {
+                            if let DropData::Nft(nft_data) = drop_data {
                                 result_drops.push(ExtClaimedDrop::nft(ExtClaimedNFTDropData {
                                     found_scavenger_ids: found_scavenger_ids.clone(),
                                     name: nft_data.base.name.clone(),
                                     image: nft_data.base.image.clone(),
-                                    nft_metadata: self.series_by_id.get(&nft_data.series_id).unwrap().metadata,
+                                    nft_metadata: self
+                                        .series_by_id
+                                        .get(&nft_data.series_id)
+                                        .unwrap()
+                                        .metadata,
                                     drop_id: drop_id.clone(),
                                 }));
                             }
                         }
-                        ClaimedDropData::token(found_scavenger_ids) => {
-                            if let DropData::token(token_data) = drop_data {
+                        ClaimedDropData::Token(found_scavenger_ids) => {
+                            if let DropData::Token(token_data) = drop_data {
                                 result_drops.push(ExtClaimedDrop::token(ExtClaimedTokenDropData {
                                     found_scavenger_ids: found_scavenger_ids.clone(),
                                     name: token_data.base.name.clone(),
@@ -206,7 +230,7 @@ impl Contract {
     ///
     /// The total number of drops as a `u64`.
     pub fn get_num_drops(&self) -> u64 {
-        self.drop_by_id.len() as u64
+        self.drop_by_id.len()
     }
 
     /// Retrieves a paginated list of drops.
@@ -222,7 +246,7 @@ impl Contract {
     pub fn get_drops(&self, from_index: Option<U128>, limit: Option<u64>) -> Vec<ExtDropData> {
         // Where to start pagination - if we have a from_index, we'll use that - otherwise start from 0 index
         let start = u128::from(from_index.unwrap_or(U128(0)));
-    
+
         // Iterate through each drop using an iterator
         self.drop_by_id
             .keys()
@@ -233,27 +257,51 @@ impl Contract {
             // Filter out the drops that are not NFTs
             .filter_map(|drop_id| {
                 self.get_drop_information(drop_id.clone())
-                    .map(|drop| {
-                        match drop {
-                            DropData::nft(nft_data) => {
-                                ExtDropData::nft(ExtNFTDropData {
-                                    name: nft_data.base.name.clone(),
-                                    image: nft_data.base.image.clone(),
-                                    nft_metadata: self.series_by_id.get(&nft_data.series_id).unwrap().metadata,
-                                    drop_id: nft_data.base.id.clone(),
-                                    scavenger_hunt: nft_data.base.scavenger_hunt.map(|scav_data| scav_data.iter().map(|s| s.description.clone()).collect::<Vec<String>>())
-                                })
-                            },
-                            DropData::token(token_data) => {
-                                ExtDropData::token(ExtTokenDropData {
-                                    name: token_data.base.name.clone(),
-                                    image: token_data.base.image.clone(),
-                                    amount: token_data.amount,
-                                    drop_id: token_data.base.id.clone(),
-                                    scavenger_hunt: token_data.base.scavenger_hunt.map(|scav_data| scav_data.iter().map(|s| s.description.clone()).collect::<Vec<String>>())
-                                })
-                            }
-                        }
+                    .map(|drop| match drop {
+                        DropData::Multichain(nft_data) => ExtDropData::multichain(ExtNFTDropData {
+                            name: nft_data.base.name.clone(),
+                            image: nft_data.base.image.clone(),
+                            nft_metadata: self
+                                .series_by_id
+                                .get(&nft_data.series_id)
+                                .unwrap()
+                                .metadata,
+                            drop_id: nft_data.base.id.clone(),
+                            scavenger_hunt: nft_data.base.scavenger_hunt.map(|scav_data| {
+                                scav_data
+                                    .iter()
+                                    .map(|s| s.description.clone())
+                                    .collect::<Vec<String>>()
+                            }),
+                        }),
+                        DropData::Nft(nft_data) => ExtDropData::nft(ExtNFTDropData {
+                            name: nft_data.base.name.clone(),
+                            image: nft_data.base.image.clone(),
+                            nft_metadata: self
+                                .series_by_id
+                                .get(&nft_data.series_id)
+                                .unwrap()
+                                .metadata,
+                            drop_id: nft_data.base.id.clone(),
+                            scavenger_hunt: nft_data.base.scavenger_hunt.map(|scav_data| {
+                                scav_data
+                                    .iter()
+                                    .map(|s| s.description.clone())
+                                    .collect::<Vec<String>>()
+                            }),
+                        }),
+                        DropData::Token(token_data) => ExtDropData::token(ExtTokenDropData {
+                            name: token_data.base.name.clone(),
+                            image: token_data.base.image.clone(),
+                            amount: token_data.amount,
+                            drop_id: token_data.base.id.clone(),
+                            scavenger_hunt: token_data.base.scavenger_hunt.map(|scav_data| {
+                                scav_data
+                                    .iter()
+                                    .map(|s| s.description.clone())
+                                    .collect::<Vec<String>>()
+                            }),
+                        }),
                     })
             })
             // Since we turned the keys into an iterator, we need to turn it back into a vector to return

@@ -7,8 +7,9 @@ pub const KEYPOM_STANDARD_NAME: &str = "kpom101";
 #[serde(crate = "near_sdk::serde")]
 #[allow(non_camel_case_types)]
 pub enum DropClaimReward {
-    NFT,
+    Nft,
     Token(U128),
+    Multichain,
 }
 
 #[derive(Serialize, Deserialize, Debug)]

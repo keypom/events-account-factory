@@ -15,7 +15,7 @@ impl Contract {
     /// This function will only work when the contract is frozen. It iterates
     /// over the `account_details_by_id` map, processing up to 1000 accounts at
     /// a time. For each account, it removes the account from the outer map and
-    /// clears any associated data in the inner maps (`drops_claimed` and 
+    /// clears any associated data in the inner maps (`drops_claimed` and
     /// `drops_created`).
     ///
     /// # Returns
@@ -29,19 +29,22 @@ impl Contract {
         // Ensure that only an admin can perform this operation.
         self.assert_admin();
         // Ensure that the contract is frozen before clearing storage.
-        require!(self.is_contract_frozen, "Storage can only be cleared once the contract is frozen");
+        require!(
+            self.is_contract_frozen,
+            "Storage can only be cleared once the contract is frozen"
+        );
 
         // Clear the external maps if they're not already cleared
-        if self.drop_by_id.len() != 0 {
+        if !self.drop_by_id.is_empty() {
             self.drop_by_id.clear()
         }
-        if self.ticket_data_by_id.len() != 0 {
+        if !self.ticket_data_by_id.is_empty() {
             self.ticket_data_by_id.clear()
         }
-        if self.account_id_by_pub_key.len() != 0 {
+        if !self.account_id_by_pub_key.is_empty() {
             self.account_id_by_pub_key.clear()
         }
-        
+
         // Get the total number of accounts to clear.
         let total = self.account_details_by_id.len();
 
@@ -49,7 +52,8 @@ impl Contract {
         let batch_size = limit.unwrap_or(1000);
 
         // Collect the keys of the accounts to be processed in this batch.
-        let account_ids_to_process: Vec<_> = self.account_details_by_id
+        let account_ids_to_process: Vec<_> = self
+            .account_details_by_id
             .keys()
             .take(batch_size as usize)
             .collect();

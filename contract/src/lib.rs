@@ -9,15 +9,16 @@ use near_sdk::{
     PublicKey,
 };
 
+mod cleanup;
 mod drops;
 mod events;
 mod factory;
 mod fungible_tokens;
 mod internals;
 mod models;
+mod multichain;
 mod non_fungible_tokens;
 mod vendors;
-mod cleanup;
 
 use drops::*;
 use events::*;
@@ -38,7 +39,7 @@ pub const DROP_DELIMITER: &str = "||";
 pub struct Contract {
     // ------------------------ Contract Global ---------------------------- //
     pub account_details_by_id: UnorderedMap<AccountId, AccountDetails>, // clearable
-    pub account_id_by_pub_key: UnorderedMap<PublicKey, AccountId>, // clearable
+    pub account_id_by_pub_key: UnorderedMap<PublicKey, AccountId>,      // clearable
     pub is_contract_frozen: bool,
 
     // ------------------------ Fungible Tokens ---------------------------- //
@@ -62,17 +63,17 @@ pub struct Contract {
 #[near_bindgen]
 impl Contract {
     /// Queries for the account details associated with the given public key or account ID.
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `key_or_account_id` - Either the public key or the account ID to query for the associated account details.
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// Returns `ExtAccountDetails` associated with the given public key or account ID.
-    /// 
+    ///
     /// # Panics
-    /// 
+    ///
     /// Panics if no account is found for the given public key or account ID.
     pub fn recover_account(&self, key_or_account_id: String) -> ExtAccountDetails {
         let account_id = if let Ok(public_key) = key_or_account_id.parse::<PublicKey>() {
@@ -85,7 +86,8 @@ impl Contract {
                 .expect("Invalid account ID format")
         };
 
-        let account_details = self.account_details_by_id
+        let account_details = self
+            .account_details_by_id
             .get(&account_id)
             .expect("No account details found");
 
@@ -120,14 +122,14 @@ impl Contract {
         admin: Vec<AccountId>,
     ) -> Self {
         let mut ticket_data_by_id: UnorderedMap<String, TicketType> =
-        UnorderedMap::new(StorageKeys::TicketDataById);
+            UnorderedMap::new(StorageKeys::TicketDataById);
 
         for (drop_id, ticket_type) in ticket_data.into_iter() {
             ticket_data_by_id.insert(&drop_id, &ticket_type);
         }
 
         let mut account_details_by_id: UnorderedMap<AccountId, AccountDetails> =
-        UnorderedMap::new(StorageKeys::AccountDetailsById);
+            UnorderedMap::new(StorageKeys::AccountDetailsById);
         for account in admin {
             let mut account_details = AccountDetails::new(&account);
             account_details.account_status = Some(AccountStatus::Admin);

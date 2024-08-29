@@ -27,7 +27,7 @@ impl Contract {
 
         // Match on the DropData enum to handle token and NFT drops
         let claim_log = match drop_data {
-            DropData::token(ref mut data) => {
+            DropData::Token(ref mut data) => {
                 // Increment the number of claims for this drop
                 data.base.num_claimed += 1;
 
@@ -40,12 +40,25 @@ impl Contract {
                     &mut claimed_drops,
                 )
             }
-            DropData::nft(ref mut data) => {
+            DropData::Nft(ref mut data) => {
                 // Increment the number of claims for this drop
                 data.base.num_claimed += 1;
 
                 // Handle claiming an NFT drop
                 self.handle_claim_nft_drop(
+                    data,
+                    &drop_id,
+                    &receiver_id,
+                    scavenger_id,
+                    &mut claimed_drops,
+                )
+            }
+            DropData::Multichain(ref mut data) => {
+                // Increment the number of claims for this drop
+                data.base.num_claimed += 1;
+
+                // Handle claiming an NFT drop
+                self.handle_claim_multichain_drop(
                     data,
                     &drop_id,
                     &receiver_id,
@@ -110,7 +123,7 @@ impl Contract {
 
             let mut claimed_drop = claimed_drops
                 .get(drop_id)
-                .unwrap_or(ClaimedDropData::token(Some(Vec::new())));
+                .unwrap_or(ClaimedDropData::Token(Some(Vec::new())));
 
             let already_claimed = claimed_drop
                 .get_found_scavenger_ids()
@@ -146,7 +159,7 @@ impl Contract {
             event_log
         } else {
             require!(claimed_drops.get(drop_id).is_none(), "Drop already claimed");
-            claimed_drops.insert(drop_id, &ClaimedDropData::token(None));
+            claimed_drops.insert(drop_id, &ClaimedDropData::Token(None));
             self.internal_deposit_ft_transfer(data, drop_id, receiver_id);
             event_log.reward = Some(DropClaimReward::Token(data.amount));
             event_log
@@ -187,7 +200,7 @@ impl Contract {
 
             let mut claimed_drop = claimed_drops
                 .get(drop_id)
-                .unwrap_or(ClaimedDropData::nft(Some(Vec::new())));
+                .unwrap_or(ClaimedDropData::Nft(Some(Vec::new())));
 
             let already_claimed = claimed_drop
                 .get_found_scavenger_ids()
@@ -216,16 +229,93 @@ impl Contract {
             );
             if found_scavenger_ids == required_scavenger_ids {
                 self.internal_nft_mint(data.series_id, receiver_id.clone());
-                event_log.reward = Some(DropClaimReward::NFT);
+                event_log.reward = Some(DropClaimReward::Nft);
             }
 
             claimed_drops.insert(drop_id, &claimed_drop);
             event_log
         } else {
             require!(claimed_drops.get(drop_id).is_none(), "Drop already claimed");
-            claimed_drops.insert(drop_id, &ClaimedDropData::nft(None));
+            claimed_drops.insert(drop_id, &ClaimedDropData::Nft(None));
             self.internal_nft_mint(data.series_id, receiver_id.clone());
-            event_log.reward = Some(DropClaimReward::NFT);
+            event_log.reward = Some(DropClaimReward::Nft);
+            event_log
+        }
+    }
+
+    /// Handles the claim process for a multichain drop.
+    ///
+    /// # Arguments
+    ///
+    /// * `data` - The internal token drop data.
+    /// * `receiver_id` - The ID of the receiver claiming the drop.
+    /// * `scavenger_id` - Optional scavenger ID to claim.
+    /// * `claimed_drops` - The map of claimed drops for the receiver.
+    fn handle_claim_multichain_drop(
+        &mut self,
+        data: &MultichainDropData,
+        drop_id: &DropId,
+        receiver_id: &AccountId,
+        found_scavenger_id: Option<String>,
+        claimed_drops: &mut UnorderedMap<DropId, ClaimedDropData>,
+    ) -> KeypomDropClaimLog {
+        let mut event_log = KeypomDropClaimLog {
+            claimer_id: receiver_id.to_string(),
+            reward: None,
+            pieces_found: None,
+            pieces_required: None,
+        };
+
+        if let Some(required_scavenger_ids) = &data.base.scavenger_hunt {
+            let found_scavenger_id = found_scavenger_id.expect("This drop requires a scavenger ID");
+
+            // Check if the found_scavenger_id is valid and hasn't been claimed yet
+            let is_valid_scavenger_id = required_scavenger_ids
+                .iter()
+                .any(|scavenger| scavenger.piece == found_scavenger_id);
+            require!(is_valid_scavenger_id, "Incorrect scavenger piece passed in");
+
+            let mut claimed_drop = claimed_drops
+                .get(drop_id)
+                .unwrap_or(ClaimedDropData::Multichain(Some(Vec::new())));
+
+            let already_claimed = claimed_drop
+                .get_found_scavenger_ids()
+                .unwrap_or_default()
+                .contains(&found_scavenger_id);
+            require!(!already_claimed, "Scavenger piece already claimed");
+
+            // Add the valid scavenger_id to the claimed_drop
+            claimed_drop.add_scavenger_id(found_scavenger_id.clone());
+
+            let found_scavenger_ids = claimed_drop
+                .get_found_scavenger_ids()
+                .unwrap_or_default()
+                .len();
+            let required_scavenger_ids = required_scavenger_ids.len();
+
+            event_log.pieces_found = Some(
+                found_scavenger_ids
+                    .try_into()
+                    .expect("Too many pieces found to convert to u16"),
+            );
+            event_log.pieces_required = Some(
+                required_scavenger_ids
+                    .try_into()
+                    .expect("Too many pieces required to convert to u16"),
+            );
+            if found_scavenger_ids == required_scavenger_ids {
+                event_log.reward = Some(DropClaimReward::Multichain);
+                self.handle_multichain_mint(data);
+            }
+
+            claimed_drops.insert(drop_id, &claimed_drop);
+            event_log
+        } else {
+            require!(claimed_drops.get(drop_id).is_none(), "Drop already claimed");
+            claimed_drops.insert(drop_id, &ClaimedDropData::Multichain(None));
+            self.handle_multichain_mint(data);
+            event_log.reward = Some(DropClaimReward::Multichain);
             event_log
         }
     }
