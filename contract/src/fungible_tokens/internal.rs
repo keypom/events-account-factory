@@ -126,6 +126,7 @@ impl Contract {
             .to_string(),
         );
 
+        // Emit the Keypom transfer event
         env::log_str(
             &EventLog {
                 standard: KEYPOM_STANDARD_NAME.to_string(),
