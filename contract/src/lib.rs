@@ -12,6 +12,7 @@ use near_sdk::{
 mod cleanup;
 mod drops;
 mod events;
+mod ext_database;
 mod factory;
 mod fungible_tokens;
 mod internals;
@@ -58,6 +59,10 @@ pub struct Contract {
     // ------------------------ Account Factory ---------------------------- //
     pub ticket_data_by_id: UnorderedMap<DropId, TicketType>, // clearable
     pub keypom_contract: AccountId,
+
+    // ------------------------ External Databases ------------------------- //
+    pub agenda: String, // clearable
+    pub alerts: String, // clearable
 }
 
 #[near_bindgen]
@@ -137,6 +142,8 @@ impl Contract {
         }
 
         Self {
+            agenda: "".to_string(),
+            alerts: "".to_string(),
             nft_tokens_per_owner: LookupMap::new(StorageKeys::TokensForOwner),
             is_contract_frozen: false,
             account_details_by_id,

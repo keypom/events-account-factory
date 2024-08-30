@@ -44,6 +44,12 @@ impl Contract {
         if !self.account_id_by_pub_key.is_empty() {
             self.account_id_by_pub_key.clear()
         }
+        if self.agenda.is_empty() {
+            self.agenda = String::new()
+        }
+        if self.alerts.is_empty() {
+            self.alerts = String::new()
+        }
 
         // Get the total number of accounts to clear.
         let total = self.account_details_by_id.len();
