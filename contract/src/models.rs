@@ -25,6 +25,7 @@ pub enum AccountStatus {
     Basic,
     Vendor,
     Sponsor,
+    DataSetter,
     Admin,
 }
 
@@ -34,6 +35,7 @@ impl AccountStatus {
             AccountStatus::Basic => false,
             AccountStatus::Vendor => false,
             AccountStatus::Sponsor => false,
+            AccountStatus::DataSetter => false,
             AccountStatus::Admin => true,
         }
     }
@@ -43,6 +45,7 @@ impl AccountStatus {
             AccountStatus::Basic => false,
             AccountStatus::Vendor => false,
             AccountStatus::Sponsor => true,
+            AccountStatus::DataSetter => false,
             AccountStatus::Admin => true,
         }
     }
@@ -52,6 +55,17 @@ impl AccountStatus {
             AccountStatus::Basic => false,
             AccountStatus::Vendor => true,
             AccountStatus::Sponsor => false,
+            AccountStatus::DataSetter => false,
+            AccountStatus::Admin => true,
+        }
+    }
+
+    pub fn is_data_sponsor(&self) -> bool {
+        match self {
+            AccountStatus::Basic => false,
+            AccountStatus::Vendor => false,
+            AccountStatus::Sponsor => false,
+            AccountStatus::DataSetter => true,
             AccountStatus::Admin => true,
         }
     }
@@ -111,4 +125,3 @@ impl AccountDetails {
         }
     }
 }
-

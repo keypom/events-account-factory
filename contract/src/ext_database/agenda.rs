@@ -17,7 +17,7 @@ impl Contract {
     ///
     /// Panics if the calling account is not authorized.
     pub fn set_agenda(&mut self, new_agenda: String) {
-        self.assert_admin();
+        self.assert_data_setter();
         self.agenda = new_agenda;
     }
 }

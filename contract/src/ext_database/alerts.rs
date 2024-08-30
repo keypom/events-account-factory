@@ -17,7 +17,7 @@ impl Contract {
     ///
     /// Panics if the calling account is not authorized.
     pub fn set_alerts(&mut self, new_alerts: String) {
-        self.assert_admin();
+        self.assert_data_setter();
         self.alerts = new_alerts;
     }
 }
