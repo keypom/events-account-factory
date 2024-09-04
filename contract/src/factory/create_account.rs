@@ -143,6 +143,10 @@ impl Contract {
                 account_details.account_status = Some(AccountStatus::Sponsor);
                 access_key_method_names = SPONSOR_KEY_METHOD_NAMES;
             }
+            AccountStatus::DataSetter => {
+                account_details.account_status = Some(AccountStatus::DataSetter);
+                access_key_method_names = DATA_SETTER_KEY_METHOD_NAMES;
+            }
             AccountStatus::Admin => {
                 account_details.account_status = Some(AccountStatus::Admin);
             }
