@@ -45,10 +45,12 @@ impl Contract {
             self.account_id_by_pub_key.clear()
         }
         if self.agenda.is_empty() {
-            self.agenda = String::new()
+            self.agenda = String::new();
+            self.agenda_timestamp = 0;
         }
         if self.alerts.is_empty() {
-            self.alerts = String::new()
+            self.alerts = String::new();
+            self.alerts_timestamp = 0;
         }
 
         // Get the total number of accounts to clear.

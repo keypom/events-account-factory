@@ -62,8 +62,10 @@ pub struct Contract {
     pub keypom_contract: AccountId,
 
     // ------------------------ External Databases ------------------------- //
-    pub agenda: String, // clearable
-    pub alerts: String, // clearable
+    pub agenda: String,        // clearable
+    pub alerts: String,        // clearable
+    pub alerts_timestamp: u64, // clearable
+    pub agenda_timestamp: u64, // clearable
 }
 
 #[near_bindgen]
@@ -145,6 +147,8 @@ impl Contract {
         Self {
             agenda: "[{}]".to_string(),
             alerts: "[{}]".to_string(),
+            agenda_timestamp: 0,
+            alerts_timestamp: 0,
             nft_tokens_per_owner: LookupMap::new(StorageKeys::TokensForOwner),
             is_contract_frozen: false,
             account_details_by_id,
