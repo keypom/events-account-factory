@@ -143,8 +143,8 @@ impl Contract {
         }
 
         Self {
-            agenda: "".to_string(),
-            alerts: "".to_string(),
+            agenda: "[{}]".to_string(),
+            alerts: "[{}]".to_string(),
             nft_tokens_per_owner: LookupMap::new(StorageKeys::TokensForOwner),
             is_contract_frozen: false,
             account_details_by_id,
