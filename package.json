@@ -1,34 +1,34 @@
 {
-	"name": "keypom-trial-accounts",
-	"version": "1.0.0",
-	"license": "MIT",
-	"author": "Ben Kurrek, Matt Lockyer",
-	"scripts": {
-		"build": "cd contract && ./build.sh",
-		"test": "ava __tests__/tests.ava.ts",
-		"test:nearcon": "ava __tests__/nearcon/nearcon.ava.ts",
-		"create-drop": "node scripts/create_drop.js",
-		"add-tickets": "node scripts/add_tickets.js"
-	},
-	"dependencies": {
-		"@near-js/accounts": "0.1.3",
-		"@near-js/crypto": "0.0.4",
-		"@near-js/keystores-browser": "0.0.4",
-		"@near-js/keystores-node": "0.0.4",
-		"@near-js/transactions": "0.2.0",
-		"@near-js/types": "0.0.4",
-		"@near-js/utils": "0.0.4",
-		"@near-js/wallet-account": "0.0.6",
-		"@near-wallet-selector/core": "8.0.3",
-		"@types/bn.js": "^5.1.0",
-		"@types/react": "^18.0.26",
-		"ava": "^5.2.0",
-		"near-cli": "^3.4.2",
-		"near-workspaces": "^3.3.0",
-		"react": "^18.2.0",
-		"react-dom": "18.2.0",
-		"ts-node": "^10.8.0",
-		"typedoc": "^0.23.24",
-		"typescript": "^4.8.4"
-	}
+  "name": "keypom-trial-accounts",
+  "version": "1.0.0",
+  "license": "MIT",
+  "author": "Ben Kurrek, Matt Lockyer",
+  "scripts": {
+    "build": "cd contract && ./build.sh",
+    "test": "ava __tests__/tests.ava.ts",
+    "test:nearcon": "ava __tests__/nearcon/nearcon.ava.ts",
+    "create-drop": "node scripts/create_drop.js",
+    "add-tickets": "node scripts/add_tickets.js"
+  },
+  "dependencies": {
+    "@near-js/accounts": "0.1.3",
+    "@near-js/crypto": "0.0.4",
+    "@near-js/keystores-browser": "1.0.4",
+    "@near-js/keystores-node": "0.0.4",
+    "@near-js/transactions": "0.2.0",
+    "@near-js/types": "0.0.4",
+    "@near-js/utils": "0.0.4",
+    "@near-js/wallet-account": "0.0.6",
+    "@near-wallet-selector/core": "8.0.3",
+    "@types/bn.js": "^5.1.0",
+    "@types/react": "^18.0.26",
+    "ava": "^5.2.0",
+    "near-cli": "^3.4.2",
+    "near-workspaces": "^3.3.0",
+    "react": "^18.2.0",
+    "react-dom": "18.2.0",
+    "ts-node": "^10.8.0",
+    "typedoc": "^0.23.24",
+    "typescript": "^4.8.4"
+  }
 }

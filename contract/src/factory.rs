@@ -34,11 +34,11 @@ impl Contract {
         // Get the next available account ID in case the one passed in is taken
         let account_id: AccountId = self.find_available_account_id(new_account_id);
         let tokens_to_start = self
-            .starting_near_balance
+            .starting_token_balance
             .get(&drop_id)
             .expect("Drop ID not found");
         let near_to_start = self
-            .starting_token_balance
+            .starting_near_balance
             .get(&drop_id)
             .expect("Drop ID not found");
 
