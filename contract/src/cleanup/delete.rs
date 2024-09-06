@@ -41,9 +41,6 @@ impl Contract {
         if !self.ticket_data_by_id.is_empty() {
             self.ticket_data_by_id.clear()
         }
-        if !self.account_id_by_pub_key.is_empty() {
-            self.account_id_by_pub_key.clear()
-        }
         if self.agenda.is_empty() {
             self.agenda = String::new();
             self.agenda_timestamp = 0;
@@ -51,6 +48,9 @@ impl Contract {
         if self.alerts.is_empty() {
             self.alerts = String::new();
             self.alerts_timestamp = 0;
+        }
+        if self.attendee_ticket_by_pk.is_empty() {
+            self.attendee_ticket_by_pk.clear();
         }
 
         // Get the total number of accounts to clear.

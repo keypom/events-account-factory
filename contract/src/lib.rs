@@ -19,6 +19,7 @@ mod internals;
 mod models;
 mod multichain;
 mod non_fungible_tokens;
+mod tickets;
 mod vendors;
 
 use drops::*;
@@ -30,7 +31,7 @@ use non_fungible_tokens::*;
 use vendors::*;
 
 // ------------------------ Access Key Method Names ------------------------ //
-pub const ATTENDEE_KEY_METHOD_NAMES: &str = "claim_drop,ft_transfer";
+pub const ATTENDEE_KEY_METHOD_NAMES: &str = "create_account,claim_drop,ft_transfer";
 pub const SPONSOR_KEY_METHOD_NAMES: &str = "create_token_drop,create_nft_drop,delete_drop";
 pub const DATA_SETTER_KEY_METHOD_NAMES: &str = "set_alerts,set_agenda";
 
@@ -41,7 +42,6 @@ pub const DROP_DELIMITER: &str = "||";
 pub struct Contract {
     // ------------------------ Contract Global ---------------------------- //
     pub account_details_by_id: UnorderedMap<AccountId, AccountDetails>, // clearable
-    pub account_id_by_pub_key: UnorderedMap<PublicKey, AccountId>,      // clearable
     pub is_contract_frozen: bool,
 
     // ------------------------ Fungible Tokens ---------------------------- //
@@ -59,7 +59,9 @@ pub struct Contract {
 
     // ------------------------ Account Factory ---------------------------- //
     pub ticket_data_by_id: UnorderedMap<DropId, TicketType>, // clearable
-    pub keypom_contract: AccountId,
+
+    // ------------------------ Tickets ------------------------------------ //
+    pub attendee_ticket_by_pk: UnorderedMap<PublicKey, AttendeeTicketInformation>, // clearable
 
     // ------------------------ External Databases ------------------------- //
     pub agenda: String,        // clearable
@@ -85,9 +87,11 @@ impl Contract {
     /// Panics if no account is found for the given public key or account ID.
     pub fn recover_account(&self, key_or_account_id: String) -> ExtAccountDetails {
         let account_id = if let Ok(public_key) = key_or_account_id.parse::<PublicKey>() {
-            self.account_id_by_pub_key
+            self.attendee_ticket_by_pk
                 .get(&public_key)
                 .expect("No account found for the given public key")
+                .account_id
+                .expect("Account has not been scanned in yet")
         } else {
             key_or_account_id
                 .parse::<AccountId>()
@@ -122,7 +126,6 @@ impl Contract {
     /// Returns a new instance of the contract.
     #[init]
     pub fn new(
-        keypom_contract: AccountId,
         ticket_data: HashMap<DropId, TicketType>,
         token_name: Option<String>,
         symbol: Option<String>,
@@ -177,9 +180,8 @@ impl Contract {
 
             drop_by_id: UnorderedMap::new(StorageKeys::DropById),
 
-            keypom_contract,
             ticket_data_by_id,
-            account_id_by_pub_key: UnorderedMap::new(StorageKeys::AccountIdByPubKey),
+            attendee_ticket_by_pk: UnorderedMap::new(StorageKeys::AttendeeTicketInformation),
         }
     }
 

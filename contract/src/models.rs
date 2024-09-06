@@ -5,7 +5,7 @@ pub type DropId = String;
 
 #[derive(BorshSerialize, BorshStorageKey)]
 pub enum StorageKeys {
-    AccountIdByPubKey,
+    AttendeeTicketInformation,
     VendorItems { vendor_id_hash: CryptoHash },
     AccountDetailsById,
     DropsClaimedByAccountInner { account_id_hash: CryptoHash },
@@ -81,6 +81,16 @@ pub struct ExtAccountDetails {
     // ------------------------ Vendor Information ------------------------- //
     pub vendor_data: Option<VendorMetadata>,
     pub account_status: Option<AccountStatus>,
+}
+
+/// Data for each ticket such as the account status, starting balances, etc...
+#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
+#[serde(crate = "near_sdk::serde")]
+pub struct AttendeeTicketInformation {
+    pub drop_id: DropId,
+    pub has_scanned: bool,
+    pub account_id: Option<AccountId>,
+    pub metadata: String,
 }
 
 /// Data for each ticket such as the account status, starting balances, etc...

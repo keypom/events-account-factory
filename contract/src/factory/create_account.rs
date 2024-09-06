@@ -31,29 +31,30 @@ impl Contract {
     ///
     /// Panics if the Keypom arguments are invalid or the drop ID does not exist.
     #[payable]
-    pub fn create_account(
-        &mut self,
-        new_account_id: AccountId,
-        new_public_key: PublicKey,
-        drop_id: String,
-        keypom_args: KeypomArgs,
-    ) -> Promise {
+    pub fn create_account(&mut self, new_account_id: AccountId) -> Promise {
         self.assert_no_freeze();
-        self.assert_keypom();
-        // Ensure the incoming args are correct from Keypom
+        let ticket_pk = env::signer_account_pk();
+
+        let mut attendee_ticket = self
+            .attendee_ticket_by_pk
+            .get(&ticket_pk)
+            .expect("No ticket information found for public key");
         require!(
-            keypom_args.drop_id_field.expect("No keypom args sent") == *"drop_id",
-            "Invalid Keypom arguments"
-        );
-        require!(
-            self.ticket_data_by_id.get(&drop_id).is_some(),
-            "Invalid drop ID"
+            !attendee_ticket.has_scanned,
+            "Ticket has already been scanned"
         );
 
         // Get the next available account ID in case the one passed in is taken
         let account_id: AccountId = self.find_available_account_id(new_account_id);
-        let ticket_data = self.ticket_data_by_id.get(&drop_id).unwrap();
-        self.internal_create_account(account_id, new_public_key, ticket_data)
+
+        // Update the attendee ticket with the new account ID and make sure that it doesnt get
+        // scanned in again
+        attendee_ticket.account_id = Some(account_id.clone());
+        attendee_ticket.has_scanned = true;
+
+        let ticket_drop_id = attendee_ticket.drop_id;
+        let ticket_data = self.ticket_data_by_id.get(&ticket_drop_id).unwrap();
+        self.internal_create_account(account_id, ticket_pk, ticket_data, false)
     }
 
     /// Finds the next available account ID if the given one is already taken.
@@ -110,7 +111,7 @@ impl Contract {
     ) -> Promise {
         self.assert_no_freeze();
         self.assert_admin();
-        self.internal_create_account(new_account_id, new_public_key, ticket_data)
+        self.internal_create_account(new_account_id, new_public_key, ticket_data, true)
     }
 
     /// Internally creates a new account with the given parameters.
@@ -130,6 +131,7 @@ impl Contract {
         new_account_id: AccountId,
         new_public_key: PublicKey,
         ticket_data: TicketType,
+        add_key: bool,
     ) -> Promise {
         let initial_storage_usage = env::storage_usage();
 
@@ -161,9 +163,6 @@ impl Contract {
             near_to_start.0
         );
 
-        // Add the account ID to the map
-        self.account_id_by_pub_key
-            .insert(&new_public_key, &new_account_id);
         self.account_details_by_id
             .insert(&new_account_id, &account_details);
 
@@ -176,13 +175,17 @@ impl Contract {
             final_storage_usage - initial_storage_usage
         );
 
-        // Add the ticket access key for this account so they can sign transactions
-        Promise::new(env::current_account_id()).add_access_key(
-            new_public_key.clone(),
-            0, // unlimited allowance
-            env::current_account_id(),
-            access_key_method_names.to_string(),
-        );
+        // Add the ticket access key for this account so they can sign transactions only if they
+        // are not an attendee (since their original ticket contains the key already and its been
+        // created)
+        if add_key {
+            Promise::new(env::current_account_id()).add_access_key(
+                new_public_key.clone(),
+                0, // unlimited allowance
+                env::current_account_id(),
+                access_key_method_names.to_string(),
+            );
+        }
 
         // Add the same full access key to the account so that they can offboard later
         Promise::new(new_account_id.clone())

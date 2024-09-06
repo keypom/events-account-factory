@@ -90,8 +90,9 @@ impl Contract {
     ///
     /// Panics if no account ID is found for the given public key.
     pub(crate) fn caller_id_by_signing_pk(&self) -> AccountId {
-        self.account_id_by_pub_key
+        self.attendee_ticket_by_pk
             .get(&env::signer_account_pk())
+            .and_then(|a| a.account_id)
             .unwrap_or(env::predecessor_account_id())
     }
 }
