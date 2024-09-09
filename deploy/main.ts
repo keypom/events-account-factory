@@ -13,15 +13,9 @@ import { deployFactory } from "./createEvent";
 import { convertMapToRawJsonCsv, initNear, updateConfigFile } from "./utils";
 import fs from "fs";
 import path from "path";
-import {
-  decodeEd25519SecretKey,
-  decryptOnChainData,
-  decryptStoredData,
-} from "./encryptionUtils";
 
 const main = async () => {
   const near = await initNear();
-
   const signerAccount = await near.account(SIGNER_ACCOUNT);
 
   // Ensure the "data" directory exists, create it if it doesn't
@@ -85,18 +79,17 @@ const main = async () => {
 
   // STEP 4: Add Tickets
   // TODO: Add airtable integration
-  const attendeeInfo = [
-    {
-      name: "test",
-      email: "test",
-    },
-  ];
+  // Make default attendee info array of size 100
+  const defaultAttendeeInfo = new Array(100).fill({
+    name: "test",
+    email: "test",
+  });
 
   const keyPairMap = await addTickets({
     signerAccount,
     factoryAccountId,
     dropId: "ga_pass",
-    attendeeInfo,
+    attendeeInfo: defaultAttendeeInfo,
   });
   // Convert the keyPairMap to CSV with raw JSON and write to a file
   const csvData = convertMapToRawJsonCsv(keyPairMap);

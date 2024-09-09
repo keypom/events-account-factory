@@ -14,6 +14,30 @@ pub struct KeypomArgs {
 
 #[near_bindgen]
 impl Contract {
+    /// Scans the ticket into the event
+    ///
+    /// # Panics
+    ///
+    /// Panics if the ticket has already been scanned or if the ticket does not exist.
+    #[payable]
+    pub fn scan_ticket(&mut self) {
+        self.assert_no_freeze();
+        let ticket_pk = env::signer_account_pk();
+
+        let mut attendee_ticket = self
+            .attendee_ticket_by_pk
+            .get(&ticket_pk)
+            .expect("No ticket information found for public key");
+        require!(
+            !attendee_ticket.has_scanned,
+            "Ticket has already been scanned"
+        );
+        attendee_ticket.has_scanned = true;
+
+        self.attendee_ticket_by_pk
+            .insert(&ticket_pk, &attendee_ticket);
+    }
+
     /// Creates a new account with the given parameters.
     ///
     /// # Arguments
@@ -40,8 +64,8 @@ impl Contract {
             .get(&ticket_pk)
             .expect("No ticket information found for public key");
         require!(
-            !attendee_ticket.has_scanned,
-            "Ticket has already been scanned"
+            attendee_ticket.has_scanned,
+            "Ticket needs to be scanned first"
         );
 
         // Get the next available account ID in case the one passed in is taken
@@ -50,7 +74,8 @@ impl Contract {
         // Update the attendee ticket with the new account ID and make sure that it doesnt get
         // scanned in again
         attendee_ticket.account_id = Some(account_id.clone());
-        attendee_ticket.has_scanned = true;
+        self.attendee_ticket_by_pk
+            .insert(&ticket_pk, &attendee_ticket);
 
         let ticket_drop_id = attendee_ticket.drop_id;
         let ticket_data = self.ticket_data_by_id.get(&ticket_drop_id).unwrap();

@@ -1,3 +1,5 @@
+import { TICKET_URL_BASE } from "./config";
+
 const {
   KeyPair,
   connect,
@@ -134,7 +136,7 @@ export const convertMapToRawJsonCsv = (
 
   for (const [secretKey, attendeeInfo] of map.entries()) {
     const rawJsonData = JSON.stringify(attendeeInfo);
-    csvString += `${secretKey},"${rawJsonData}"\n`;
+    csvString += `${TICKET_URL_BASE}${secretKey.split(":")[1]},"${rawJsonData}"\n`;
   }
 
   return csvString;
