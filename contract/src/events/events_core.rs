@@ -2,11 +2,6 @@ use std::fmt;
 
 use crate::*;
 
-/// This spec can be treated like a version of the standard.
-pub const FT_METADATA_SPEC: &str = "1.0.0";
-/// This is the name of the NFT standard we're using
-pub const FT_STANDARD_NAME: &str = "nep141";
-
 /// Enum that represents the data type of the EventLog.
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(tag = "event", content = "data")]
@@ -14,10 +9,20 @@ pub const FT_STANDARD_NAME: &str = "nep141";
 #[serde(crate = "near_sdk::serde")]
 #[non_exhaustive]
 pub enum EventLogVariant {
-    /// Drop creation / deletion
+    // Fungible Tokens
     FtMint(FtMintLog),
     FtBurn(FtBurnLog),
     FtTransfer(FtTransferLog),
+
+    // Non Fungible Tokens
+    NftMint(Vec<NftMintLog>),
+    NftTransfer(Vec<NftTransferLog>),
+
+    // Keypom Specific Events
+    KeypomTokenMint(KeypomTokenMintLog),
+    KeypomTokenTransfer(KeypomTokenTransferLog),
+    KeypomDropCreation(KeypomDropCreationLog),
+    KeypomDropClaim(KeypomDropClaimLog),
 }
 
 /// Interface to capture data about an event

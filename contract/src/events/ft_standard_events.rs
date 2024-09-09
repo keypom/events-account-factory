@@ -1,5 +1,10 @@
 use crate::*;
 
+/// This spec can be treated like a version of the standard.
+pub const FT_METADATA_SPEC: &str = "1.0.0";
+/// This is the name of the NFT standard we're using
+pub const FT_STANDARD_NAME: &str = "nep141";
+
 /// An event log to capture tokens minting
 /// Arguments
 /// * `owner_id`: "account.near"

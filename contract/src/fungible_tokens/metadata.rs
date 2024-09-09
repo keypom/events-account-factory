@@ -23,11 +23,11 @@ pub struct FungibleTokenMetadata {
 #[near_bindgen]
 impl Contract {
     pub fn ft_metadata(&self) -> FungibleTokenMetadata {
-        self.metadata.clone()
+        self.ft_metadata.clone()
     }
 
-    #[private]
     pub fn update_ft_metadata(&mut self, metadata: FungibleTokenMetadata) {
-        self.metadata = metadata;
+        self.assert_admin();
+        self.ft_metadata = metadata;
     }
 }
