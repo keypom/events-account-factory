@@ -1,4 +1,4 @@
-import { TICKET_URL_BASE } from "./config";
+import { GLOBAL_NETWORK, TICKET_URL_BASE } from "./config";
 
 const {
   KeyPair,
@@ -17,8 +17,8 @@ const keyStore = new keyStores.UnencryptedFileSystemKeyStore(credentialsPath);
 
 const config = {
   keyStore,
-  networkId: "testnet",
-  nodeUrl: "https://rpc.testnet.near.org",
+  networkId: GLOBAL_NETWORK,
+  nodeUrl: `https://rpc.${GLOBAL_NETWORK}.near.org`,
 };
 
 export async function initNear() {
@@ -43,10 +43,6 @@ export async function sendTransaction({
   gas: string;
   wasmPath?: string;
 }) {
-  console.log(
-    "Sending transaction... with deposit",
-    utils.format.parseNearAmount(deposit),
-  );
   const result = await signerAccount.signAndSendTransaction({
     receiverId: receiverId,
     actions: [
@@ -61,8 +57,7 @@ export async function sendTransaction({
       ),
     ],
   });
-
-  console.log(result);
+  return result;
 }
 
 export async function createAccountDeployContract({
@@ -117,7 +112,7 @@ export async function createAccount({
   await keyStore.setKey(config.networkId, newAccountId, keyPair);
 
   return await signerAccount.functionCall({
-    contractId: "testnet",
+    contractId: GLOBAL_NETWORK === "testnet" ? "testnet" : "near",
     methodName: "create_account",
     args: {
       new_account_id: newAccountId,

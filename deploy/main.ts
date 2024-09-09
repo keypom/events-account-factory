@@ -1,10 +1,13 @@
-import { addTickets } from "./addTickets";
+import { addPremadeTickets, addTickets } from "./addTickets";
 import { adminCreateAccount } from "./adminCreateAccounts";
 import {
   ADMIN_ACCOUNTS,
+  CREATION_CONFIG,
   EXISTING_FACTORY,
-  NEW_FACTORY,
-  SHOULD_CREATE_SPONSORS,
+  GLOBAL_NETWORK,
+  NUM_TICKETS_TO_ADD,
+  PREMADE_DROP_DATA,
+  PREMADE_TICKET_DATA,
   SIGNER_ACCOUNT,
   SPONSOR_DATA,
   TICKET_DATA,
@@ -13,9 +16,12 @@ import { deployFactory } from "./createEvent";
 import { convertMapToRawJsonCsv, initNear, updateConfigFile } from "./utils";
 import fs from "fs";
 import path from "path";
+import { createDrops } from "./createDrops";
 
 const main = async () => {
   const near = await initNear();
+  console.log("Connected to Near: ", near);
+
   const signerAccount = await near.account(SIGNER_ACCOUNT);
 
   // Ensure the "data" directory exists, create it if it doesn't
@@ -26,8 +32,8 @@ const main = async () => {
 
   // STEP 1: Deploy the factory contract
   let factoryAccountId = EXISTING_FACTORY;
-  if (NEW_FACTORY) {
-    factoryAccountId = `${Date.now().toString()}-factory.testnet`;
+  if (CREATION_CONFIG.deployContract) {
+    factoryAccountId = `${Date.now().toString()}-factory.${GLOBAL_NETWORK === "testnet" ? "testnet" : "near"}`;
     await deployFactory({
       near,
       signerAccount,
@@ -42,7 +48,7 @@ const main = async () => {
 
   let csvFilePath;
   // STEP 2: Create Sponsors
-  if (SHOULD_CREATE_SPONSORS) {
+  if (CREATION_CONFIG.createSponsors) {
     const sponsorCSV: string[] = [];
     for (const sponsorData of SPONSOR_DATA) {
       const { connectionObject } = await adminCreateAccount({
@@ -64,40 +70,68 @@ const main = async () => {
   }
 
   // STEP 3: Create Worker
-  const { keyPair } = await adminCreateAccount({
-    signerAccount,
-    factoryAccountId,
-    newAccountName: "worker",
-    startingNearBalance: "0.01",
-    startingTokenBalance: "0",
-    accountType: "DataSetter",
-  });
+  if (CREATION_CONFIG.createWorker) {
+    const { keyPair } = await adminCreateAccount({
+      signerAccount,
+      factoryAccountId,
+      newAccountName: "worker",
+      startingNearBalance: "0.01",
+      startingTokenBalance: "0",
+      accountType: "DataSetter",
+    });
 
-  // Write the worker information to the "data" directory
-  csvFilePath = path.join(dataDir, "worker.csv");
-  fs.writeFileSync(csvFilePath, `worker, ${keyPair.toString()}`);
+    // Write the worker information to the "data" directory
+    csvFilePath = path.join(dataDir, "worker.csv");
+    fs.writeFileSync(csvFilePath, `worker, ${keyPair.toString()}`);
+  }
 
   // STEP 4: Add Tickets
-  // TODO: Add airtable integration
-  // Make default attendee info array of size 100
-  const defaultAttendeeInfo = new Array(100).fill({
-    name: "test",
-    email: "test",
-  });
+  if (CREATION_CONFIG.addTickets) {
+    // TODO: Add airtable integration
+    const defaultAttendeeInfo = new Array(NUM_TICKETS_TO_ADD).fill({
+      name: "test",
+      email: "test",
+    });
+    const keyPairMap = await addTickets({
+      signerAccount,
+      factoryAccountId,
+      dropId: "ga_pass",
+      attendeeInfo: defaultAttendeeInfo,
+    });
+    // Convert the keyPairMap to CSV with raw JSON and write to a file
+    const csvData = convertMapToRawJsonCsv(keyPairMap);
+    csvFilePath = path.join(dataDir, "tickets.csv");
+    fs.writeFileSync(csvFilePath, csvData);
+  }
 
-  const keyPairMap = await addTickets({
-    signerAccount,
-    factoryAccountId,
-    dropId: "ga_pass",
-    attendeeInfo: defaultAttendeeInfo,
-  });
-  // Convert the keyPairMap to CSV with raw JSON and write to a file
-  const csvData = convertMapToRawJsonCsv(keyPairMap);
-  csvFilePath = path.join(dataDir, "tickets.csv");
-  fs.writeFileSync(csvFilePath, csvData);
+  if (CREATION_CONFIG.premadeTickets) {
+    const premadeCSV = await addPremadeTickets({
+      near,
+      signerAccount,
+      factoryAccountId,
+      dropId: "ga_pass",
+      attendeeInfo: PREMADE_TICKET_DATA,
+    });
+    // Write the sponsors CSV to the "data" directory
+    csvFilePath = path.join(dataDir, "premade-tickets.csv");
+    fs.writeFileSync(csvFilePath, premadeCSV.join("\n"));
+  }
+
+  if (CREATION_CONFIG.premadeDrops) {
+    const premadeDropCSV = await createDrops({
+      signerAccount,
+      factoryAccountId,
+      drops: PREMADE_DROP_DATA,
+    });
+    // Write the sponsors CSV to the "data" directory
+    csvFilePath = path.join(dataDir, "premade-drops.csv");
+    fs.writeFileSync(csvFilePath, premadeDropCSV.join("\n"));
+  }
 
   console.log("Done!");
-  console.log(`https://testnet.nearblocks.io/address/${factoryAccountId}`);
+  console.log(
+    `https://${GLOBAL_NETWORK}.nearblocks.io/address/${factoryAccountId}`,
+  );
 };
 
 main().catch(console.error);

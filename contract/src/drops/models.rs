@@ -13,7 +13,6 @@ pub struct ScavengerHuntData {
 pub struct ExtDropBase {
     pub scavenger_hunt: Option<Vec<ScavengerHuntData>>,
     pub name: String,
-    pub image: String,
 }
 
 /// Base struct for external claimed drop data.
@@ -22,7 +21,6 @@ pub struct ExtDropBase {
 pub struct DropBase {
     pub scavenger_hunt: Option<Vec<ScavengerHuntData>>,
     pub name: String,
-    pub image: String,
     pub id: String,
     pub num_claimed: u64,
 }
@@ -121,15 +119,6 @@ impl DropData {
             DropData::Token(data) => data.base.name.clone(),
             DropData::Nft(data) => data.base.name.clone(),
             DropData::Multichain(data) => data.base.name.clone(),
-        }
-    }
-
-    /// Returns the image URL of the claimed drop.
-    pub fn get_image(&self) -> String {
-        match self {
-            DropData::Token(data) => data.base.image.clone(),
-            DropData::Nft(data) => data.base.image.clone(),
-            DropData::Multichain(data) => data.base.image.clone(),
         }
     }
 }

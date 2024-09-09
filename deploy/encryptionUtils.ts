@@ -12,7 +12,7 @@ const decryptOnChainData = async ({
   factoryAccountId: string;
   secretKey: string;
 }) => {
-  const viewAccount = await near.account("view-keypom.testnet");
+  const viewAccount = await near.account("foo");
   const pubKey = getPubFromSecret(secretKey);
 
   const keyInfo = await viewAccount.viewFunction(

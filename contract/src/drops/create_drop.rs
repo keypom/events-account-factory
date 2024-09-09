@@ -35,7 +35,6 @@ impl Contract {
                         base: DropBase {
                             name: drop_data.name,
                             num_claimed: 0,
-                            image: drop_data.image,
                             scavenger_hunt: drop_data.scavenger_hunt.clone(),
                             id: drop_id.clone()
                         },
@@ -107,7 +106,6 @@ impl Contract {
                         base: DropBase {
                             name: drop_data.name,
                             num_claimed: 0,
-                            image: drop_data.image,
                             scavenger_hunt: drop_data.scavenger_hunt.clone(),
                             id: drop_id.clone()
                         },
@@ -182,7 +180,6 @@ impl Contract {
                         base: DropBase {
                             name: drop_data.name,
                             num_claimed: 0,
-                            image: drop_data.image,
                             scavenger_hunt: drop_data.scavenger_hunt.clone(),
                             id: drop_id.clone()
                         },
