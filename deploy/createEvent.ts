@@ -34,7 +34,7 @@ export async function deployFactory({
     };
   }
 
-  await createAccountDeployContract({
+  return await createAccountDeployContract({
     signerAccount,
     newAccountId: factoryAccountId,
     amount: "200",

@@ -6,8 +6,9 @@ import {
   EXISTING_FACTORY,
   GLOBAL_NETWORK,
   NUM_TICKETS_TO_ADD,
-  PREMADE_DROP_DATA,
+  PREMADE_NFT_DROP_DATA,
   PREMADE_TICKET_DATA,
+  PREMADE_TOKEN_DROP_DATA,
   SIGNER_ACCOUNT,
   SPONSOR_DATA,
   TICKET_DATA,
@@ -31,10 +32,11 @@ const main = async () => {
   }
 
   // STEP 1: Deploy the factory contract
+  let csvFilePath;
   let factoryAccountId = EXISTING_FACTORY;
   if (CREATION_CONFIG.deployContract) {
     factoryAccountId = `${Date.now().toString()}-factory.${GLOBAL_NETWORK === "testnet" ? "testnet" : "near"}`;
-    await deployFactory({
+    let factoryKey = await deployFactory({
       near,
       signerAccount,
       adminAccounts: ADMIN_ACCOUNTS,
@@ -42,11 +44,14 @@ const main = async () => {
       ticketData: TICKET_DATA,
     });
 
+    // Write the sponsors CSV to the "data" directory
+    csvFilePath = path.join(dataDir, "factoryKey.csv");
+    fs.writeFileSync(csvFilePath, `${factoryAccountId},${factoryKey}`);
+
     // STEP 1.1: Update the EXISTING_FACTORY in config.ts
     updateConfigFile(factoryAccountId);
   }
 
-  let csvFilePath;
   // STEP 2: Create Sponsors
   if (CREATION_CONFIG.createSponsors) {
     const sponsorCSV: string[] = [];
@@ -118,14 +123,23 @@ const main = async () => {
   }
 
   if (CREATION_CONFIG.premadeDrops) {
-    const premadeDropCSV = await createDrops({
+    const premadeTokenDropCSV = await createDrops({
       signerAccount,
       factoryAccountId,
-      drops: PREMADE_DROP_DATA,
+      drops: PREMADE_TOKEN_DROP_DATA,
     });
     // Write the sponsors CSV to the "data" directory
-    csvFilePath = path.join(dataDir, "premade-drops.csv");
-    fs.writeFileSync(csvFilePath, premadeDropCSV.join("\n"));
+    csvFilePath = path.join(dataDir, "premade-token-drops.csv");
+    fs.writeFileSync(csvFilePath, premadeTokenDropCSV.join("\n"));
+
+    const premadeNFTDropCSV = await createDrops({
+      signerAccount,
+      factoryAccountId,
+      drops: PREMADE_NFT_DROP_DATA,
+    });
+    // Write the sponsors CSV to the "data" directory
+    csvFilePath = path.join(dataDir, "premade-nft-drops.csv");
+    fs.writeFileSync(csvFilePath, premadeNFTDropCSV.join("\n"));
   }
 
   console.log("Done!");

@@ -12,11 +12,11 @@ impl Contract {
         let account_details = self
             .account_details_by_id
             .get(&caller_id)
-            .expect("Unauthorized");
+            .expect("No account details found");
         require!(
             account_details
                 .account_status
-                .expect("Unauthorized")
+                .expect("No account status found")
                 .is_admin(),
             "Unauthorized"
         );
@@ -28,11 +28,11 @@ impl Contract {
         let account_details = self
             .account_details_by_id
             .get(&caller_id)
-            .expect("Unauthorized");
+            .expect("No account details found");
         require!(
             account_details
                 .account_status
-                .expect("Unauthorized")
+                .expect("No account status found")
                 .is_vendor(),
             "Unauthorized"
         );
@@ -44,11 +44,11 @@ impl Contract {
         let account_details = self
             .account_details_by_id
             .get(&caller_id)
-            .expect("Unauthorized");
+            .expect("No account details found");
         require!(
             account_details
                 .account_status
-                .expect("Unauthorized")
+                .expect("No account status found")
                 .is_sponsor(),
             "Unauthorized"
         );
@@ -57,14 +57,15 @@ impl Contract {
 
     pub(crate) fn assert_data_setter(&self) -> AccountId {
         let caller_id = self.caller_id_by_signing_pk();
+        near_sdk::env::log_str(&format!("caller_id: {}", caller_id));
         let account_details = self
             .account_details_by_id
             .get(&caller_id)
-            .expect("Unauthorized");
+            .expect("No account details found");
         require!(
             account_details
                 .account_status
-                .expect("Unauthorized")
+                .expect("No account status found")
                 .is_data_sponsor(),
             "Unauthorized"
         );
@@ -92,7 +93,8 @@ impl Contract {
     pub(crate) fn caller_id_by_signing_pk(&self) -> AccountId {
         self.attendee_ticket_by_pk
             .get(&env::signer_account_pk())
-            .and_then(|a| a.account_id)
-            .unwrap_or(env::predecessor_account_id())
+            .map(|t| t.account_id)
+            .unwrap_or(Some(env::predecessor_account_id()))
+            .expect("Account has not been scanned in yet")
     }
 }

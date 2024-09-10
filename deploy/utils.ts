@@ -82,7 +82,7 @@ export async function createAccountDeployContract({
   gas?: string;
 }) {
   console.log("Creating account: ", newAccountId);
-  await createAccount({ signerAccount, newAccountId, amount });
+  let keyPair = await createAccount({ signerAccount, newAccountId, amount });
   console.log("Deploying contract: ", newAccountId);
   const accountObj = await near.account(newAccountId);
   await sendTransaction({
@@ -96,6 +96,7 @@ export async function createAccountDeployContract({
   });
 
   console.log("Deployed.");
+  return keyPair;
 }
 
 export async function createAccount({
@@ -111,7 +112,7 @@ export async function createAccount({
   const publicKey = keyPair.publicKey.toString();
   await keyStore.setKey(config.networkId, newAccountId, keyPair);
 
-  return await signerAccount.functionCall({
+  await signerAccount.functionCall({
     contractId: GLOBAL_NETWORK === "testnet" ? "testnet" : "near",
     methodName: "create_account",
     args: {
@@ -121,6 +122,7 @@ export async function createAccount({
     gas: "300000000000000",
     attachedDeposit: utils.format.parseNearAmount(amount),
   });
+  return keyPair.toString();
 }
 
 // Convert the map to CSV with the key and the raw JSON stringified data

@@ -6,10 +6,10 @@ import { encryptAndStoreData } from "./encryptionUtils";
 import { GLOBAL_NETWORK, TICKET_URL_BASE } from "./config";
 
 interface DropData {
-  scavenger_hunt?: {
+  scavenger_hunt?: Array<{
     piece: string;
     description: string;
-  };
+  }>;
   name: string;
 }
 
@@ -41,9 +41,9 @@ export const createDrops = async ({
   const dropIds: Array<string> = [];
   for (const drop of drops) {
     let res: any;
+    let isNFT = false;
 
     if ((drop as TokenDropInfo).token_amount !== undefined) {
-      // Send the transaction in batches of 50 tickets
       res = await sendTransaction({
         signerAccount,
         receiverId: factoryAccountId,
@@ -55,9 +55,10 @@ export const createDrops = async ({
           ),
         },
         deposit: "0",
-        gas: "300000000000000", // Set gas limit
+        gas: "300000000000000",
       });
     } else {
+      isNFT = true;
       res = await sendTransaction({
         signerAccount,
         receiverId: factoryAccountId,
@@ -67,21 +68,22 @@ export const createDrops = async ({
           nft_metadata: (drop as NFTDropInfo).nft_metadata,
         },
         deposit: "0",
-        gas: "300000000000000", // Set gas limit
+        gas: "300000000000000",
       });
     }
 
     console.log("Response:", res);
     const status = res?.status;
-    console.log("Status:", status);
     if (status && status.SuccessValue) {
-      console.log("SuccessValue:", status.SuccessValue);
-      // Now we're sure SuccessValue exists and is a string
       let dropId = atob(status.SuccessValue);
       if (dropId.startsWith('"') && dropId.endsWith('"')) {
         dropId = dropId.slice(1, -1);
       }
-      dropIds.push(dropId);
+
+      // Format the CSV line, ensuring that text fields are wrapped in quotes
+      dropIds.push(
+        `"${drop.drop_data.name}",${isNFT ? "nft" : "token"}%%${dropId}`,
+      );
     } else {
       console.error("SuccessValue is not available");
     }

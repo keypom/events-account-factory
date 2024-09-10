@@ -136,6 +136,19 @@ impl Contract {
     ) -> Promise {
         self.assert_no_freeze();
         self.assert_admin();
+
+        let attendee_info = AttendeeTicketInformation {
+            drop_id: '.'.to_string(),
+            has_scanned: false,
+            account_id: Some(new_account_id.clone()),
+            metadata: '.'.to_string(),
+        };
+        require!(
+            self.attendee_ticket_by_pk
+                .insert(&new_public_key, &attendee_info)
+                .is_none(),
+            "Key already exists"
+        );
         self.internal_create_account(new_account_id, new_public_key, ticket_data, true)
     }
 
