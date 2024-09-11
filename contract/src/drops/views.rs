@@ -14,6 +14,7 @@ pub enum ExtClaimedDrop {
 #[serde(crate = "near_sdk::serde")]
 pub struct ExtClaimedNFTDropData {
     pub found_scavenger_ids: Option<Vec<String>>,
+    pub needed_scavenger_ids: Option<Vec<ScavengerHuntData>>,
     pub name: String,
     pub nft_metadata: TokenMetadata,
     pub drop_id: DropId,
@@ -23,6 +24,7 @@ pub struct ExtClaimedNFTDropData {
 #[serde(crate = "near_sdk::serde")]
 pub struct ExtClaimedTokenDropData {
     pub found_scavenger_ids: Option<Vec<String>>,
+    pub needed_scavenger_ids: Option<Vec<ScavengerHuntData>>,
     pub name: String,
     pub amount: U128,
     pub drop_id: DropId,
@@ -43,7 +45,7 @@ pub enum ExtDropData {
 pub struct ExtNFTDropData {
     pub name: String,
     pub nft_metadata: TokenMetadata,
-    pub scavenger_hunt: Option<Vec<String>>,
+    pub scavenger_hunt: Option<Vec<ScavengerHuntData>>,
     pub drop_id: DropId,
 }
 
@@ -51,7 +53,7 @@ pub struct ExtNFTDropData {
 #[serde(crate = "near_sdk::serde")]
 pub struct ExtTokenDropData {
     pub name: String,
-    pub scavenger_hunt: Option<Vec<String>>,
+    pub scavenger_hunt: Option<Vec<ScavengerHuntData>>,
     pub amount: U128,
     pub drop_id: DropId,
 }
@@ -73,34 +75,19 @@ impl Contract {
                 name: nft_data.base.name.clone(),
                 nft_metadata: self.series_by_id.get(&nft_data.series_id).unwrap().metadata,
                 drop_id: nft_data.base.id.clone(),
-                scavenger_hunt: nft_data.base.scavenger_hunt.map(|scav_data| {
-                    scav_data
-                        .iter()
-                        .map(|s| s.description.clone())
-                        .collect::<Vec<String>>()
-                }),
+                scavenger_hunt: nft_data.base.scavenger_hunt,
             }),
             DropData::Nft(nft_data) => ExtDropData::nft(ExtNFTDropData {
                 name: nft_data.base.name.clone(),
                 nft_metadata: self.series_by_id.get(&nft_data.series_id).unwrap().metadata,
                 drop_id: nft_data.base.id.clone(),
-                scavenger_hunt: nft_data.base.scavenger_hunt.map(|scav_data| {
-                    scav_data
-                        .iter()
-                        .map(|s| s.description.clone())
-                        .collect::<Vec<String>>()
-                }),
+                scavenger_hunt: nft_data.base.scavenger_hunt,
             }),
             DropData::Token(token_data) => ExtDropData::token(ExtTokenDropData {
                 name: token_data.base.name.clone(),
                 amount: token_data.amount,
                 drop_id: token_data.base.id.clone(),
-                scavenger_hunt: token_data.base.scavenger_hunt.map(|scav_data| {
-                    scav_data
-                        .iter()
-                        .map(|s| s.description.clone())
-                        .collect::<Vec<String>>()
-                }),
+                scavenger_hunt: token_data.base.scavenger_hunt,
             }),
         })
     }
@@ -138,10 +125,11 @@ impl Contract {
                         // Now process the data and match it to the claimed drop types
                         match claimed_drop {
                             ClaimedDropData::Multichain(found_scavenger_ids) => {
-                                if let DropData::Multichain(nft_data) = drop_data {
+                                if let DropData::Multichain(nft_data) = &drop_data {
                                     result_drops.push(ExtClaimedDrop::multichain(
                                         ExtClaimedNFTDropData {
                                             found_scavenger_ids: found_scavenger_ids.clone(),
+                                            needed_scavenger_ids: drop_data.get_scavenger_data(),
                                             name: nft_data.base.name.clone(),
                                             nft_metadata: self
                                                 .series_by_id
@@ -154,9 +142,10 @@ impl Contract {
                                 }
                             }
                             ClaimedDropData::Nft(found_scavenger_ids) => {
-                                if let DropData::Nft(nft_data) = drop_data {
+                                if let DropData::Nft(nft_data) = &drop_data {
                                     result_drops.push(ExtClaimedDrop::nft(ExtClaimedNFTDropData {
                                         found_scavenger_ids: found_scavenger_ids.clone(),
+                                        needed_scavenger_ids: drop_data.get_scavenger_data(),
                                         name: nft_data.base.name.clone(),
                                         nft_metadata: self
                                             .series_by_id
@@ -168,10 +157,11 @@ impl Contract {
                                 }
                             }
                             ClaimedDropData::Token(found_scavenger_ids) => {
-                                if let DropData::Token(token_data) = drop_data {
+                                if let DropData::Token(token_data) = &drop_data {
                                     result_drops.push(ExtClaimedDrop::token(
                                         ExtClaimedTokenDropData {
                                             found_scavenger_ids: found_scavenger_ids.clone(),
+                                            needed_scavenger_ids: drop_data.get_scavenger_data(),
                                             name: token_data.base.name.clone(),
                                             amount: token_data.amount,
                                             drop_id: drop_id.clone(),

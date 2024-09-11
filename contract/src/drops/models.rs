@@ -113,6 +113,14 @@ impl DropData {
         }
     }
 
+    pub fn get_scavenger_data(&self) -> Option<Vec<ScavengerHuntData>> {
+        match self {
+            DropData::Token(data) => data.base.scavenger_hunt.as_ref().map(|h| h.clone()),
+            DropData::Nft(data) => data.base.scavenger_hunt.as_ref().map(|h| h.clone()),
+            DropData::Multichain(data) => data.base.scavenger_hunt.as_ref().map(|h| h.clone()),
+        }
+    }
+
     /// Returns the name of the claimed drop.
     pub fn get_name(&self) -> String {
         match self {

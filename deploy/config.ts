@@ -17,7 +17,7 @@ export const CREATION_CONFIG = {
 export const NUM_TICKETS_TO_ADD = 5;
 
 export const TICKET_URL_BASE = "http://localhost:5173/tickets/ticket/ga_pass#";
-export const EXISTING_FACTORY = `1726002215389-factory.testnet`;
+export const EXISTING_FACTORY = `1726003020608-factory.testnet`;
 export const ADMIN_ACCOUNTS = [SIGNER_ACCOUNT];
 
 export const TICKET_DATA = {
