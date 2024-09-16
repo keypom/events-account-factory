@@ -189,6 +189,7 @@ impl Contract {
             }
             AccountStatus::Admin => {
                 account_details.account_status = Some(AccountStatus::Admin);
+                access_key_method_names = SPONSOR_KEY_METHOD_NAMES;
             }
             _ => {
                 // Do nothing for other cases, including AccountStatus::Basic

@@ -131,9 +131,9 @@ export const convertMapToRawJsonCsv = (
 ): string => {
   let csvString = "Secret Key,Raw JSON Data\n"; // CSV header
 
-  for (const [secretKey, attendeeInfo] of map.entries()) {
+  for (const [encodedTicket, attendeeInfo] of map.entries()) {
     const rawJsonData = JSON.stringify(attendeeInfo);
-    csvString += `${TICKET_URL_BASE}${secretKey.split(":")[1]},"${rawJsonData}"\n`;
+    csvString += `${TICKET_URL_BASE}${encodedTicket},"${rawJsonData}"\n`;
   }
 
   return csvString;

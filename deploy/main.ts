@@ -7,6 +7,7 @@ import {
   GLOBAL_NETWORK,
   NUM_TICKETS_TO_ADD,
   PREMADE_NFT_DROP_DATA,
+  PREMADE_SCAVENGER_HUNTS,
   PREMADE_TICKET_DATA,
   PREMADE_TOKEN_DROP_DATA,
   SIGNER_ACCOUNT,
@@ -90,11 +91,26 @@ const main = async () => {
     fs.writeFileSync(csvFilePath, `worker, ${keyPair.toString()}`);
   }
 
+  if (CREATION_CONFIG.createAdmin) {
+    const { keyPair } = await adminCreateAccount({
+      signerAccount,
+      factoryAccountId,
+      newAccountName: "admin",
+      startingNearBalance: "0.01",
+      startingTokenBalance: "0",
+      accountType: "Admin",
+    });
+
+    // Write the worker information to the "data" directory
+    csvFilePath = path.join(dataDir, "admin.csv");
+    fs.writeFileSync(csvFilePath, `admin, ${keyPair.toString()}`);
+  }
+
   // STEP 4: Add Tickets
   if (CREATION_CONFIG.addTickets) {
     // TODO: Add airtable integration
     const defaultAttendeeInfo = new Array(NUM_TICKETS_TO_ADD).fill({
-      name: "test",
+      name: "Test User",
       email: "test",
     });
     const keyPairMap = await addTickets({
@@ -128,7 +144,6 @@ const main = async () => {
       factoryAccountId,
       drops: PREMADE_TOKEN_DROP_DATA,
     });
-    // Write the sponsors CSV to the "data" directory
     csvFilePath = path.join(dataDir, "premade-token-drops.csv");
     fs.writeFileSync(csvFilePath, premadeTokenDropCSV.join("\n"));
 
@@ -137,9 +152,16 @@ const main = async () => {
       factoryAccountId,
       drops: PREMADE_NFT_DROP_DATA,
     });
-    // Write the sponsors CSV to the "data" directory
     csvFilePath = path.join(dataDir, "premade-nft-drops.csv");
     fs.writeFileSync(csvFilePath, premadeNFTDropCSV.join("\n"));
+
+    const premadeScavDropCSV = await createDrops({
+      signerAccount,
+      factoryAccountId,
+      drops: PREMADE_SCAVENGER_HUNTS,
+    });
+    csvFilePath = path.join(dataDir, "premade-scav-drops.csv");
+    fs.writeFileSync(csvFilePath, premadeScavDropCSV.join("\n"));
   }
 
   console.log("Done!");

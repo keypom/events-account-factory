@@ -178,6 +178,79 @@ impl Contract {
         result_drops
     }
 
+    /// Retrieves a specific claimed drop for a specific account.
+    ///
+    /// # Arguments
+    ///
+    /// * `account_id` - The ID of the account to retrieve the claimed drops for.
+    /// * `drop_id` - The ID of the drop to retrieve.
+    ///
+    /// # Returns
+    ///
+    /// A `ExtClaimedDrop` containing the information about the claimed drop for the account.
+    pub fn get_claimed_drop_for_account(
+        &self,
+        account_id: AccountId,
+        drop_id: String,
+    ) -> ExtClaimedDrop {
+        let claimed_drop = self
+            .account_details_by_id
+            .get(&account_id)
+            .expect("Account not scanned in yet")
+            .drops_claimed
+            .get(&drop_id)
+            .expect("Drop not found")
+            .clone();
+
+        let drop_data = self
+            .drop_by_id
+            .get(&drop_id)
+            .expect("Drop not found")
+            .clone();
+
+        match claimed_drop {
+            ClaimedDropData::Multichain(found_scavenger_ids) => {
+                if let DropData::Multichain(nft_data) = &drop_data {
+                    ExtClaimedDrop::multichain(ExtClaimedNFTDropData {
+                        found_scavenger_ids: found_scavenger_ids.clone(),
+                        needed_scavenger_ids: drop_data.get_scavenger_data(),
+                        name: nft_data.base.name.clone(),
+                        nft_metadata: self.series_by_id.get(&nft_data.series_id).unwrap().metadata,
+                        drop_id: drop_id.clone(),
+                    })
+                } else {
+                    panic!("Drop type mismatch for Multichain");
+                }
+            }
+            ClaimedDropData::Nft(found_scavenger_ids) => {
+                if let DropData::Nft(nft_data) = &drop_data {
+                    ExtClaimedDrop::nft(ExtClaimedNFTDropData {
+                        found_scavenger_ids: found_scavenger_ids.clone(),
+                        needed_scavenger_ids: drop_data.get_scavenger_data(),
+                        name: nft_data.base.name.clone(),
+                        nft_metadata: self.series_by_id.get(&nft_data.series_id).unwrap().metadata,
+                        drop_id: drop_id.clone(),
+                    })
+                } else {
+                    panic!("Drop type mismatch for NFT");
+                }
+            }
+            ClaimedDropData::Token(found_scavenger_ids) => {
+                if let DropData::Token(token_data) = &drop_data {
+                    ExtClaimedDrop::token(ExtClaimedTokenDropData {
+                        found_scavenger_ids: found_scavenger_ids.clone(),
+                        needed_scavenger_ids: drop_data.get_scavenger_data(),
+                        name: token_data.base.name.clone(),
+                        amount: token_data.amount,
+                        drop_id: drop_id.clone(),
+                    })
+                } else {
+                    panic!("Drop type mismatch for Token");
+                }
+            }
+        }
+    }
+
     /// Retrieves all claimed drops for a specific account.
     ///
     /// # Arguments

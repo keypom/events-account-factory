@@ -43,6 +43,7 @@ export const createDrops = async ({
     let res: any;
     let isNFT = false;
 
+    // Check if it's a token or NFT drop
     if ((drop as TokenDropInfo).token_amount !== undefined) {
       res = await sendTransaction({
         signerAccount,
@@ -80,10 +81,22 @@ export const createDrops = async ({
         dropId = dropId.slice(1, -1);
       }
 
-      // Format the CSV line, ensuring that text fields are wrapped in quotes
-      dropIds.push(
-        `"${drop.drop_data.name}",${isNFT ? "nft" : "token"}%%${dropId}`,
-      );
+      // Handle scavenger hunt data if present
+      if (drop.drop_data.scavenger_hunt) {
+        let pieceNum = 1;
+        for (const piece of drop.drop_data.scavenger_hunt) {
+          // Write a CSV entry for each scavenger piece
+          dropIds.push(
+            `"${drop.drop_data.name} - Piece ${pieceNum}",${isNFT ? "nft" : "token"}%%${piece.piece}%%${dropId}`,
+          );
+          pieceNum++;
+        }
+      } else {
+        // Handle regular token or NFT drop
+        dropIds.push(
+          `"${drop.drop_data.name}",${isNFT ? "nft" : "token"}%%${dropId}`,
+        );
+      }
     } else {
       console.error("SuccessValue is not available");
     }

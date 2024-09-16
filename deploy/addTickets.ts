@@ -1,10 +1,25 @@
 import { sendTransaction } from "./utils";
 import nacl from "tweetnacl";
-import bs58 from "bs58"; // Library for decoding base58
-import { KeyPair, utils } from "near-api-js";
-import { encryptAndStoreData } from "./encryptionUtils";
-import { encodeUTF8 } from "tweetnacl-util";
+import { KeyPair } from "near-api-js";
 import { GLOBAL_NETWORK, TICKET_URL_BASE } from "./config";
+
+// Utility function to base64 encode a JSON object
+const encodeToBase64 = (jsonObject: Record<string, any>) => {
+  const jsonString = JSON.stringify(jsonObject);
+  return Buffer.from(jsonString).toString("base64");
+};
+
+// Utility function to decode base64 and parse JSON
+const decodeAndParseBase64 = (base64String: string) => {
+  // Step 1: Decode the base64 string to get the JSON string
+  const jsonString = Buffer.from(base64String, "base64").toString("utf-8");
+
+  // Step 2: Parse the JSON string to get back the original object
+  const jsonObject = JSON.parse(jsonString);
+
+  // Step 3: Return the parsed object
+  return jsonObject;
+};
 
 export const addTickets = async ({
   signerAccount,
@@ -19,7 +34,7 @@ export const addTickets = async ({
 }) => {
   // Map to store the KeyPair -> Attendee Info relationship
   const keyPairMap: Map<string, Record<string, string>> = new Map();
-  // Loop through 50 at a time and add the tickets
+
   for (let i = 0; i < attendeeInfo.length; i += 50) {
     let keyData: Array<Record<string, any>> = [];
 
@@ -28,23 +43,20 @@ export const addTickets = async ({
       if (curInfo) {
         const keyPair = KeyPair.fromRandom("ed25519");
 
-        // Encrypt the attendee's sensitive info using the defined helper function
-        const attendeeMetadata = JSON.stringify(curInfo); // Sensitive data
+        // Instead of encrypting, create a base64-encoded JSON object
+        const jsonObject = {
+          ticket: keyPair.toString(), // Private key of the ticket
+          userData: curInfo, // Attendee's data
+        };
 
-        // Use the helper function to encrypt the metadata
-        const encryptedMetadata = encryptAndStoreData(
-          keyPair.toString(),
-          attendeeMetadata,
-        ); // This will return the JSON including encrypted data
-
-        // Push key data with the encrypted metadata
         keyData.push({
           public_key: keyPair.getPublicKey().toString(),
-          metadata: encryptedMetadata, // Already stringified JSON with encrypted data
+          metadata: "", // Store base64-encoded JSON
         });
 
+        const encodedJson = encodeToBase64(jsonObject); // Encode to base64
         // Map the keypair's public key to the corresponding attendee info
-        keyPairMap.set(keyPair.toString(), curInfo);
+        keyPairMap.set(encodedJson, curInfo);
       }
     }
 
@@ -81,7 +93,7 @@ export const addPremadeTickets = async ({
 }) => {
   // Map to store the KeyPair -> Attendee Info relationship
   const keyPairMap: Map<string, Record<string, string>> = new Map();
-  // Loop through 50 at a time and add the tickets
+
   for (let i = 0; i < attendeeInfo.length; i += 50) {
     let keyData: Array<Record<string, any>> = [];
 
@@ -90,23 +102,20 @@ export const addPremadeTickets = async ({
       if (curInfo) {
         const keyPair = KeyPair.fromRandom("ed25519");
 
-        // Encrypt the attendee's sensitive info using the defined helper function
-        const attendeeMetadata = JSON.stringify(curInfo); // Sensitive data
+        // Instead of encrypting, create a base64-encoded JSON object
+        const jsonObject = {
+          ticket: keyPair.toString(), // Private key of the ticket
+          userData: curInfo, // Attendee's data
+        };
 
-        // Use the helper function to encrypt the metadata
-        const encryptedMetadata = encryptAndStoreData(
-          keyPair.toString(),
-          attendeeMetadata,
-        ); // This will return the JSON including encrypted data
-
-        // Push key data with the encrypted metadata
         keyData.push({
           public_key: keyPair.getPublicKey().toString(),
-          metadata: encryptedMetadata, // Already stringified JSON with encrypted data
+          metadata: "", // Store base64-encoded JSON
         });
 
+        const encodedJson = encodeToBase64(jsonObject); // Encode to base64
         // Map the keypair's public key to the corresponding attendee info
-        keyPairMap.set(keyPair.toString(), curInfo);
+        keyPairMap.set(encodedJson, curInfo);
       }
     }
 
@@ -126,7 +135,8 @@ export const addPremadeTickets = async ({
 
   const premadeCSV: string[] = [];
   for (const [key, value] of keyPairMap) {
-    const keyPair = KeyPair.fromString(key);
+    const { ticket, userData } = decodeAndParseBase64(key);
+    const keyPair = KeyPair.fromString(ticket);
     await near.config.keyStore.setKey(
       GLOBAL_NETWORK,
       factoryAccountId,
@@ -153,7 +163,8 @@ export const addPremadeTickets = async ({
       gas: "300000000000000", // Set gas limit
     });
 
-    premadeCSV.push(`${value.name}, ${TICKET_URL_BASE}${key.split(":")[1]}`);
+    // Push the URL into the premade CSV array
+    premadeCSV.push(`${userData.name}, ${TICKET_URL_BASE}${key}`);
   }
 
   return premadeCSV;

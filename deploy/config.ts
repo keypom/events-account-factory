@@ -2,22 +2,24 @@ export const GLOBAL_NETWORK = "testnet";
 
 export const SIGNER_ACCOUNT = "benjiman.testnet";
 export const CREATION_CONFIG = {
-  deployContract: true,
+  deployContract: false,
 
   // TICKETS
-  addTickets: true,
-  premadeTickets: true,
+  addTickets: false,
+  premadeTickets: false,
 
   // ACCOUNTS
-  createSponsors: true,
-  createWorker: true,
+  createSponsors: false,
+  createWorker: false,
+  createAdmin: true,
 
-  premadeDrops: true,
+  premadeDrops: false,
 };
-export const NUM_TICKETS_TO_ADD = 5;
+export const NUM_TICKETS_TO_ADD = 10;
 
-export const TICKET_URL_BASE = "http://localhost:5173/tickets/ticket/ga_pass#";
-export const EXISTING_FACTORY = `1726003020608-factory.testnet`;
+export const TICKET_URL_BASE =
+  "https://2930bf5d.keypom-redacted-app.pages.dev/tickets/ticket/ga_pass#";
+export const EXISTING_FACTORY = `1726258983645-factory.testnet`;
 export const ADMIN_ACCOUNTS = [SIGNER_ACCOUNT];
 
 export const TICKET_DATA = {
@@ -176,6 +178,9 @@ export const PREMADE_NFT_DROP_DATA = [
         "https://builders.mypinata.cloud/ipfs/QmYXJ89PFMYEcPbqA8DTbmzZu7qKrgKBUjS6kHUovHA3k7",
     },
   },
+];
+
+export const PREMADE_SCAVENGER_HUNTS = [
   {
     drop_data: {
       name: "Official Scavenger Hunt",
@@ -295,5 +300,77 @@ export const PREMADE_NFT_DROP_DATA = [
       media:
         "https://builders.mypinata.cloud/ipfs/QmYXJ89PFMYEcPbqA8DTbmzZu7qKrgKBUjS6kHUovHA3k7",
     },
+  },
+  {
+    drop_data: {
+      name: "DevHub Scavenger Hunt",
+      scavenger_hunt: [
+        {
+          piece: "1",
+          description: "Find at location 1",
+        },
+        {
+          piece: "2",
+          description: "Find at location 2",
+        },
+        {
+          piece: "3",
+          description: "Find at location 3",
+        },
+        {
+          piece: "4",
+          description: "Find at location 4",
+        },
+      ],
+    },
+    token_amount: "25",
+  },
+  {
+    drop_data: {
+      name: "NEAR Horizons Scavenger Hunt",
+      scavenger_hunt: [
+        {
+          piece: "1",
+          description: "Find at location 1",
+        },
+        {
+          piece: "2",
+          description: "Find at location 2",
+        },
+        {
+          piece: "3",
+          description: "Find at location 3",
+        },
+        {
+          piece: "4",
+          description: "Find at location 4",
+        },
+      ],
+    },
+    token_amount: "15",
+  },
+  {
+    drop_data: {
+      name: "NEAR AI Scavenger Hunt",
+      scavenger_hunt: [
+        {
+          piece: "1",
+          description: "Find at location 1",
+        },
+        {
+          piece: "2",
+          description: "Find at location 2",
+        },
+        {
+          piece: "3",
+          description: "Find at location 3",
+        },
+        {
+          piece: "4",
+          description: "Find at location 4",
+        },
+      ],
+    },
+    token_amount: "10",
   },
 ];
