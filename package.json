@@ -6,6 +6,7 @@
   "scripts": {
     "build": "cd contract && ./build.sh",
     "deploy": "ts-node deploy/main.ts",
+    "sendTickets": "ts-node deploy/prodAddKeys.ts",
     "buildAndDeploy": "yarn build && yarn deploy",
     "test": "ava __tests__/tests.ava.ts",
     "test:nearcon": "ava __tests__/nearcon/nearcon.ava.ts",

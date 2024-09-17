@@ -6,19 +6,19 @@ import {
   EXISTING_FACTORY,
   GLOBAL_NETWORK,
   NUM_TICKETS_TO_ADD,
-  PREMADE_NFT_DROP_DATA,
-  PREMADE_SCAVENGER_HUNTS,
   PREMADE_TICKET_DATA,
-  PREMADE_TOKEN_DROP_DATA,
   SIGNER_ACCOUNT,
-  SPONSOR_DATA,
-  TICKET_DATA,
 } from "./config";
 import { deployFactory } from "./createEvent";
 import { convertMapToRawJsonCsv, initNear, updateConfigFile } from "./utils";
 import fs from "fs";
 import path from "path";
 import { createDrops } from "./createDrops";
+import { TICKET_DATA } from "./toRead/ticketData";
+import { SPONSOR_DATA } from "./toRead/sponsorData";
+import { PREMADE_TOKEN_DROP_DATA } from "./toRead/premadeTokenDrops";
+import { PREMADE_NFT_DROP_DATA } from "./toRead/premadeNFTDrops";
+import { PREMADE_SCAVENGER_HUNTS } from "./toRead/premadeScavengers";
 
 const main = async () => {
   const near = await initNear();

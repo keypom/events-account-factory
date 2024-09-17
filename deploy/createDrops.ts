@@ -1,9 +1,5 @@
 import { sendTransaction } from "./utils";
-import nacl from "tweetnacl";
-import bs58 from "bs58"; // Library for decoding base58
-import { KeyPair, utils } from "near-api-js";
-import { encryptAndStoreData } from "./encryptionUtils";
-import { GLOBAL_NETWORK, TICKET_URL_BASE } from "./config";
+import { utils } from "near-api-js";
 
 interface DropData {
   scavenger_hunt?: Array<{
