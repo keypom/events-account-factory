@@ -2,24 +2,24 @@ export const GLOBAL_NETWORK = "testnet";
 
 export const SIGNER_ACCOUNT = "benjiman.testnet";
 export const CREATION_CONFIG = {
-  deployContract: false,
+  deployContract: true,
 
   // TICKETS
-  addTickets: false,
-  premadeTickets: false,
+  addTickets: true,
+  premadeTickets: true,
 
   // ACCOUNTS
-  createSponsors: false,
-  createWorker: false,
+  createSponsors: true,
+  createWorker: true,
   createAdmin: true,
 
-  premadeDrops: false,
+  premadeDrops: true,
 };
 export const NUM_TICKETS_TO_ADD = 10;
 
 export const TICKET_URL_BASE =
   "https://2930bf5d.keypom-redacted-app.pages.dev/tickets/ticket/ga_pass#";
-export const EXISTING_FACTORY = `1726258983645-factory.testnet`;
+export const EXISTING_FACTORY = `1726599533786-factory.testnet`;
 export const ADMIN_ACCOUNTS = [SIGNER_ACCOUNT];
 
 export const TICKET_DATA = {
@@ -31,7 +31,7 @@ export const TICKET_DATA = {
 };
 export const SPONSOR_DATA = [
   {
-    accountName: "proximity",
+    accountName: "proximity2",
     startingNearBalance: "0.01",
     startingTokenBalance: "50",
     accountType: "Sponsor",
@@ -90,8 +90,7 @@ export const PREMADE_NFT_DROP_DATA = [
       title: "Illia Talk POAP",
       description:
         "Here are some instructions on how to retrieve this collectible. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas placerat mauris turpis, vel consequat mi ultricies eu. Quisque ligula neque, placerat ut dui.",
-      media:
-        "https://builders.mypinata.cloud/ipfs/QmYXJ89PFMYEcPbqA8DTbmzZu7qKrgKBUjS6kHUovHA3k7",
+      media: "bafkreihgosptxbojx37vxo4bly5opn5iqx2hmffdmg6ztokjmvtwa36axu",
     },
   },
   {
@@ -102,8 +101,7 @@ export const PREMADE_NFT_DROP_DATA = [
       title: "Opening Ceremony POAP",
       description:
         "Here are some instructions on how to retrieve this collectible. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas placerat mauris turpis, vel consequat mi ultricies eu. Quisque ligula neque, placerat ut dui.",
-      media:
-        "https://builders.mypinata.cloud/ipfs/QmYXJ89PFMYEcPbqA8DTbmzZu7qKrgKBUjS6kHUovHA3k7",
+      media: "bafkreihgosptxbojx37vxo4bly5opn5iqx2hmffdmg6ztokjmvtwa36axu",
     },
   },
   {
@@ -114,8 +112,7 @@ export const PREMADE_NFT_DROP_DATA = [
       title: "Closing Ceremony POAP",
       description:
         "Here are some instructions on how to retrieve this collectible. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas placerat mauris turpis, vel consequat mi ultricies eu. Quisque ligula neque, placerat ut dui.",
-      media:
-        "https://builders.mypinata.cloud/ipfs/QmYXJ89PFMYEcPbqA8DTbmzZu7qKrgKBUjS6kHUovHA3k7",
+      media: "bafkreihgosptxbojx37vxo4bly5opn5iqx2hmffdmg6ztokjmvtwa36axu",
     },
   },
   {
@@ -126,8 +123,7 @@ export const PREMADE_NFT_DROP_DATA = [
       title: "Keypom Booth POAP",
       description:
         "Here are some instructions on how to retrieve this collectible. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas placerat mauris turpis, vel consequat mi ultricies eu. Quisque ligula neque, placerat ut dui.",
-      media:
-        "https://builders.mypinata.cloud/ipfs/QmYXJ89PFMYEcPbqA8DTbmzZu7qKrgKBUjS6kHUovHA3k7",
+      media: "bafkreihgosptxbojx37vxo4bly5opn5iqx2hmffdmg6ztokjmvtwa36axu",
     },
   },
   {
@@ -138,8 +134,7 @@ export const PREMADE_NFT_DROP_DATA = [
       title: "Nuffle Waffles POAP",
       description:
         "Here are some instructions on how to retrieve this collectible. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas placerat mauris turpis, vel consequat mi ultricies eu. Quisque ligula neque, placerat ut dui.",
-      media:
-        "https://builders.mypinata.cloud/ipfs/QmYXJ89PFMYEcPbqA8DTbmzZu7qKrgKBUjS6kHUovHA3k7",
+      media: "bafkreihgosptxbojx37vxo4bly5opn5iqx2hmffdmg6ztokjmvtwa36axu",
     },
   },
   {
@@ -150,8 +145,7 @@ export const PREMADE_NFT_DROP_DATA = [
       title: "Proximity Booth POAP",
       description:
         "Here are some instructions on how to retrieve this collectible. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas placerat mauris turpis, vel consequat mi ultricies eu. Quisque ligula neque, placerat ut dui.",
-      media:
-        "https://builders.mypinata.cloud/ipfs/QmYXJ89PFMYEcPbqA8DTbmzZu7qKrgKBUjS6kHUovHA3k7",
+      media: "bafkreihgosptxbojx37vxo4bly5opn5iqx2hmffdmg6ztokjmvtwa36axu",
     },
   },
   {
@@ -162,8 +156,7 @@ export const PREMADE_NFT_DROP_DATA = [
       title: "Snowden Talk POAP",
       description:
         "Here are some instructions on how to retrieve this collectible. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas placerat mauris turpis, vel consequat mi ultricies eu. Quisque ligula neque, placerat ut dui.",
-      media:
-        "https://builders.mypinata.cloud/ipfs/QmYXJ89PFMYEcPbqA8DTbmzZu7qKrgKBUjS6kHUovHA3k7",
+      media: "bafkreihgosptxbojx37vxo4bly5opn5iqx2hmffdmg6ztokjmvtwa36axu",
     },
   },
   {
@@ -174,8 +167,7 @@ export const PREMADE_NFT_DROP_DATA = [
       title: "Eric Winer Talk POAP",
       description:
         "Here are some instructions on how to retrieve this collectible. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas placerat mauris turpis, vel consequat mi ultricies eu. Quisque ligula neque, placerat ut dui.",
-      media:
-        "https://builders.mypinata.cloud/ipfs/QmYXJ89PFMYEcPbqA8DTbmzZu7qKrgKBUjS6kHUovHA3k7",
+      media: "bafkreihgosptxbojx37vxo4bly5opn5iqx2hmffdmg6ztokjmvtwa36axu",
     },
   },
 ];
@@ -207,8 +199,7 @@ export const PREMADE_SCAVENGER_HUNTS = [
       title: "Redacted Scavenger Hunt POAP",
       description:
         "Here are some instructions on how to retrieve this collectible. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas placerat mauris turpis, vel consequat mi ultricies eu. Quisque ligula neque, placerat ut dui.",
-      media:
-        "https://builders.mypinata.cloud/ipfs/QmYXJ89PFMYEcPbqA8DTbmzZu7qKrgKBUjS6kHUovHA3k7",
+      media: "bafkreihgosptxbojx37vxo4bly5opn5iqx2hmffdmg6ztokjmvtwa36axu",
     },
   },
   {
@@ -237,8 +228,7 @@ export const PREMADE_SCAVENGER_HUNTS = [
       title: "Keypom Scavenger Hunt POAP",
       description:
         "Here are some instructions on how to retrieve this collectible. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas placerat mauris turpis, vel consequat mi ultricies eu. Quisque ligula neque, placerat ut dui.",
-      media:
-        "https://builders.mypinata.cloud/ipfs/QmYXJ89PFMYEcPbqA8DTbmzZu7qKrgKBUjS6kHUovHA3k7",
+      media: "bafkreihgosptxbojx37vxo4bly5opn5iqx2hmffdmg6ztokjmvtwa36axu",
     },
   },
   {
@@ -267,8 +257,7 @@ export const PREMADE_SCAVENGER_HUNTS = [
       title: "Proximity Scavenger Hunt POAP",
       description:
         "Here are some instructions on how to retrieve this collectible. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas placerat mauris turpis, vel consequat mi ultricies eu. Quisque ligula neque, placerat ut dui.",
-      media:
-        "https://builders.mypinata.cloud/ipfs/QmYXJ89PFMYEcPbqA8DTbmzZu7qKrgKBUjS6kHUovHA3k7",
+      media: "bafkreihgosptxbojx37vxo4bly5opn5iqx2hmffdmg6ztokjmvtwa36axu",
     },
   },
   {
@@ -297,8 +286,7 @@ export const PREMADE_SCAVENGER_HUNTS = [
       title: "Nuffle Labs Scavenger Hunt POAP",
       description:
         "Here are some instructions on how to retrieve this collectible. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas placerat mauris turpis, vel consequat mi ultricies eu. Quisque ligula neque, placerat ut dui.",
-      media:
-        "https://builders.mypinata.cloud/ipfs/QmYXJ89PFMYEcPbqA8DTbmzZu7qKrgKBUjS6kHUovHA3k7",
+      media: "bafkreihgosptxbojx37vxo4bly5opn5iqx2hmffdmg6ztokjmvtwa36axu",
     },
   },
   {

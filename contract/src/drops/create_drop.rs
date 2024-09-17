@@ -34,6 +34,7 @@ impl Contract {
                     &DropData::Token(TokenDropData {
                         base: DropBase {
                             name: drop_data.name,
+                            image: drop_data.image,
                             num_claimed: 0,
                             scavenger_hunt: drop_data.scavenger_hunt.clone(),
                             id: drop_id.clone()
@@ -105,6 +106,7 @@ impl Contract {
                     &DropData::Nft(NFTDropData {
                         base: DropBase {
                             name: drop_data.name,
+                            image: drop_data.image,
                             num_claimed: 0,
                             scavenger_hunt: drop_data.scavenger_hunt.clone(),
                             id: drop_id.clone()
@@ -179,6 +181,7 @@ impl Contract {
                     &DropData::Multichain(MultichainDropData {
                         base: DropBase {
                             name: drop_data.name,
+                            image: drop_data.image,
                             num_claimed: 0,
                             scavenger_hunt: drop_data.scavenger_hunt.clone(),
                             id: drop_id.clone()

@@ -46,6 +46,7 @@ pub struct ExtNFTDropData {
     pub name: String,
     pub nft_metadata: TokenMetadata,
     pub scavenger_hunt: Option<Vec<ScavengerHuntData>>,
+    pub num_claimed: u64,
     pub drop_id: DropId,
 }
 
@@ -54,7 +55,9 @@ pub struct ExtNFTDropData {
 pub struct ExtTokenDropData {
     pub name: String,
     pub scavenger_hunt: Option<Vec<ScavengerHuntData>>,
+    pub num_claimed: u64,
     pub amount: U128,
+    pub image: Option<String>,
     pub drop_id: DropId,
 }
 
@@ -74,17 +77,21 @@ impl Contract {
             DropData::Multichain(nft_data) => ExtDropData::multichain(ExtNFTDropData {
                 name: nft_data.base.name.clone(),
                 nft_metadata: self.series_by_id.get(&nft_data.series_id).unwrap().metadata,
+                num_claimed: nft_data.base.num_claimed,
                 drop_id: nft_data.base.id.clone(),
                 scavenger_hunt: nft_data.base.scavenger_hunt,
             }),
             DropData::Nft(nft_data) => ExtDropData::nft(ExtNFTDropData {
                 name: nft_data.base.name.clone(),
+                num_claimed: nft_data.base.num_claimed,
                 nft_metadata: self.series_by_id.get(&nft_data.series_id).unwrap().metadata,
                 drop_id: nft_data.base.id.clone(),
                 scavenger_hunt: nft_data.base.scavenger_hunt,
             }),
             DropData::Token(token_data) => ExtDropData::token(ExtTokenDropData {
                 name: token_data.base.name.clone(),
+                image: token_data.base.image.clone(),
+                num_claimed: token_data.base.num_claimed,
                 amount: token_data.amount,
                 drop_id: token_data.base.id.clone(),
                 scavenger_hunt: token_data.base.scavenger_hunt,
@@ -302,7 +309,7 @@ impl Contract {
     /// # Returns
     ///
     /// A vector of `DropData` containing the drops created by the account.
-    pub fn get_drops_created_by_account(&self, account_id: AccountId) -> Vec<DropData> {
+    pub fn get_drops_created_by_account(&self, account_id: AccountId) -> Vec<ExtDropData> {
         let mut drops_created = Vec::new();
         // Retrieve the account details to get the list of drops created
         let account_details = self
@@ -311,7 +318,10 @@ impl Contract {
             .expect("No account found");
         // Iterate over the drops and retrieve the drop data
         for drop in account_details.drops_created.iter() {
-            drops_created.push(self.drop_by_id.get(&drop).unwrap());
+            drops_created.push(
+                self.get_drop_information(drop.clone())
+                    .expect("Drop not found"),
+            );
         }
         drops_created
     }

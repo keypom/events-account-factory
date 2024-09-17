@@ -57,7 +57,7 @@ const main = async () => {
   if (CREATION_CONFIG.createSponsors) {
     const sponsorCSV: string[] = [];
     for (const sponsorData of SPONSOR_DATA) {
-      const { connectionObject } = await adminCreateAccount({
+      const { accountId, secretKey } = await adminCreateAccount({
         signerAccount,
         factoryAccountId,
         newAccountName: sponsorData.accountName,
@@ -66,7 +66,7 @@ const main = async () => {
         accountType: sponsorData.accountType,
       });
       sponsorCSV.push(
-        `${sponsorData.accountName}, http://localhost:3000/dashboard?connection=${btoa(connectionObject)}`,
+        `${sponsorData.accountName}, http://localhost:3000/sponsorDashboard/${accountId}#${secretKey}`,
       );
     }
 
@@ -95,7 +95,7 @@ const main = async () => {
     const { keyPair } = await adminCreateAccount({
       signerAccount,
       factoryAccountId,
-      newAccountName: "admin",
+      newAccountName: "admin2",
       startingNearBalance: "0.01",
       startingTokenBalance: "0",
       accountType: "Admin",

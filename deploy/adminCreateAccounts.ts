@@ -38,15 +38,9 @@ export const adminCreateAccount = async ({
     gas: "300000000000000",
   });
 
-  const connectionObject = JSON.stringify({
-    displayName: newAccountName,
-    accountId: factoryAccountId,
-    walletId: "sweat-wallet",
-    secretKey: keyPair.toString(),
-  });
-
   return {
-    connectionObject,
+    accountId: `${newAccountName}.${factoryAccountId}`,
+    secretKey: keyPair.toString(),
     keyPair,
   };
 };
