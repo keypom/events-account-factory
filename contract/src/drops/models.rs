@@ -48,14 +48,7 @@ pub struct NFTDropData {
 #[serde(crate = "near_sdk::serde")]
 pub struct MultichainDropData {
     pub base: DropBase,
-
-    // FOR MPC
-    pub chain_id: u64,
-    // Receiving NFT contract on external chain
-    pub contract_id: String,
-    // Arguments that I pass in to the NFT mint function call on external chain
-    // **NEEDS TO HAVE BEEN CREATED ON THE NFT CONTRACT BEFORE CALLING CREATE DROP**
-    pub series_id: SeriesId,
+    pub metadata: MultichainMetadata,
 }
 
 /// Represents the different types of claimed drops to be returned to the frontend.

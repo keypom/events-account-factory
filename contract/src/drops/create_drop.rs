@@ -186,9 +186,11 @@ impl Contract {
                             scavenger_hunt: drop_data.scavenger_hunt.clone(),
                             id: drop_id.clone()
                         },
-                        chain_id,
-                        series_id,
-                        contract_id
+                        metadata: MultichainMetadata{
+                            chain_id,
+                            series_id,
+                            contract_id
+                        }
                     })
                 )
                 .is_none(),
