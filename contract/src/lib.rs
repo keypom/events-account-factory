@@ -171,7 +171,7 @@ impl Contract {
             ft_total_supply: 0,
             recent_transactions: Vec::new(),
             total_transactions: 0,
-            total_tokens_transferred: U128(0),
+            total_tokens_transferred: 0,
             ft_metadata: FungibleTokenMetadata {
                 spec: "ft-1.0.0".to_string(),
                 name: token_name.unwrap_or("Redacted Fungible Token".to_string()),

@@ -13,12 +13,8 @@ impl Contract {
             .account_details_by_id
             .get(&account_id)
             .expect("Account not found in map");
-        let creator_status = account_details
-            .account_status
-            .as_ref()
-            .expect("Account not found for status");
 
-        if creator_status.is_admin() || creator_status.is_sponsor() {
+        if account_details.account_status.is_some() {
             return;
         }
 
@@ -56,12 +52,8 @@ impl Contract {
             .account_details_by_id
             .get(account_id)
             .expect("Account not found in map");
-        let creator_status = account_details
-            .account_status
-            .as_ref()
-            .expect("Account not found for status");
 
-        if creator_status.is_admin() || creator_status.is_sponsor() {
+        if account_details.account_status.is_some() {
             return;
         }
 
