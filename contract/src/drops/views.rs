@@ -93,30 +93,7 @@ impl Contract {
     ///
     /// An `Option` containing the `ExtDropData` if the drop is found, otherwise `None`.
     pub fn get_drop_information(&self, drop_id: String) -> Option<ExtDropData> {
-        self.drop_by_id.get(&drop_id).map(|drop| match drop {
-            DropData::Multichain(multichain_data) => ExtDropData::multichain(ExtMultichainDropData {
-                name: multichain_data.base.name.clone(),
-                multichain_metadata: multichain_data.metadata.clone(),
-                num_claimed: multichain_data.base.num_claimed,
-                drop_id: multichain_data.base.id.clone(),
-                scavenger_hunt: multichain_data.base.scavenger_hunt,
-            }),
-            DropData::Nft(nft_data) => ExtDropData::nft(ExtNFTDropData {
-                name: nft_data.base.name.clone(),
-                num_claimed: nft_data.base.num_claimed,
-                nft_metadata: self.series_by_id.get(&nft_data.series_id).unwrap().metadata,
-                drop_id: nft_data.base.id.clone(),
-                scavenger_hunt: nft_data.base.scavenger_hunt,
-            }),
-            DropData::Token(token_data) => ExtDropData::token(ExtTokenDropData {
-                name: token_data.base.name.clone(),
-                image: token_data.base.image.clone(),
-                num_claimed: token_data.base.num_claimed,
-                amount: token_data.amount,
-                drop_id: token_data.base.id.clone(),
-                scavenger_hunt: token_data.base.scavenger_hunt,
-            }),
-        })
+        self.drop_by_id.get(&drop_id).map(|drop| self.drop_to_external(&drop))
     }
 
     /// Generic function to retrieve claimed drops for a specific account based on a filter.

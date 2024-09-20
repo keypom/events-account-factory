@@ -6,3 +6,4 @@ pub mod internal;
 
 pub use models::*;
 pub use internal::*;
+pub use views::*;
