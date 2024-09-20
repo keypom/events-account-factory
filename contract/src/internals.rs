@@ -8,7 +8,7 @@ pub fn hash_string(string: &String) -> CryptoHash {
 #[near_bindgen]
 impl Contract {
     pub(crate) fn assert_admin(&self) -> AccountId {
-        let caller_id = env::predecessor_account_id();
+        let caller_id = self.caller_id_by_signing_pk();
         let account_details = self
             .account_details_by_id
             .get(&caller_id)

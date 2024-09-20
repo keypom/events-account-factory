@@ -87,10 +87,10 @@ pub struct ExtAccountDetails {
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize)]
 #[serde(crate = "near_sdk::serde")]
 pub struct AttendeeTicketInformation {
-    pub drop_id: DropId,
     pub has_scanned: bool,
+    pub drop_id: Option<DropId>,
     pub account_id: Option<AccountId>,
-    pub metadata: String,
+    pub metadata: Option<String>,
 }
 
 /// Data for each ticket such as the account status, starting balances, etc...

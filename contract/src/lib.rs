@@ -32,7 +32,9 @@ use vendors::*;
 
 // ------------------------ Access Key Method Names ------------------------ //
 pub const ATTENDEE_KEY_METHOD_NAMES: &str = "scan_ticket,create_account,claim_drop,ft_transfer";
-pub const SPONSOR_KEY_METHOD_NAMES: &str = "create_token_drop,create_nft_drop,delete_drop";
+pub const SPONSOR_KEY_METHOD_NAMES: &str =
+    "create_token_drop,create_nft_drop,delete_drop,ft_transfer";
+pub const ADMIN_KEY_METHOD_NAMES: &str = "";
 pub const DATA_SETTER_KEY_METHOD_NAMES: &str = "set_alerts,set_agenda";
 
 pub const DROP_DELIMITER: &str = "||";
