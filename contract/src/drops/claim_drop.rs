@@ -306,7 +306,7 @@ impl Contract {
             );
             if found_scavenger_ids == required_scavenger_ids {
                 event_log.reward = Some(DropClaimReward::Multichain);
-                self.handle_multichain_mint(data);
+                //self.handle_multichain_mint(data);
             }
 
             claimed_drops.insert(drop_id, &claimed_drop);

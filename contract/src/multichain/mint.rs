@@ -16,7 +16,6 @@ pub struct MultichainMetadata {
 #[near_bindgen]
 impl Contract {
     pub fn handle_multichain_mint(&mut self, data: &MultichainDropData) {
-        // TODO:
-        todo!();
+        // Future implemntation: user passes in minting account nonce + gas info or constructed multichain transaction, call MPC, return signature from MPC 
     }
 }
