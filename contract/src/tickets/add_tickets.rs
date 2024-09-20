@@ -7,7 +7,7 @@ use crate::*;
 #[serde(crate = "near_sdk::serde")]
 pub struct KeyData {
     pub public_key: PublicKey,
-    pub metadata: String,
+    pub metadata: Option<String>,
 }
 
 #[near_bindgen]
@@ -43,10 +43,10 @@ impl Contract {
         // Loop through each key and add it to the account and insert into the maps
         for key in key_data.iter() {
             let attendee_info = AttendeeTicketInformation {
-                drop_id: drop_id.clone(),
+                drop_id: Some(drop_id.clone()),
                 has_scanned: false,
                 account_id: None,
-                metadata: key.metadata.to_string(),
+                metadata: key.metadata.clone(),
             };
             require!(
                 self.attendee_ticket_by_pk

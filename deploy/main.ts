@@ -14,11 +14,11 @@ import { convertMapToRawJsonCsv, initNear, updateConfigFile } from "./utils";
 import fs from "fs";
 import path from "path";
 import { createDrops } from "./createDrops";
-import { TICKET_DATA } from "./toRead/ticketData";
-import { SPONSOR_DATA } from "./toRead/sponsorData";
-import { PREMADE_TOKEN_DROP_DATA } from "./toRead/premadeTokenDrops";
-import { PREMADE_NFT_DROP_DATA } from "./toRead/premadeNFTDrops";
-import { PREMADE_SCAVENGER_HUNTS } from "./toRead/premadeScavengers";
+import { TICKET_DATA } from "./configData/ticketData";
+import { SPONSOR_DATA } from "./configData/sponsorData";
+import { PREMADE_TOKEN_DROP_DATA } from "./configData/premadeTokenDrops";
+import { PREMADE_NFT_DROP_DATA } from "./configData/premadeNFTDrops";
+import { PREMADE_SCAVENGER_HUNTS } from "./configData/premadeScavengers";
 
 const main = async () => {
   const near = await initNear();
@@ -95,7 +95,7 @@ const main = async () => {
     const { keyPair } = await adminCreateAccount({
       signerAccount,
       factoryAccountId,
-      newAccountName: "admin2",
+      newAccountName: "admin5",
       startingNearBalance: "0.01",
       startingTokenBalance: "0",
       accountType: "Admin",

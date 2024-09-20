@@ -77,7 +77,9 @@ impl Contract {
         self.attendee_ticket_by_pk
             .insert(&ticket_pk, &attendee_ticket);
 
-        let ticket_drop_id = attendee_ticket.drop_id;
+        let ticket_drop_id = attendee_ticket
+            .drop_id
+            .expect("No drop ID found. Admin accounts should be created via internal functions");
         let ticket_data = self.ticket_data_by_id.get(&ticket_drop_id).unwrap();
         self.internal_create_account(account_id, ticket_pk, ticket_data, false)
     }
@@ -138,10 +140,10 @@ impl Contract {
         self.assert_admin();
 
         let attendee_info = AttendeeTicketInformation {
-            drop_id: '.'.to_string(),
-            has_scanned: false,
+            drop_id: None,
+            has_scanned: true,
             account_id: Some(new_account_id.clone()),
-            metadata: '.'.to_string(),
+            metadata: None,
         };
         require!(
             self.attendee_ticket_by_pk
@@ -189,7 +191,7 @@ impl Contract {
             }
             AccountStatus::Admin => {
                 account_details.account_status = Some(AccountStatus::Admin);
-                access_key_method_names = SPONSOR_KEY_METHOD_NAMES;
+                access_key_method_names = ADMIN_KEY_METHOD_NAMES;
             }
             _ => {
                 // Do nothing for other cases, including AccountStatus::Basic
