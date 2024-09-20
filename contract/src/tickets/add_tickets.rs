@@ -66,6 +66,7 @@ impl Contract {
             );
         }
 
+        self.total_transactions += 1;
         env::promise_return(promise);
     }
 }

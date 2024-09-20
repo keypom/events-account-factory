@@ -18,7 +18,9 @@ impl Contract {
     pub fn ft_mint(&mut self, account_id: AccountId, amount: U128) {
         self.assert_no_freeze();
         self.assert_admin();
-        self.internal_deposit_ft_mint(&account_id, amount.0, None);
+
+        self.total_transactions += 1;
+        self.internal_deposit_ft_mint(&account_id, amount.0, None, false);
     }
 
     /// Allows a user to transfer tokens to another account or purchase items from a vendor.
@@ -80,8 +82,18 @@ impl Contract {
 
         // Transfer the tokens to the vendor
         let sender_id = self.caller_id_by_signing_pk();
-        self.internal_ft_transfer(&sender_id, &receiver_id, amount_to_transfer);
+        self.internal_ft_transfer(&sender_id, &receiver_id, amount_to_transfer, false);
 
+        // Record the transfer transaction
+        self.add_transaction(TransactionType::Transfer {
+            sender_id: sender_id.clone(),
+            receiver_id: receiver_id.clone(),
+            amount: U128(amount_to_transfer),
+            timestamp: env::block_timestamp(),
+        });
+        self.total_transactions += 1;
+
+        self.total_tokens_transferred += amount_to_transfer;
         Ok(U128(amount_to_transfer))
     }
 

@@ -68,8 +68,22 @@ impl Contract {
             }
         };
 
+        let reward = match claim_log.reward {
+            Some(DropClaimReward::Token(amount)) => format!("{}", amount.0),
+            Some(DropClaimReward::Nft) => "NFT".to_string(),
+            Some(DropClaimReward::Multichain) => "Multichain POAP".to_string(),
+            _ => "Scavenger Piece".to_string(),
+        };
+
+        self.add_transaction(TransactionType::Claim {
+            account_id: receiver_id.clone(),
+            reward,
+            timestamp: env::block_timestamp(),
+        });
+
         // Save the updated drop_data back into the drop_by_id map
         self.drop_by_id.insert(&drop_id, &drop_data);
+        self.total_transactions += 1;
 
         let mut new_account_details = self
             .account_details_by_id
@@ -360,7 +374,12 @@ impl Contract {
         if creator_status.is_admin() {
             env::log_str(format!("Creator is admin: {}", drop_creator).as_str());
             // Mint tokens internally if the creator is an admin
-            self.internal_deposit_ft_mint(receiver_id, amount_to_claim, Some(drop_id.clone()));
+            self.internal_deposit_ft_mint(
+                receiver_id,
+                amount_to_claim,
+                Some(drop_id.clone()),
+                true,
+            );
         } else if creator_status.is_sponsor() {
             env::log_str(format!("Creator is sponsor {:?}", drop_creator).as_str());
             // Get the current token balance of the creator
@@ -373,7 +392,7 @@ impl Contract {
             );
 
             // Perform FT transfer from the drop creator to the receiver
-            self.internal_ft_transfer(&drop_creator, receiver_id, amount_to_claim);
+            self.internal_ft_transfer(&drop_creator, receiver_id, amount_to_claim, true);
         }
     }
 }

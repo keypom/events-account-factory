@@ -52,6 +52,15 @@ impl Contract {
         if self.attendee_ticket_by_pk.is_empty() {
             self.attendee_ticket_by_pk.clear();
         }
+        if self.token_leaderboard.is_empty() {
+            self.token_leaderboard.clear();
+        }
+        if self.poap_leaderboard.is_empty() {
+            self.poap_leaderboard.clear();
+        }
+        if self.recent_transactions.is_empty() {
+            self.recent_transactions.clear();
+        }
 
         // Get the total number of accounts to clear.
         let total = self.account_details_by_id.len();
