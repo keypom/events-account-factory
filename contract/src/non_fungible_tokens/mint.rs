@@ -2,29 +2,42 @@ use crate::*;
 
 #[near_bindgen]
 impl Contract {
-    pub(crate) fn internal_create_series(&mut self, nft_metadata: &TokenMetadata, creator_id: &AccountId) -> SeriesId {
-        let series_id = self
-            .series_by_id
-            .len();
+    pub(crate) fn internal_create_series(
+        &mut self,
+        nft_metadata: &TokenMetadata,
+        creator_id: &AccountId,
+    ) -> SeriesId {
+        let series_id = self.series_by_id.len();
 
-        let tokens = UnorderedSet::new(StorageKeys::SeriesByIdInner { account_id_hash: hash_string(&format!("{}{}", creator_id, series_id)), });
+        let tokens = UnorderedSet::new(StorageKeys::SeriesByIdInner {
+            account_id_hash: hash_string(&format!("{}{}", creator_id, series_id)),
+        });
         let series = Series {
             metadata: nft_metadata.clone(),
             royalty: None,
-            tokens
+            tokens,
         };
 
-        require!(self.series_by_id.insert(&series_id, &series).is_none(), "Series ID already exists on the contract");
+        require!(
+            self.series_by_id.insert(&series_id, &series).is_none(),
+            "Series ID already exists on the contract"
+        );
         series_id
     }
 
     pub(crate) fn internal_delete_series(&mut self, series_id: SeriesId) {
-        let mut series = self.series_by_id.remove(&series_id).expect("No series found with given ID");
+        let mut series = self
+            .series_by_id
+            .remove(&series_id)
+            .expect("No series found with given ID");
         series.tokens.clear();
     }
 
     pub(crate) fn internal_nft_mint(&mut self, series_id: SeriesId, receiver_id: AccountId) {
-        let mut series = self.series_by_id.get(&series_id).expect("No series found with given ID");
+        let mut series = self
+            .series_by_id
+            .get(&series_id)
+            .expect("No series found with given ID");
         let cur_len = series.tokens.len();
         // Ensure we haven't overflowed on the number of copies minted
         if let Some(copies) = series.metadata.copies {
@@ -57,7 +70,11 @@ impl Contract {
         );
 
         //call the internal method for adding the token to the owner
-        self.internal_add_token_to_owner(&token.owner_id, &token_id);
+        let num_tokens = self.internal_add_token_to_owner(&token.owner_id, &token_id);
+        // Update leaderboard
+        self.update_poap_leaderboard(&token.owner_id, num_tokens);
+
+        self.total_transactions += 1;
 
         // Construct the mint log as per the events standard.
         let nft_mint_log: EventLog = EventLog {

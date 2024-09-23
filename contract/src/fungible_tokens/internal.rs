@@ -8,6 +8,7 @@ impl Contract {
         account_id: &AccountId,
         amount: Balance,
         drop_id: Option<String>,
+        add_to_leaderboard: bool,
     ) {
         // Get the current balance of the account. If they're not registered, panic.
         let mut account_details = self
@@ -15,6 +16,13 @@ impl Contract {
             .get(account_id)
             .expect("Receiver not found in map");
         let balance = account_details.ft_balance;
+
+        if add_to_leaderboard {
+            let mut tokens_collected = account_details.tokens_collected.0;
+            tokens_collected += amount;
+            self.update_token_leaderboard(account_id.clone(), tokens_collected);
+            account_details.tokens_collected.0 = tokens_collected;
+        }
 
         // Add the amount to the balance and insert the new balance into the accounts map
         if let Some(new_balance) = balance.checked_add(amount) {
@@ -27,6 +35,7 @@ impl Contract {
 
         // Increment the total supply and log a mint event
         self.ft_total_supply += amount;
+        self.total_tokens_transferred += amount;
         env::log_str(
             &EventLog {
                 standard: FT_STANDARD_NAME.to_string(),
@@ -55,13 +64,25 @@ impl Contract {
     }
 
     /// Internal method for depositing some amount of FTs into an account.
-    pub(crate) fn internal_ft_deposit(&mut self, account_id: &AccountId, amount: Balance) {
+    pub(crate) fn internal_ft_deposit(
+        &mut self,
+        account_id: &AccountId,
+        amount: Balance,
+        add_to_leaderboard: bool,
+    ) {
         // Get the current balance of the account. If they're not registered, panic.
         let mut account_details = self
             .account_details_by_id
             .get(account_id)
             .expect("Receiver not found in map");
         let balance = account_details.ft_balance;
+
+        if add_to_leaderboard {
+            let mut tokens_collected = account_details.tokens_collected.0;
+            tokens_collected += amount;
+            self.update_token_leaderboard(account_id.clone(), tokens_collected);
+            account_details.tokens_collected.0 = tokens_collected;
+        }
 
         // Add the amount to the balance and insert the new balance into the accounts map
         if let Some(new_balance) = balance.checked_add(amount) {
@@ -98,6 +119,7 @@ impl Contract {
         sender_id: &AccountId,
         receiver_id: &AccountId,
         amount: Balance,
+        add_to_leaderboard: bool,
     ) {
         // Ensure the sender can't transfer to themselves
         require!(
@@ -109,8 +131,9 @@ impl Contract {
 
         // Withdraw from the sender and deposit into the receiver
         self.internal_ft_withdraw(sender_id, amount);
-        self.internal_ft_deposit(receiver_id, amount);
+        self.internal_ft_deposit(receiver_id, amount, add_to_leaderboard);
 
+        self.total_tokens_transferred += amount;
         // Emit a Transfer event
         env::log_str(
             &EventLog {

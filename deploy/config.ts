@@ -19,7 +19,7 @@ export const NUM_TICKETS_TO_ADD = 10;
 
 export const TICKET_URL_BASE =
   "https://2930bf5d.keypom-redacted-app.pages.dev/tickets/ticket/ga_pass#";
-export const EXISTING_FACTORY = `1726678513463-factory.testnet`;
+export const EXISTING_FACTORY = `1726855043687-factory.testnet`;
 export const ADMIN_ACCOUNTS = [SIGNER_ACCOUNT];
 
 export const PREMADE_TICKET_DATA = [

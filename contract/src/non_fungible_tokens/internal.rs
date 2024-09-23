@@ -52,15 +52,22 @@ impl Contract {
         &mut self,
         account_id: &AccountId,
         token_id: &TokenId,
-    ) {
-
-        let mut token_set = self.nft_tokens_per_owner.get(account_id).unwrap_or_else(|| UnorderedSet::new(StorageKeys::TokensForOwnerInner {
-            account_id_hash: hash_string(&account_id.to_string()),
-        }));
+    ) -> u16 {
+        let mut token_set = self
+            .nft_tokens_per_owner
+            .get(account_id)
+            .unwrap_or_else(|| {
+                UnorderedSet::new(StorageKeys::TokensForOwnerInner {
+                    account_id_hash: hash_string(&account_id.to_string()),
+                })
+            });
 
         //we insert the token ID into the set
         token_set.insert(token_id);
         self.nft_tokens_per_owner.insert(account_id, &token_set);
+
+        //we return the number of tokens the user has
+        token_set.len() as u16
     }
 
     //remove a token from an owner (internal method and can't be called directly via CLI).
@@ -70,7 +77,10 @@ impl Contract {
         token_id: &TokenId,
     ) {
         //we get the set of tokens that the owner has
-        let mut token_set = self.nft_tokens_per_owner.get(account_id).expect("Trying to send NFTs to a non registered account");
+        let mut token_set = self
+            .nft_tokens_per_owner
+            .get(account_id)
+            .expect("Trying to send NFTs to a non registered account");
 
         //we remove the the token_id from the set of tokens
         token_set.remove(token_id);
@@ -177,3 +187,4 @@ impl Contract {
         token
     }
 }
+

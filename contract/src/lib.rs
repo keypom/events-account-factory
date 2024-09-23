@@ -16,6 +16,7 @@ mod ext_database;
 mod factory;
 mod fungible_tokens;
 mod internals;
+mod leaderboard;
 mod models;
 mod multichain;
 mod non_fungible_tokens;
@@ -26,6 +27,7 @@ use drops::*;
 use events::*;
 use fungible_tokens::*;
 use internals::*;
+use leaderboard::*;
 use models::*;
 use non_fungible_tokens::*;
 use vendors::*;
@@ -61,6 +63,13 @@ pub struct Contract {
 
     // ------------------------ Account Factory ---------------------------- //
     pub ticket_data_by_id: UnorderedMap<DropId, TicketType>, // clearable
+
+    // ------------------------ Leaderboard ------------------------------------ //
+    pub token_leaderboard: Vec<AccountId>,         // clearable
+    pub poap_leaderboard: Vec<AccountId>,          // clearable
+    pub recent_transactions: Vec<TransactionType>, // clearable
+    pub total_transactions: u64,
+    pub total_tokens_transferred: u128,
 
     // ------------------------ Tickets ------------------------------------ //
     pub attendee_ticket_by_pk: UnorderedMap<PublicKey, AttendeeTicketInformation>, // clearable
@@ -152,12 +161,17 @@ impl Contract {
         Self {
             agenda: "[{}]".to_string(),
             alerts: "[{}]".to_string(),
+            token_leaderboard: Vec::new(),
+            poap_leaderboard: Vec::new(),
             agenda_timestamp: 0,
             alerts_timestamp: 0,
             nft_tokens_per_owner: LookupMap::new(StorageKeys::TokensForOwner),
             is_contract_frozen: false,
             account_details_by_id,
             ft_total_supply: 0,
+            recent_transactions: Vec::new(),
+            total_transactions: 0,
+            total_tokens_transferred: 0,
             ft_metadata: FungibleTokenMetadata {
                 spec: "ft-1.0.0".to_string(),
                 name: token_name.unwrap_or("Redacted Fungible Token".to_string()),
