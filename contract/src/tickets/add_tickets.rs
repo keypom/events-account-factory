@@ -10,7 +10,7 @@ pub struct KeyData {
     pub metadata: Option<String>,
 }
 
-#[near_bindgen]
+#[near]
 impl Contract {
     /// Creates a new account with the given parameters.
     ///

@@ -1,6 +1,6 @@
 use crate::*;
 
-#[near_bindgen]
+#[near]
 impl Contract {
     /// Allows users to get the stringified JSON for the agenda and its timestamp
     pub fn get_agenda(&self) -> (String, u64) {

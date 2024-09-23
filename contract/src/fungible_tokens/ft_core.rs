@@ -1,6 +1,6 @@
 use crate::*;
 
-#[near_bindgen]
+#[near]
 impl Contract {
     /// Allows an admin to mint an amount of tokens to a specified account ID.
     ///
@@ -20,7 +20,12 @@ impl Contract {
         self.assert_admin();
 
         self.total_transactions += 1;
-        self.internal_deposit_ft_mint(&account_id, amount.0, None, false);
+        self.internal_deposit_ft_mint(
+            &account_id,
+            NearToken::from_yoctonear(amount.0),
+            None,
+            false,
+        );
     }
 
     /// Allows a user to transfer tokens to another account or purchase items from a vendor.
@@ -48,8 +53,8 @@ impl Contract {
     pub fn ft_transfer(
         &mut self,
         receiver_id: AccountId,
-        amount: U128,
-    ) -> Result<U128, String> {
+        amount: NearToken,
+    ) -> Result<NearToken, String> {
         self.assert_no_freeze();
         // Tested: https://play.rust-lang.org/?version=stable&mode=debug&edition=2021&gist=54a4a26cf62b44a178286431fe10e7f4
         require!(
@@ -58,23 +63,24 @@ impl Contract {
                 .ends_with(env::current_account_id().as_str()),
             "Invalid receiver ID"
         );
-        amount.expect("No amount specified").0
 
         // Transfer the tokens
         let sender_id = self.caller_id_by_signing_pk();
-        self.internal_ft_transfer(&sender_id, &receiver_id, amount_to_transfer, false);
+        self.internal_ft_transfer(&sender_id, &receiver_id, amount, false);
 
         // Record the transfer transaction
         self.add_transaction(TransactionType::Transfer {
             sender_id: sender_id.clone(),
             receiver_id: receiver_id.clone(),
-            amount: U128(amount_to_transfer),
+            amount,
             timestamp: env::block_timestamp(),
         });
         self.total_transactions += 1;
 
-        self.total_tokens_transferred += amount_to_transfer;
-        Ok(U128(amount_to_transfer))
+        self.total_tokens_transferred
+            .checked_add(amount)
+            .expect("Overflow");
+        Ok(amount)
     }
 
     /// Queries for the total amount of tokens currently circulating.
@@ -82,9 +88,9 @@ impl Contract {
     /// # Returns
     ///
     /// Returns the total supply of tokens as a `U128`.
-    pub fn ft_total_supply(&self) -> U128 {
+    pub fn ft_total_supply(&self) -> NearToken {
         // Return the total supply casted to a U128
-        self.ft_total_supply.into()
+        self.ft_total_supply
     }
 
     /// Queries for the balance of tokens for a specific account.
@@ -96,12 +102,12 @@ impl Contract {
     /// # Returns
     ///
     /// Returns the balance of tokens for the specified account as a `U128`.
-    pub fn ft_balance_of(&self, account_id: AccountId) -> U128 {
+    pub fn ft_balance_of(&self, account_id: AccountId) -> NearToken {
         // Return the balance of the account casted to a U128
         self.account_details_by_id
             .get(&account_id)
             .map(|d| d.ft_balance)
-            .unwrap_or(0)
+            .unwrap_or(NearToken::from_yoctonear(0))
             .into()
     }
 }

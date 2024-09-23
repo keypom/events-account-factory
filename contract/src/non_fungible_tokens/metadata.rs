@@ -4,7 +4,7 @@ use crate::*;
 use near_sdk::json_types::Base64VecU8;
 
 pub type TokenId = String;
-pub type SeriesId = u64;
+pub type SeriesId = u32;
 //defines the payout type we'll be returning as a part of the royalty standards.
 #[derive(Serialize, Deserialize)]
 #[serde(crate = "near_sdk::serde")]
@@ -41,10 +41,11 @@ pub struct TokenMetadata {
     pub reference_hash: Option<Base64VecU8>, // Base64-encoded sha256 hash of JSON from reference field. Required if `reference` is included.
 }
 
+#[derive(Clone)]
 #[near(serializers = [json, borsh])]
 pub struct Token {
     // Series that the token belongs to
-    pub series_id: u64,
+    pub series_id: SeriesId,
     //owner of the token
     pub owner_id: AccountId,
     //list of approved account IDs that have access to transfer the token. This maps an account ID to an approval ID
@@ -57,7 +58,7 @@ pub struct Token {
 #[near(serializers = [json, borsh])]
 pub struct JsonToken {
     // Series that the token belongs to
-    pub series_id: u64,
+    pub series_id: u32,
     //token ID
     pub token_id: TokenId,
     //owner of the token
@@ -81,7 +82,7 @@ pub struct Series {
     pub tokens: IterableSet<TokenId>,
 }
 
-#[near_bindgen]
+#[near]
 impl Contract {
     pub fn nft_metadata(&self) -> NFTContractMetadata {
         self.nft_metadata.clone()

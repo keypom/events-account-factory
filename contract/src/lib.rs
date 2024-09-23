@@ -3,9 +3,7 @@ use std::collections::HashMap;
 use near_sdk::json_types::{Base64VecU8, U128};
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::store::{IterableMap, IterableSet, LookupMap};
-use near_sdk::{
-    env, near, near_bindgen, require, AccountId, BorshStorageKey, CryptoHash, NearToken, PublicKey,
-};
+use near_sdk::{env, near, require, AccountId, BorshStorageKey, CryptoHash, NearToken, PublicKey};
 
 mod cleanup;
 mod drops;
@@ -65,7 +63,7 @@ pub struct Contract {
     pub poap_leaderboard: Vec<AccountId>,          // clearable
     pub recent_transactions: Vec<TransactionType>, // clearable
     pub total_transactions: u64,
-    pub total_tokens_transferred: u128,
+    pub total_tokens_transferred: NearToken,
 
     // ------------------------ Tickets ------------------------------------ //
     pub attendee_ticket_by_pk: IterableMap<PublicKey, AttendeeTicketInformation>, // clearable
@@ -77,7 +75,7 @@ pub struct Contract {
     pub agenda_timestamp: u64, // clearable
 }
 
-#[near_bindgen]
+#[near]
 impl Contract {
     /// Initializes a new contract instance.
     ///
@@ -128,7 +126,7 @@ impl Contract {
             ft_total_supply: NearToken::from_yoctonear(0),
             recent_transactions: Vec::new(),
             total_transactions: 0,
-            total_tokens_transferred: 0,
+            total_tokens_transferred: NearToken::from_yoctonear(0),
             ft_metadata: FungibleTokenMetadata {
                 spec: "ft-1.0.0".to_string(),
                 name: token_name.unwrap_or("Redacted Fungible Token".to_string()),

@@ -6,36 +6,41 @@ use crate::*;
 
 //convert the royalty percentage and amount to pay into a payout (U128)
 pub(crate) fn royalty_to_payout(royalty_percentage: u32, amount_to_pay: NearToken) -> U128 {
-    U128(royalty_percentage as u128 * amount_to_pay / 10_000u128)
+    U128(royalty_percentage as u128 * amount_to_pay.as_yoctonear() / 10_000u128)
 }
 
 //Assert that the user has attached at least 1 yoctoNEAR (for security reasons and to pay for storage)
 pub(crate) fn assert_at_least_one_yocto() {
     assert!(
-        env::attached_deposit() >= 1,
+        env::attached_deposit().as_yoctonear() >= 1,
         "Requires attached deposit of at least 1 yoctoNEAR",
     )
 }
 
 //refund the initial deposit based on the amount of storage that was used up
 pub(crate) fn refund_deposit(storage_used: u64) {
-    //get how much it would cost to store the information
-    let required_cost = env::storage_byte_cost() * NearToken::from(storage_used);
-    //get the attached deposit
+    // Get how much it would cost to store the information, ensuring the value exists
+    let required_cost = env::storage_byte_cost()
+        .checked_mul(storage_used as u128)
+        .expect("Overflow in calculating required cost");
+
+    // Get the attached deposit
     let attached_deposit = env::attached_deposit();
 
-    //make sure that the attached deposit is greater than or equal to the required cost
+    // Make sure that the attached deposit is greater than or equal to the required cost
     assert!(
-        required_cost <= attached_deposit,
+        attached_deposit >= required_cost,
         "Must attach {} yoctoNEAR to cover storage",
-        required_cost,
+        required_cost
     );
 
-    //get the refund amount from the attached deposit - required cost
-    let refund = attached_deposit - required_cost;
+    // Get the refund amount from the attached deposit - required cost
+    let refund = attached_deposit
+        .checked_sub(required_cost)
+        .expect("Unexpected calculation overflow");
 
-    //if the refund is greater than 1 yocto NEAR, we refund the predecessor that amount
-    if refund > 1 {
+    // If the refund is greater than 1 yoctoNEAR, we refund the predecessor that amount
+    if refund.as_yoctonear() > 1 {
         Promise::new(env::predecessor_account_id()).transfer(refund);
     }
 }
@@ -53,20 +58,20 @@ impl Contract {
         account_id: &AccountId,
         token_id: &TokenId,
     ) -> u16 {
-        let mut token_set = self
+        // Use the entry API to get or initialize the IterableSet
+        let token_set = self
             .nft_tokens_per_owner
-            .get(account_id)
-            .unwrap_or_else(|| {
+            .entry(account_id.clone()) // Clone the account_id since entry takes ownership
+            .or_insert_with(|| {
                 IterableSet::new(StorageKeys::TokensForOwnerInner {
                     account_id_hash: hash_string(&account_id.to_string()),
                 })
             });
 
-        //we insert the token ID into the set
-        token_set.insert(token_id);
-        self.nft_tokens_per_owner.insert(account_id, &token_set);
+        // Insert the token ID into the set
+        token_set.insert(token_id.to_string());
 
-        //we return the number of tokens the user has
+        // Return the number of tokens the user owns
         token_set.len() as u16
     }
 
@@ -77,14 +82,13 @@ impl Contract {
         token_id: &TokenId,
     ) {
         //we get the set of tokens that the owner has
-        let mut token_set = self
+        let token_set = self
             .nft_tokens_per_owner
-            .get(account_id)
+            .get_mut(account_id)
             .expect("Trying to send NFTs to a non registered account");
 
         //we remove the the token_id from the set of tokens
         token_set.remove(token_id);
-        self.nft_tokens_per_owner.insert(account_id, &token_set);
     }
 
     //transfers the NFT to the receiver_id (internal method and can't be called directly via CLI).
@@ -98,7 +102,11 @@ impl Contract {
         memo: Option<String>,
     ) -> Token {
         //get the token object by passing in the token_id
-        let token = self.nft_tokens_by_id.get(token_id).expect("No token");
+        let token = self
+            .nft_tokens_by_id
+            .get(token_id)
+            .cloned()
+            .expect("No token");
 
         //if the sender doesn't equal the owner, we check if the sender is in the approval list
         if sender_id != &token.owner_id {
@@ -145,7 +153,8 @@ impl Contract {
             next_approval_id: token.next_approval_id,
         };
         //insert that new token into the nft_tokens_by_id, replacing the old entry
-        self.nft_tokens_by_id.insert(token_id, &new_token);
+        self.nft_tokens_by_id
+            .insert(token_id.to_string(), new_token);
 
         //if there was some memo attached, we log it.
         if let Some(memo) = memo.as_ref() {
@@ -184,7 +193,6 @@ impl Contract {
         env::log_str(&nft_transfer_log.to_string());
 
         //return the previous token object that was transferred.
-        token
+        token.clone()
     }
 }
-

@@ -1,6 +1,6 @@
 use crate::*;
 
-#[near_bindgen]
+#[near]
 impl Contract {
     /// Query for the information of a specific attendee key.
     ///

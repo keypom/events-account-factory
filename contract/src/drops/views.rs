@@ -1,8 +1,8 @@
 use crate::*;
 
 #[allow(non_camel_case_types)]
-#[derive(BorshSerialize, BorshDeserialize, Deserialize, Serialize, Clone)]
-#[serde(crate = "near_sdk::serde")]
+#[derive(Clone)]
+#[near(serializers = [json, borsh])]
 #[serde(tag = "type")]
 pub enum ExtClaimedDrop {
     token(ExtClaimedTokenDropData),
@@ -10,8 +10,8 @@ pub enum ExtClaimedDrop {
     multichain(ExtClaimedMultichainDropData),
 }
 
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, Debug)]
-#[serde(crate = "near_sdk::serde")]
+#[derive(Clone)]
+#[near(serializers = [json, borsh])]
 pub struct ExtClaimedNFTDropData {
     pub found_scavenger_ids: ScavengerKeys,
     pub needed_scavenger_ids: Option<Vec<ScavengerHuntData>>,
@@ -20,8 +20,8 @@ pub struct ExtClaimedNFTDropData {
     pub drop_id: DropId,
 }
 
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, Debug)]
-#[serde(crate = "near_sdk::serde")]
+#[derive(Clone)]
+#[near(serializers = [json, borsh])]
 pub struct ExtClaimedMultichainDropData {
     pub found_scavenger_ids: ScavengerKeys,
     pub needed_scavenger_ids: Option<Vec<ScavengerHuntData>>,
@@ -30,8 +30,8 @@ pub struct ExtClaimedMultichainDropData {
     pub multichain_metadata: MultichainMetadata,
 }
 
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, Debug)]
-#[serde(crate = "near_sdk::serde")]
+#[derive(Clone)]
+#[near(serializers = [json, borsh])]
 pub struct ExtClaimedTokenDropData {
     pub found_scavenger_ids: ScavengerKeys,
     pub needed_scavenger_ids: Option<Vec<ScavengerHuntData>>,
@@ -40,7 +40,7 @@ pub struct ExtClaimedTokenDropData {
     pub drop_id: DropId,
 }
 
-#[near_bindgen]
+#[near]
 impl Contract {
     /// Query for the information of a specific drop.
     ///
@@ -52,7 +52,7 @@ impl Contract {
     ///
     /// An `Option` containing the `ExtDropData` if the drop is found, otherwise `None`.
     pub fn get_drop_information(&self, drop_id: String) -> Option<DropData> {
-        self.drop_by_id.get(&drop_id)
+        self.drop_by_id.get(&drop_id).cloned()
     }
 
     /// Generic function to retrieve claimed drops for a specific account based on a filter.
@@ -72,17 +72,17 @@ impl Contract {
         let mut result_drops = Vec::new();
 
         // Retrieve the claimed drops for the account
-        if let Some(claimed_drops) = self
-            .account_details_by_id
-            .get(&account_id)
-            .map(|d| d.drops_claimed)
-        {
-            // Iterate over the claimed drops
+        if let Some(account_details) = self.account_details_by_id.get(&account_id) {
+            // Borrow the drops_claimed rather than moving it
+            let claimed_drops = &account_details.drops_claimed;
+
+            // Iterate over the claimed drops if they exist
             for (drop_id, found_scavenger_ids) in claimed_drops.iter() {
+                // Convert drop_id (which is a &String) to &str
+                let drop_id_str: &str = drop_id;
+
                 // Get the drop information associated with the drop ID
-                // Ensure we're using DropData, not ExtDropData
-                if let Some(drop_data) = self.drop_by_id.get(&drop_id) {
-                    // DropData is used here
+                if let Some(drop_data) = self.drop_by_id.get(drop_id_str) {
                     // Apply the filter to determine if this drop should be included
                     if filter(&drop_data, &found_scavenger_ids) {
                         // Now process the data and match it to the claimed drop types
@@ -95,7 +95,7 @@ impl Contract {
                                             needed_scavenger_ids: drop_data.get_scavenger_data(),
                                             name: multichain_data.name.clone(),
                                             multichain_metadata: multichain_data.metadata.clone(),
-                                            drop_id: drop_id.clone(),
+                                            drop_id: drop_id.to_string(),
                                         },
                                     ));
                                 }
@@ -110,8 +110,9 @@ impl Contract {
                                             .series_by_id
                                             .get(&nft_data.series_id)
                                             .unwrap()
-                                            .metadata,
-                                        drop_id: drop_id.clone(),
+                                            .metadata
+                                            .clone(),
+                                        drop_id: drop_id.to_string(),
                                     }));
                                 }
                             }
@@ -123,7 +124,7 @@ impl Contract {
                                             needed_scavenger_ids: drop_data.get_scavenger_data(),
                                             name: token_data.name.clone(),
                                             amount: token_data.amount,
-                                            drop_id: drop_id.clone(),
+                                            drop_id: drop_id.to_string(),
                                         },
                                     ));
                                 }
@@ -187,7 +188,12 @@ impl Contract {
                         found_scavenger_ids: found_scavenger_ids.clone(),
                         needed_scavenger_ids: drop_data.get_scavenger_data(),
                         name: nft_data.name.clone(),
-                        nft_metadata: self.series_by_id.get(&nft_data.series_id).unwrap().metadata,
+                        nft_metadata: self
+                            .series_by_id
+                            .get(&nft_data.series_id)
+                            .unwrap()
+                            .metadata
+                            .clone(),
                         drop_id: drop_id.clone(),
                     })
                 } else {
@@ -283,7 +289,7 @@ impl Contract {
     /// # Returns
     ///
     /// The total number of drops as a `u64`.
-    pub fn get_num_drops(&self) -> u64 {
+    pub fn get_num_drops(&self) -> u32 {
         self.drop_by_id.len()
     }
 

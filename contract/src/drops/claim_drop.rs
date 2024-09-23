@@ -2,7 +2,7 @@ use std::convert::TryInto;
 
 use crate::*;
 
-#[near_bindgen]
+#[near]
 impl Contract {
     /// Allows a user to claim an existing drop (if they haven't already).
     ///
@@ -14,24 +14,29 @@ impl Contract {
     /// # Panics
     ///
     /// Panics if the drop is not found or if the user is not registered.
-    pub fn claim_drop(&mut self, drop_id: String, signature: Base64VecU8) -> DropData {
+    pub fn claim_drop(
+        &mut self,
+        drop_id: String,
+        scavenger_id: Option<PublicKey>,
+        signature: Base64VecU8,
+    ) -> DropData {
         self.assert_no_freeze();
-        let mut drop_data = self.drop_by_id.get(&drop_id).expect("Drop not found");
+        let drop_data = self.drop_by_id.get_mut(&drop_id).expect("Drop not found");
 
         let receiver_id = self.caller_id_by_signing_pk();
-        let old_account_details = self
+
+        // Use entry API to access and modify account details
+        let account_details = self
             .account_details_by_id
-            .get(&receiver_id)
-            .expect("Receiver not registered...");
-        let mut claimed_drops = old_account_details.drops_claimed;
+            .entry(receiver_id.clone())
+            .or_insert_with(|| AccountDetails::new(&receiver_id));
+
+        let mut claimed_drops = account_details.drops_claimed;
 
         // Match on the DropData enum to handle token and NFT drops
-        let claim_log = match drop_data {
-            DropData::Token(ref mut data) => {
-                // Increment the number of claims for this drop
-                data.base.num_claimed += 1;
-
-                // Handle claiming a token drop
+        let claim_log = match &mut drop_data {
+            DropData::Token(data) => {
+                data.num_claimed += 1;
                 self.handle_claim_token_drop(
                     data,
                     &drop_id,
@@ -40,11 +45,8 @@ impl Contract {
                     &mut claimed_drops,
                 )
             }
-            DropData::Nft(ref mut data) => {
-                // Increment the number of claims for this drop
-                data.base.num_claimed += 1;
-
-                // Handle claiming an NFT drop
+            DropData::Nft(data) => {
+                data.num_claimed += 1;
                 self.handle_claim_nft_drop(
                     data,
                     &drop_id,
@@ -53,11 +55,8 @@ impl Contract {
                     &mut claimed_drops,
                 )
             }
-            DropData::Multichain(ref mut data) => {
-                // Increment the number of claims for this drop
-                data.base.num_claimed += 1;
-
-                // Handle claiming an NFT drop
+            DropData::Multichain(data) => {
+                data.num_claimed += 1;
                 self.handle_claim_multichain_drop(
                     data,
                     &drop_id,
@@ -81,28 +80,19 @@ impl Contract {
             timestamp: env::block_timestamp(),
         });
 
-        // Save the updated drop_data back into the drop_by_id map
-        self.drop_by_id.insert(&drop_id, &drop_data);
         self.total_transactions += 1;
 
-        let mut new_account_details = self
-            .account_details_by_id
-            .get(&receiver_id)
-            .expect("Receiver not registered...");
-        new_account_details.drops_claimed = claimed_drops;
-        self.account_details_by_id
-            .insert(&receiver_id, &new_account_details);
-        let event_log: EventLog = EventLog {
-            // Standard name ("nep171").
+        // Update account details with claimed drops
+        account_details.drops_claimed = claimed_drops;
+
+        let event_log = EventLog {
             standard: KEYPOM_STANDARD_NAME.to_string(),
-            // Version of the standard ("nft-1.0.0").
             version: KEYPOM_CONFERENCE_METADATA_SPEC.to_string(),
-            // The data related with the event stored in a vector.
             event: EventLogVariant::KeypomDropClaim(claim_log),
         };
         env::log_str(&event_log.to_string());
-        let external_drop = self.drop_to_external(&drop_data);
-        external_drop
+
+        drop_data.clone()
     }
 
     /// Handles the claim process for a token drop.

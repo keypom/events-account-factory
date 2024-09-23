@@ -1,6 +1,6 @@
 use crate::*;
 
-#[near_bindgen]
+#[near]
 impl Contract {
     /// Allows users to get the stringified JSON for the alerts
     pub fn get_alerts(&self) -> (String, u64) {

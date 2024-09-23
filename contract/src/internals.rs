@@ -5,7 +5,7 @@ pub fn hash_string(string: &String) -> CryptoHash {
     env::sha256_array(string.as_bytes())
 }
 
-#[near_bindgen]
+#[near]
 impl Contract {
     pub(crate) fn assert_role<F>(&self, role_checker: F, role_name: &str) -> AccountId
     where
