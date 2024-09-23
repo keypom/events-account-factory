@@ -14,10 +14,7 @@ impl Contract {
     /// # Panics
     ///
     /// Panics if the drop is not found or if the user is not registered.
-    pub fn claim_drop(
-        &mut self, drop_id: String, 
-        scavenger_id: Option<String>
-    ) -> ExtDropData {
+    pub fn claim_drop(&mut self, drop_id: String, signature: Base64VecU8) -> DropData {
         self.assert_no_freeze();
         let mut drop_data = self.drop_by_id.get(&drop_id).expect("Drop not found");
 
@@ -122,7 +119,7 @@ impl Contract {
         drop_id: &DropId,
         receiver_id: &AccountId,
         found_scavenger_id: Option<String>,
-        claimed_drops: &mut UnorderedMap<DropId, ClaimedDropData>,
+        claimed_drops: &mut IterableMap<DropId, ClaimedDropData>,
     ) -> KeypomDropClaimLog {
         let mut event_log = KeypomDropClaimLog {
             claimer_id: receiver_id.to_string(),
@@ -199,7 +196,7 @@ impl Contract {
         drop_id: &DropId,
         receiver_id: &AccountId,
         found_scavenger_id: Option<String>,
-        claimed_drops: &mut UnorderedMap<DropId, ClaimedDropData>,
+        claimed_drops: &mut IterableMap<DropId, ClaimedDropData>,
     ) -> KeypomDropClaimLog {
         let mut event_log = KeypomDropClaimLog {
             claimer_id: receiver_id.to_string(),
@@ -276,7 +273,7 @@ impl Contract {
         drop_id: &DropId,
         receiver_id: &AccountId,
         found_scavenger_id: Option<String>,
-        claimed_drops: &mut UnorderedMap<DropId, ClaimedDropData>,
+        claimed_drops: &mut IterableMap<DropId, ClaimedDropData>,
     ) -> KeypomDropClaimLog {
         let mut event_log = KeypomDropClaimLog {
             claimer_id: receiver_id.to_string(),

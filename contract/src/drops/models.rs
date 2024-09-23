@@ -1,60 +1,9 @@
 use crate::*;
 
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, Debug)]
-#[serde(crate = "near_sdk::serde")]
-pub struct ScavengerHuntData {
-    pub piece: String,
-    pub description: String,
-}
-
-/// Base struct for external claimed drop data.
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, Debug)]
-#[serde(crate = "near_sdk::serde")]
-pub struct ExtDropBase {
-    pub scavenger_hunt: Option<Vec<ScavengerHuntData>>,
-    pub name: String,
-    pub image: Option<String>, // For token drops!
-}
-
-/// Base struct for external claimed drop data.
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, Debug)]
-#[serde(crate = "near_sdk::serde")]
-pub struct DropBase {
-    pub scavenger_hunt: Option<Vec<ScavengerHuntData>>,
-    pub name: String,
-    pub id: String,
-    pub num_claimed: u64,
-    pub image: Option<String>,
-}
-
-/// Represents the internal data for a token drop.
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, Debug)]
-#[serde(crate = "near_sdk::serde")]
-pub struct TokenDropData {
-    pub base: DropBase,
-    pub amount: U128,
-}
-
-/// Represents the internal data for a token drop.
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, Debug)]
-#[serde(crate = "near_sdk::serde")]
-pub struct NFTDropData {
-    pub base: DropBase,
-    pub series_id: SeriesId,
-}
-
-/// Represents the internal data for a token drop.
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, Debug)]
-#[serde(crate = "near_sdk::serde")]
-pub struct MultichainDropData {
-    pub base: DropBase,
-    pub metadata: MultichainMetadata,
-}
-
 /// Represents the different types of claimed drops to be returned to the frontend.
 #[allow(non_camel_case_types)]
-#[derive(BorshSerialize, BorshDeserialize, Deserialize, Serialize, Clone)]
-#[serde(crate = "near_sdk::serde")]
+#[derive(Clone)]
+#[near(serializers = [json, borsh])]
 #[serde(tag = "type")]
 pub enum DropData {
     Token(TokenDropData),
@@ -88,134 +37,88 @@ impl DropData {
     }
 
     /// Returns the scavenger IDs associated with the claimed drop.
-    pub fn get_scavenger_ids(&self) -> Option<Vec<String>> {
+    pub fn get_scavenger_keys(&self) -> Option<Vec<PublicKey>> {
         match self {
             DropData::Token(data) => data
-                .base
                 .scavenger_hunt
                 .as_ref()
-                .map(|h| h.iter().map(|i| i.piece.clone()).collect()),
+                .map(|h| h.iter().map(|i| i.key.clone()).collect()),
             DropData::Nft(data) => data
-                .base
                 .scavenger_hunt
                 .as_ref()
-                .map(|h| h.iter().map(|i| i.piece.clone()).collect()),
+                .map(|h| h.iter().map(|i| i.key.clone()).collect()),
             DropData::Multichain(data) => data
-                .base
                 .scavenger_hunt
                 .as_ref()
-                .map(|h| h.iter().map(|i| i.piece.clone()).collect()),
+                .map(|h| h.iter().map(|i| i.key.clone()).collect()),
         }
     }
 
     pub fn get_scavenger_data(&self) -> Option<Vec<ScavengerHuntData>> {
         match self {
-            DropData::Token(data) => data.base.scavenger_hunt.clone(),
-            DropData::Nft(data) => data.base.scavenger_hunt.clone(),
-            DropData::Multichain(data) => data.base.scavenger_hunt.clone(),
+            DropData::Token(data) => data.scavenger_hunt.clone(),
+            DropData::Nft(data) => data.scavenger_hunt.clone(),
+            DropData::Multichain(data) => data.scavenger_hunt.clone(),
         }
     }
 
     /// Returns the name of the claimed drop.
     pub fn get_name(&self) -> String {
         match self {
-            DropData::Token(data) => data.base.name.clone(),
-            DropData::Nft(data) => data.base.name.clone(),
-            DropData::Multichain(data) => data.base.name.clone(),
+            DropData::Token(data) => data.name.clone(),
+            DropData::Nft(data) => data.name.clone(),
+            DropData::Multichain(data) => data.name.clone(),
         }
     }
 }
 
-impl Contract {
-    /// Retrieves external drop given internal drop data.
-    ///
-    /// # Arguments
-    ///
-    /// * `drop` - The DropData to be converted to an external drop.
-    ///
-    /// # Returns
-    ///
-    /// `ExtDropData` for the given internal drop data.
-    pub fn drop_to_external(&self, drop: &DropData) -> ExtDropData {
-        match drop {
-            DropData::Multichain(multichain_data) => ExtDropData::multichain(ExtMultichainDropData {
-                name: multichain_data.base.name.clone(),
-                multichain_metadata: multichain_data.metadata.clone(),
-                num_claimed: multichain_data.base.num_claimed,
-                drop_id: multichain_data.base.id.clone(),
-                scavenger_hunt: multichain_data.base.scavenger_hunt.clone(),
-            }),
-            DropData::Nft(nft_data) => ExtDropData::nft(ExtNFTDropData {
-                name: nft_data.base.name.clone(),
-                num_claimed: nft_data.base.num_claimed,
-                nft_metadata: self.series_by_id.get(&nft_data.series_id).unwrap().metadata.clone(),
-                drop_id: nft_data.base.id.clone(),
-                scavenger_hunt: nft_data.base.scavenger_hunt.clone(),
-            }),
-            DropData::Token(token_data) => ExtDropData::token(ExtTokenDropData {
-                name: token_data.base.name.clone(),
-                image: token_data.base.image.clone(),
-                num_claimed: token_data.base.num_claimed,
-                amount: token_data.amount,
-                drop_id: token_data.base.id.clone(),
-                scavenger_hunt: token_data.base.scavenger_hunt.clone(),
-            }),
-        }
-    }
+#[derive(Clone, Debug)]
+#[near(serializers = [json, borsh])]
+pub struct ScavengerHuntData {
+    pub key: PublicKey,
+    pub description: String,
 }
 
+pub type ScavengerKeys = Option<Vec<PublicKey>>;
 
-/// Represents what the user has claimed for a specific drop. If scavenger IDs is none, the drop contains no scavengers
-/// If scavengers is Some, the drop needs X amount of scavenger Ids to be found before the reward is allocated
-/// On the frontend, query for drop data to see how many are needed and cross reference with this data structure to see
-/// how many more IDs are left to be found
-/// This is done to optimize the contract and not require duplicate data to be stored
-#[allow(non_camel_case_types)]
-#[derive(BorshSerialize, BorshDeserialize, Deserialize, Serialize, Clone)]
-#[serde(crate = "near_sdk::serde")]
-#[serde(tag = "type")]
-pub enum ClaimedDropData {
-    Token(Option<Vec<String>>),
-    Nft(Option<Vec<String>>),
-    Multichain(Option<Vec<String>>),
+#[derive(Clone)]
+#[near(serializers = [json, borsh])]
+pub struct TokenDropData {
+    pub id: String,
+    pub key: PublicKey,
+    pub name: String,
+    pub image: String,
+    pub scavenger_hunt: Option<Vec<ScavengerHuntData>>,
+    pub num_claimed: u64,
+
+    pub amount: U128,
 }
 
-impl ClaimedDropData {
-    /// Returns the scavenger IDs associated with the claimed drop.
-    pub fn get_found_scavenger_ids(&self) -> Option<Vec<String>> {
-        match self {
-            ClaimedDropData::Token(token_drop_scavs) => token_drop_scavs.clone(),
-            ClaimedDropData::Nft(nft_drop_scavs) => nft_drop_scavs.clone(),
-            ClaimedDropData::Multichain(multichain_drop_scavs) => multichain_drop_scavs.clone(),
-        }
-    }
+/// Represents the internal data for a token drop.
+#[derive(Clone)]
+#[near(serializers = [json, borsh])]
+pub struct NFTDropData {
+    pub id: String,
+    pub key: PublicKey,
+    pub name: String,
+    pub image: String,
+    pub scavenger_hunt: Option<Vec<ScavengerHuntData>>,
+    pub num_claimed: u64,
 
+    pub metadata: TokenMetadata,
+    pub series_id: SeriesId,
+}
 
-    /// Adds a scavenger ID to the list of found scavenger IDs.
-    ///
-    /// # Arguments
-    ///
-    /// * `scavenger_id` - The scavenger ID to be added.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the scavenger ID has already been claimed.
-    pub fn add_scavenger_id(&mut self, scavenger_id: String) {
-        let mut found_scavs = self.get_found_scavenger_ids().unwrap_or_default();
-        require!(
-            !found_scavs.contains(&scavenger_id),
-            "Scavenger item already claimed"
-        );
-        found_scavs.push(scavenger_id);
+/// Represents the internal data for a token drop.
+#[derive(Clone)]
+#[near(serializers = [json, borsh])]
+pub struct MultichainDropData {
+    pub id: String,
+    pub key: PublicKey,
+    pub name: String,
+    pub image: String,
+    pub scavenger_hunt: Option<Vec<ScavengerHuntData>>,
+    pub num_claimed: u64,
 
-        match self {
-            ClaimedDropData::Token(ref mut token_drop_scavs) => {
-                *token_drop_scavs = Some(found_scavs)
-            }
-            ClaimedDropData::Nft(ref mut nft_drop_scavs) => *nft_drop_scavs = Some(found_scavs),
-            ClaimedDropData::Multichain(ref mut multichain_drop_scavs) => {
-                *multichain_drop_scavs = Some(found_scavs)
-            }
-        }
-    }
+    pub metadata: MultichainMetadata,
 }

@@ -9,7 +9,7 @@ impl Contract {
     ) -> SeriesId {
         let series_id = self.series_by_id.len();
 
-        let tokens = UnorderedSet::new(StorageKeys::SeriesByIdInner {
+        let tokens = IterableSet::new(StorageKeys::SeriesByIdInner {
             account_id_hash: hash_string(&format!("{}{}", creator_id, series_id)),
         });
         let series = Series {

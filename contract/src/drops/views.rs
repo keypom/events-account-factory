@@ -13,7 +13,7 @@ pub enum ExtClaimedDrop {
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, Debug)]
 #[serde(crate = "near_sdk::serde")]
 pub struct ExtClaimedNFTDropData {
-    pub found_scavenger_ids: Option<Vec<String>>,
+    pub found_scavenger_ids: ScavengerKeys,
     pub needed_scavenger_ids: Option<Vec<ScavengerHuntData>>,
     pub name: String,
     pub nft_metadata: TokenMetadata,
@@ -23,7 +23,7 @@ pub struct ExtClaimedNFTDropData {
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, Debug)]
 #[serde(crate = "near_sdk::serde")]
 pub struct ExtClaimedMultichainDropData {
-    pub found_scavenger_ids: Option<Vec<String>>,
+    pub found_scavenger_ids: ScavengerKeys,
     pub needed_scavenger_ids: Option<Vec<ScavengerHuntData>>,
     pub name: String,
     pub drop_id: DropId,
@@ -33,51 +33,10 @@ pub struct ExtClaimedMultichainDropData {
 #[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, Debug)]
 #[serde(crate = "near_sdk::serde")]
 pub struct ExtClaimedTokenDropData {
-    pub found_scavenger_ids: Option<Vec<String>>,
+    pub found_scavenger_ids: ScavengerKeys,
     pub needed_scavenger_ids: Option<Vec<ScavengerHuntData>>,
     pub name: String,
     pub amount: U128,
-    pub drop_id: DropId,
-}
-
-#[allow(non_camel_case_types)]
-#[derive(BorshSerialize, BorshDeserialize, Deserialize, Serialize, Clone)]
-#[serde(crate = "near_sdk::serde")]
-#[serde(tag = "type")]
-pub enum ExtDropData {
-    token(ExtTokenDropData),
-    nft(ExtNFTDropData),
-    multichain(ExtMultichainDropData),
-}
-
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, Debug)]
-#[serde(crate = "near_sdk::serde")]
-pub struct ExtNFTDropData {
-    pub name: String,
-    pub nft_metadata: TokenMetadata,
-    pub scavenger_hunt: Option<Vec<ScavengerHuntData>>,
-    pub num_claimed: u64,
-    pub drop_id: DropId,
-}
-
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, Debug)]
-#[serde(crate = "near_sdk::serde")]
-pub struct ExtTokenDropData {
-    pub name: String,
-    pub scavenger_hunt: Option<Vec<ScavengerHuntData>>,
-    pub num_claimed: u64,
-    pub amount: U128,
-    pub image: Option<String>,
-    pub drop_id: DropId,
-}
-
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, Debug)]
-#[serde(crate = "near_sdk::serde")]
-pub struct ExtMultichainDropData {
-    pub name: String,
-    pub multichain_metadata: MultichainMetadata,
-    pub scavenger_hunt: Option<Vec<ScavengerHuntData>>,
-    pub num_claimed: u64,
     pub drop_id: DropId,
 }
 
@@ -92,8 +51,8 @@ impl Contract {
     /// # Returns
     ///
     /// An `Option` containing the `ExtDropData` if the drop is found, otherwise `None`.
-    pub fn get_drop_information(&self, drop_id: String) -> Option<ExtDropData> {
-        self.drop_by_id.get(&drop_id).map(|drop| self.drop_to_external(&drop))
+    pub fn get_drop_information(&self, drop_id: String) -> Option<DropData> {
+        self.drop_by_id.get(&drop_id)
     }
 
     /// Generic function to retrieve claimed drops for a specific account based on a filter.
@@ -108,7 +67,7 @@ impl Contract {
     /// A vector of `ExtClaimedDrop` containing the drops that match the filter criteria.
     fn get_claimed_drops<F>(&self, account_id: AccountId, filter: F) -> Vec<ExtClaimedDrop>
     where
-        F: Fn(&DropData, &Option<Vec<String>>) -> bool, // Use DropData here
+        F: Fn(&DropData, &Option<Vec<PublicKey>>) -> bool, // Use DropData here
     {
         let mut result_drops = Vec::new();
 
@@ -119,34 +78,34 @@ impl Contract {
             .map(|d| d.drops_claimed)
         {
             // Iterate over the claimed drops
-            for (drop_id, claimed_drop) in claimed_drops.iter() {
+            for (drop_id, found_scavenger_ids) in claimed_drops.iter() {
                 // Get the drop information associated with the drop ID
                 // Ensure we're using DropData, not ExtDropData
                 if let Some(drop_data) = self.drop_by_id.get(&drop_id) {
                     // DropData is used here
                     // Apply the filter to determine if this drop should be included
-                    if filter(&drop_data, &claimed_drop.get_found_scavenger_ids()) {
+                    if filter(&drop_data, &found_scavenger_ids) {
                         // Now process the data and match it to the claimed drop types
-                        match claimed_drop {
-                            ClaimedDropData::Multichain(found_scavenger_ids) => {
+                        match drop_data {
+                            DropData::Multichain(_) => {
                                 if let DropData::Multichain(multichain_data) = &drop_data {
                                     result_drops.push(ExtClaimedDrop::multichain(
                                         ExtClaimedMultichainDropData {
                                             found_scavenger_ids: found_scavenger_ids.clone(),
                                             needed_scavenger_ids: drop_data.get_scavenger_data(),
-                                            name: multichain_data.base.name.clone(),
+                                            name: multichain_data.name.clone(),
                                             multichain_metadata: multichain_data.metadata.clone(),
                                             drop_id: drop_id.clone(),
                                         },
                                     ));
                                 }
                             }
-                            ClaimedDropData::Nft(found_scavenger_ids) => {
+                            DropData::Nft(_) => {
                                 if let DropData::Nft(nft_data) = &drop_data {
                                     result_drops.push(ExtClaimedDrop::nft(ExtClaimedNFTDropData {
                                         found_scavenger_ids: found_scavenger_ids.clone(),
                                         needed_scavenger_ids: drop_data.get_scavenger_data(),
-                                        name: nft_data.base.name.clone(),
+                                        name: nft_data.name.clone(),
                                         nft_metadata: self
                                             .series_by_id
                                             .get(&nft_data.series_id)
@@ -156,13 +115,13 @@ impl Contract {
                                     }));
                                 }
                             }
-                            ClaimedDropData::Token(found_scavenger_ids) => {
+                            DropData::Token(_) => {
                                 if let DropData::Token(token_data) = &drop_data {
                                     result_drops.push(ExtClaimedDrop::token(
                                         ExtClaimedTokenDropData {
                                             found_scavenger_ids: found_scavenger_ids.clone(),
                                             needed_scavenger_ids: drop_data.get_scavenger_data(),
-                                            name: token_data.base.name.clone(),
+                                            name: token_data.name.clone(),
                                             amount: token_data.amount,
                                             drop_id: drop_id.clone(),
                                         },
@@ -193,7 +152,7 @@ impl Contract {
         account_id: AccountId,
         drop_id: String,
     ) -> ExtClaimedDrop {
-        let claimed_drop = self
+        let found_scavenger_ids = self
             .account_details_by_id
             .get(&account_id)
             .expect("Account not scanned in yet")
@@ -208,13 +167,13 @@ impl Contract {
             .expect("Drop not found")
             .clone();
 
-        match claimed_drop {
-            ClaimedDropData::Multichain(found_scavenger_ids) => {
+        match drop_data {
+            DropData::Multichain(_) => {
                 if let DropData::Multichain(multichain_data) = &drop_data {
                     ExtClaimedDrop::multichain(ExtClaimedMultichainDropData {
                         found_scavenger_ids: found_scavenger_ids.clone(),
                         needed_scavenger_ids: drop_data.get_scavenger_data(),
-                        name: multichain_data.base.name.clone(),
+                        name: multichain_data.name.clone(),
                         multichain_metadata: multichain_data.metadata.clone(),
                         drop_id: drop_id.clone(),
                     })
@@ -222,12 +181,12 @@ impl Contract {
                     panic!("Drop type mismatch for Multichain");
                 }
             }
-            ClaimedDropData::Nft(found_scavenger_ids) => {
+            DropData::Nft(_) => {
                 if let DropData::Nft(nft_data) = &drop_data {
                     ExtClaimedDrop::nft(ExtClaimedNFTDropData {
                         found_scavenger_ids: found_scavenger_ids.clone(),
                         needed_scavenger_ids: drop_data.get_scavenger_data(),
-                        name: nft_data.base.name.clone(),
+                        name: nft_data.name.clone(),
                         nft_metadata: self.series_by_id.get(&nft_data.series_id).unwrap().metadata,
                         drop_id: drop_id.clone(),
                     })
@@ -235,12 +194,12 @@ impl Contract {
                     panic!("Drop type mismatch for NFT");
                 }
             }
-            ClaimedDropData::Token(found_scavenger_ids) => {
+            DropData::Token(_) => {
                 if let DropData::Token(token_data) = &drop_data {
                     ExtClaimedDrop::token(ExtClaimedTokenDropData {
                         found_scavenger_ids: found_scavenger_ids.clone(),
                         needed_scavenger_ids: drop_data.get_scavenger_data(),
-                        name: token_data.base.name.clone(),
+                        name: token_data.name.clone(),
                         amount: token_data.amount,
                         drop_id: drop_id.clone(),
                     })
@@ -302,7 +261,7 @@ impl Contract {
     /// # Returns
     ///
     /// A vector of `DropData` containing the drops created by the account.
-    pub fn get_drops_created_by_account(&self, account_id: AccountId) -> Vec<ExtDropData> {
+    pub fn get_drops_created_by_account(&self, account_id: AccountId) -> Vec<DropData> {
         let mut drops_created = Vec::new();
         // Retrieve the account details to get the list of drops created
         let account_details = self
@@ -338,7 +297,7 @@ impl Contract {
     /// # Returns
     ///
     /// A vector of `ExtDropData` containing the drops.
-    pub fn get_drops(&self, from_index: Option<U128>, limit: Option<u64>) -> Vec<ExtDropData> {
+    pub fn get_drops(&self, from_index: Option<U128>, limit: Option<u64>) -> Vec<DropData> {
         // Where to start pagination - if we have a from_index, we'll use that - otherwise start from 0 index
         let start = u128::from(from_index.unwrap_or(U128(0)));
 

@@ -1,7 +1,7 @@
 use crate::*;
 
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone)]
-#[serde(crate = "near_sdk::serde")]
+#[derive(Clone)]
+#[near(serializers = [json, borsh])]
 pub enum TransactionType {
     Claim {
         account_id: AccountId,
@@ -11,7 +11,7 @@ pub enum TransactionType {
     Transfer {
         sender_id: AccountId,
         receiver_id: AccountId,
-        amount: U128,
+        amount: NearToken,
         timestamp: u64,
     },
 }

@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::*;
 use near_sdk::json_types::Base64VecU8;
 
@@ -10,8 +12,8 @@ pub struct Payout {
     pub payout: HashMap<AccountId, U128>,
 }
 
-#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone)]
-#[serde(crate = "near_sdk::serde")]
+#[derive(Clone)]
+#[near(serializers = [json, borsh])]
 pub struct NFTContractMetadata {
     pub spec: String,              // required, essentially a version like "nft-1.0.0"
     pub name: String,              // required, ex. "Mosaics"
@@ -22,8 +24,8 @@ pub struct NFTContractMetadata {
     pub reference_hash: Option<Base64VecU8>, // Base64-encoded sha256 hash of JSON from reference field. Required if `reference` is included.
 }
 
-#[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize, Clone, Debug)]
-#[serde(crate = "near_sdk::serde")]
+#[derive(Clone, Debug)]
+#[near(serializers = [json, borsh])]
 pub struct TokenMetadata {
     pub title: Option<String>, // ex. "Arch Nemesis: Mail Carrier" or "Parcel #5055"
     pub description: Option<String>, // free-form description
@@ -39,7 +41,7 @@ pub struct TokenMetadata {
     pub reference_hash: Option<Base64VecU8>, // Base64-encoded sha256 hash of JSON from reference field. Required if `reference` is included.
 }
 
-#[derive(BorshDeserialize, BorshSerialize)]
+#[near(serializers = [json, borsh])]
 pub struct Token {
     // Series that the token belongs to
     pub series_id: u64,
@@ -52,8 +54,7 @@ pub struct Token {
 }
 
 //The Json token is what will be returned from view calls.
-#[derive(Serialize, Deserialize)]
-#[serde(crate = "near_sdk::serde")]
+#[near(serializers = [json, borsh])]
 pub struct JsonToken {
     // Series that the token belongs to
     pub series_id: u64,
@@ -70,14 +71,14 @@ pub struct JsonToken {
 }
 
 // Represents the series type. All tokens will derive this data.
-#[derive(BorshDeserialize, BorshSerialize)]
+#[near(serializers = [borsh])]
 pub struct Series {
     // Metadata including title, num copies etc.. that all tokens will derive from
     pub metadata: TokenMetadata,
     // Royalty used for all tokens in the collection
     pub royalty: Option<HashMap<AccountId, u32>>,
     // Set of tokens in the collection
-    pub tokens: UnorderedSet<TokenId>,
+    pub tokens: IterableSet<TokenId>,
 }
 
 #[near_bindgen]
@@ -86,4 +87,3 @@ impl Contract {
         self.nft_metadata.clone()
     }
 }
-

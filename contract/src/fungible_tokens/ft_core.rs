@@ -48,39 +48,19 @@ impl Contract {
     pub fn ft_transfer(
         &mut self,
         receiver_id: AccountId,
-        memo: Option<String>,
-        amount: Option<U128>,
+        amount: U128,
     ) -> Result<U128, String> {
         self.assert_no_freeze();
-        let amount_to_transfer = if let Some(memo) = memo {
-            let item_ids: Vec<u64> = serde_json::from_str(&memo).expect("Failed to parse memo");
-            let vendor_data = self
-                .account_details_by_id
-                .get(&receiver_id)
-                .expect("No receiver account details found")
-                .vendor_data
-                .expect("No vendor data found for receiver");
+        // Tested: https://play.rust-lang.org/?version=stable&mode=debug&edition=2021&gist=54a4a26cf62b44a178286431fe10e7f4
+        require!(
+            receiver_id
+                .to_string()
+                .ends_with(env::current_account_id().as_str()),
+            "Invalid receiver ID"
+        );
+        amount.expect("No amount specified").0
 
-            // Tally the total price across all the items being purchased
-            let mut total_price = 0;
-            for id in item_ids.iter() {
-                let item = vendor_data.item_by_id.get(id).expect("No item found");
-                total_price += item.price.0;
-            }
-
-            total_price
-        } else {
-            // Tested: https://play.rust-lang.org/?version=stable&mode=debug&edition=2021&gist=54a4a26cf62b44a178286431fe10e7f4
-            require!(
-                receiver_id
-                    .to_string()
-                    .ends_with(env::current_account_id().as_str()),
-                "Invalid receiver ID"
-            );
-            amount.expect("No amount specified").0
-        };
-
-        // Transfer the tokens to the vendor
+        // Transfer the tokens
         let sender_id = self.caller_id_by_signing_pk();
         self.internal_ft_transfer(&sender_id, &receiver_id, amount_to_transfer, false);
 

@@ -12,7 +12,7 @@ impl Contract {
     ///
     /// An `Option` containing the `AttendeeTicketInformation` if the ticket is found, otherwise `None`.
     pub fn get_key_information(&self, key: PublicKey) -> Option<AttendeeTicketInformation> {
-        self.attendee_ticket_by_pk.get(&key)
+        self.attendee_ticket_by_pk.get(&key).cloned()
     }
 
     /// Retrieves the ticket data for a given drop ID.
@@ -31,6 +31,7 @@ impl Contract {
     pub fn get_ticket_data(&self, drop_id: String) -> TicketType {
         self.ticket_data_by_id
             .get(&drop_id)
+            .cloned()
             .expect("No drop ID found")
     }
 
@@ -47,6 +48,6 @@ impl Contract {
     /// Panics if the caller is not an admin.
     pub fn update_ticket_data(&mut self, drop_id: String, ticket_data: TicketType) {
         self.assert_admin();
-        self.ticket_data_by_id.insert(&drop_id, &ticket_data);
+        self.ticket_data_by_id.insert(drop_id, ticket_data);
     }
 }

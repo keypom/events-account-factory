@@ -7,69 +7,40 @@ pub fn hash_string(string: &String) -> CryptoHash {
 
 #[near_bindgen]
 impl Contract {
-    pub(crate) fn assert_admin(&self) -> AccountId {
+    pub(crate) fn assert_role<F>(&self, role_checker: F, role_name: &str) -> AccountId
+    where
+        F: Fn(&AccountStatus) -> bool,
+    {
         let caller_id = self.caller_id_by_signing_pk();
         let account_details = self
             .account_details_by_id
             .get(&caller_id)
             .expect("No account details found");
+
+        // Borrow the account status instead of moving it
+        let account_status = account_details
+            .account_status
+            .as_ref()
+            .expect("No account status found");
+
         require!(
-            account_details
-                .account_status
-                .expect("No account status found")
-                .is_admin(),
-            "Unauthorized"
+            role_checker(account_status),
+            &format!("Unauthorized: Not a {}", role_name)
         );
+
         caller_id
     }
 
-    pub(crate) fn assert_vendor(&self) -> AccountId {
-        let caller_id = self.caller_id_by_signing_pk();
-        let account_details = self
-            .account_details_by_id
-            .get(&caller_id)
-            .expect("No account details found");
-        require!(
-            account_details
-                .account_status
-                .expect("No account status found")
-                .is_vendor(),
-            "Unauthorized"
-        );
-        caller_id
+    pub(crate) fn assert_admin(&self) -> AccountId {
+        self.assert_role(AccountStatus::is_admin, "admin")
     }
 
     pub(crate) fn assert_sponsor(&self) -> AccountId {
-        let caller_id = self.caller_id_by_signing_pk();
-        let account_details = self
-            .account_details_by_id
-            .get(&caller_id)
-            .expect("No account details found");
-        require!(
-            account_details
-                .account_status
-                .expect("No account status found")
-                .is_sponsor(),
-            "Unauthorized"
-        );
-        caller_id
+        self.assert_role(AccountStatus::is_sponsor, "sponsor")
     }
 
     pub(crate) fn assert_data_setter(&self) -> AccountId {
-        let caller_id = self.caller_id_by_signing_pk();
-        near_sdk::env::log_str(&format!("caller_id: {}", caller_id));
-        let account_details = self
-            .account_details_by_id
-            .get(&caller_id)
-            .expect("No account details found");
-        require!(
-            account_details
-                .account_status
-                .expect("No account status found")
-                .is_data_sponsor(),
-            "Unauthorized"
-        );
-        caller_id
+        self.assert_role(AccountStatus::is_data_sponsor, "data setter")
     }
 
     pub(crate) fn assert_no_freeze(&self) {
@@ -93,8 +64,7 @@ impl Contract {
     pub(crate) fn caller_id_by_signing_pk(&self) -> AccountId {
         self.attendee_ticket_by_pk
             .get(&env::signer_account_pk())
-            .map(|t| t.account_id)
-            .unwrap_or(Some(env::predecessor_account_id()))
-            .expect("Account has not been scanned in yet")
+            .and_then(|t| t.account_id.clone()) // Clone the account_id to move it
+            .unwrap_or_else(|| env::predecessor_account_id()) // Use the predecessor account ID if not found
     }
 }

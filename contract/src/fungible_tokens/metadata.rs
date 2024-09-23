@@ -1,15 +1,10 @@
 use crate::*;
 
-use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
-use near_sdk::json_types::Base64VecU8;
-use near_sdk::near_bindgen;
-use near_sdk::serde::{Deserialize, Serialize};
-
 /// The image URL for the default icon
 pub const DATA_IMAGE_SVG_GT_ICON: &str = "https://assets-global.website-files.com/6509ee7744afed1c907f8f97/655050623557b10a706dae04_ETHDEN_logo_full_purple-p-500.png";
 
-#[derive(BorshDeserialize, BorshSerialize, Clone, Deserialize, Serialize)]
-#[serde(crate = "near_sdk::serde")]
+#[derive(Clone)]
+#[near(serializers = [json, borsh])]
 pub struct FungibleTokenMetadata {
     pub spec: String, // Should be ft-1.0.0 to indicate that a Fungible Token contract adheres to the current versions of this Metadata and the Fungible Token Core specs. This will allow consumers of the Fungible Token to know if they support the features of a given contract.
     pub name: String, // The human-readable name of the token.
@@ -20,7 +15,7 @@ pub struct FungibleTokenMetadata {
     pub decimals: u8, // used in frontends to show the proper significant digits of a token. This concept is explained well in this OpenZeppelin post. https://docs.openzeppelin.com/contracts/3.x/erc20#a-note-on-decimals}
 }
 
-#[near_bindgen]
+#[near]
 impl Contract {
     pub fn ft_metadata(&self) -> FungibleTokenMetadata {
         self.ft_metadata.clone()

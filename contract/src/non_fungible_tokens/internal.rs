@@ -5,7 +5,7 @@ use near_sdk::Promise;
 use crate::*;
 
 //convert the royalty percentage and amount to pay into a payout (U128)
-pub(crate) fn royalty_to_payout(royalty_percentage: u32, amount_to_pay: Balance) -> U128 {
+pub(crate) fn royalty_to_payout(royalty_percentage: u32, amount_to_pay: NearToken) -> U128 {
     U128(royalty_percentage as u128 * amount_to_pay / 10_000u128)
 }
 
@@ -20,7 +20,7 @@ pub(crate) fn assert_at_least_one_yocto() {
 //refund the initial deposit based on the amount of storage that was used up
 pub(crate) fn refund_deposit(storage_used: u64) {
     //get how much it would cost to store the information
-    let required_cost = env::storage_byte_cost() * Balance::from(storage_used);
+    let required_cost = env::storage_byte_cost() * NearToken::from(storage_used);
     //get the attached deposit
     let attached_deposit = env::attached_deposit();
 
@@ -57,7 +57,7 @@ impl Contract {
             .nft_tokens_per_owner
             .get(account_id)
             .unwrap_or_else(|| {
-                UnorderedSet::new(StorageKeys::TokensForOwnerInner {
+                IterableSet::new(StorageKeys::TokensForOwnerInner {
                     account_id_hash: hash_string(&account_id.to_string()),
                 })
             });

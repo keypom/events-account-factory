@@ -6,7 +6,7 @@ impl Contract {
     pub(crate) fn internal_deposit_ft_mint(
         &mut self,
         account_id: &AccountId,
-        amount: Balance,
+        amount: NearToken,
         drop_id: Option<String>,
         add_to_leaderboard: bool,
     ) {
@@ -30,7 +30,7 @@ impl Contract {
             self.account_details_by_id
                 .insert(account_id, &account_details);
         } else {
-            env::panic_str("Balance overflow");
+            env::panic_str("NearToken overflow");
         }
 
         // Increment the total supply and log a mint event
@@ -67,7 +67,7 @@ impl Contract {
     pub(crate) fn internal_ft_deposit(
         &mut self,
         account_id: &AccountId,
-        amount: Balance,
+        amount: NearToken,
         add_to_leaderboard: bool,
     ) {
         // Get the current balance of the account. If they're not registered, panic.
@@ -90,12 +90,12 @@ impl Contract {
             self.account_details_by_id
                 .insert(account_id, &account_details);
         } else {
-            env::panic_str("Balance overflow");
+            env::panic_str("NearToken overflow");
         }
     }
 
     /// Internal method for withdrawing some amount of FTs from an account.
-    pub(crate) fn internal_ft_withdraw(&mut self, account_id: &AccountId, amount: Balance) {
+    pub(crate) fn internal_ft_withdraw(&mut self, account_id: &AccountId, amount: NearToken) {
         // Get the current balance of the account. If they're not registered, panic.
         let mut account_details = self
             .account_details_by_id
@@ -118,7 +118,7 @@ impl Contract {
         &mut self,
         sender_id: &AccountId,
         receiver_id: &AccountId,
-        amount: Balance,
+        amount: NearToken,
         add_to_leaderboard: bool,
     ) {
         // Ensure the sender can't transfer to themselves
