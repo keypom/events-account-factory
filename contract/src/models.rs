@@ -108,6 +108,9 @@ pub struct AccountDetails {
     // ------------------------ Fungible Tokens ---------------------------- //
     pub ft_balance: Balance,
 
+    // ------------------------ Leaderboard -------------------------------- //
+    pub tokens_collected: U128,
+
     // ------------------------ Vendor Information ------------------------- //
     pub vendor_data: Option<VendorInformation>,
     pub account_status: Option<AccountStatus>,
@@ -129,6 +132,7 @@ impl AccountDetails {
         AccountDetails {
             ft_balance: 0,
             vendor_data: None,
+            tokens_collected: U128(0),
             account_status: None,
             drops_created,
             drops_claimed,

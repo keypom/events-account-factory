@@ -68,6 +68,7 @@ impl Contract {
         };
         env::log_str(&drop_creation_log.to_string());
 
+        self.total_transactions += 1;
         drop_id
     }
 
@@ -139,6 +140,8 @@ impl Contract {
             }),
         };
         env::log_str(&drop_creation_log.to_string());
+
+        self.total_transactions += 1;
         drop_id
     }
 
@@ -212,6 +215,8 @@ impl Contract {
             }),
         };
         env::log_str(&drop_creation_log.to_string());
+
+        self.total_transactions += 1;
         drop_id
     }
 
@@ -246,5 +251,7 @@ impl Contract {
         account_details.drops_created = creator_drop_ids;
         self.account_details_by_id
             .insert(&drop_creator, &account_details);
+
+        self.total_transactions += 1;
     }
 }

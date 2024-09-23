@@ -36,6 +36,8 @@ impl Contract {
 
         self.attendee_ticket_by_pk
             .insert(&ticket_pk, &attendee_ticket);
+
+        self.total_transactions += 1;
     }
 
     /// Creates a new account with the given parameters.
@@ -67,6 +69,10 @@ impl Contract {
             attendee_ticket.has_scanned,
             "Ticket needs to be scanned first"
         );
+        require!(
+            attendee_ticket.account_id.is_none(),
+            "Account already created"
+        );
 
         // Get the next available account ID in case the one passed in is taken
         let account_id: AccountId = self.find_available_account_id(new_account_id);
@@ -81,6 +87,8 @@ impl Contract {
             .drop_id
             .expect("No drop ID found. Admin accounts should be created via internal functions");
         let ticket_data = self.ticket_data_by_id.get(&ticket_drop_id).unwrap();
+
+        self.total_transactions += 1;
         self.internal_create_account(account_id, ticket_pk, ticket_data, false)
     }
 
@@ -151,6 +159,8 @@ impl Contract {
                 .is_none(),
             "Key already exists"
         );
+
+        self.total_transactions += 1;
         self.internal_create_account(new_account_id, new_public_key, ticket_data, true)
     }
 
@@ -208,7 +218,7 @@ impl Contract {
             .insert(&new_account_id, &account_details);
 
         // Deposit the starting balance into the account and then create it
-        self.internal_deposit_ft_mint(&new_account_id, tokens_to_start.0, None);
+        self.internal_deposit_ft_mint(&new_account_id, tokens_to_start.0, None, false);
 
         let final_storage_usage = env::storage_usage();
         near_sdk::log!(

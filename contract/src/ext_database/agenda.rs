@@ -25,5 +25,7 @@ impl Contract {
         );
         self.agenda = new_agenda;
         self.agenda_timestamp = timestamp;
+
+        self.total_transactions += 1;
     }
 }

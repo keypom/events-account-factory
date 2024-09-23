@@ -25,5 +25,7 @@ impl Contract {
         );
         self.alerts = new_alerts;
         self.alerts_timestamp = timestamp;
+
+        self.total_transactions += 1;
     }
 }
