@@ -161,9 +161,7 @@ impl Contract {
     pub fn create_multichain_drop(
         &mut self,
         drop_data: ExtDropBase,
-        chain_id: u64,
-        series_id: SeriesId,
-        contract_id: String,
+        multichain_metadata: MultichainMetadata,
     ) -> String {
         let drop_creator = self.assert_admin();
 
@@ -189,9 +187,7 @@ impl Contract {
                             scavenger_hunt: drop_data.scavenger_hunt.clone(),
                             id: drop_id.clone()
                         },
-                        chain_id,
-                        series_id,
-                        contract_id
+                        metadata: multichain_metadata
                     })
                 )
                 .is_none(),

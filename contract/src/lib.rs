@@ -31,6 +31,7 @@ use leaderboard::*;
 use models::*;
 use non_fungible_tokens::*;
 use vendors::*;
+use multichain::*;
 
 // ------------------------ Access Key Method Names ------------------------ //
 pub const ATTENDEE_KEY_METHOD_NAMES: &str = "scan_ticket,create_account,claim_drop,ft_transfer";

@@ -19,6 +19,7 @@ import { SPONSOR_DATA } from "./configData/sponsorData";
 import { PREMADE_TOKEN_DROP_DATA } from "./configData/premadeTokenDrops";
 import { PREMADE_NFT_DROP_DATA } from "./configData/premadeNFTDrops";
 import { PREMADE_SCAVENGER_HUNTS } from "./configData/premadeScavengers";
+import { PREMADE_MULTICHAIN_DROPS } from "./configData/premadeMultichainDrops";
 
 const main = async () => {
   const near = await initNear();
@@ -138,7 +139,7 @@ const main = async () => {
     fs.writeFileSync(csvFilePath, premadeCSV.join("\n"));
   }
 
-  if (CREATION_CONFIG.premadeDrops) {
+  if (CREATION_CONFIG.tokenDrops) {
     const premadeTokenDropCSV = await createDrops({
       signerAccount,
       factoryAccountId,
@@ -146,7 +147,9 @@ const main = async () => {
     });
     csvFilePath = path.join(dataDir, "premade-token-drops.csv");
     fs.writeFileSync(csvFilePath, premadeTokenDropCSV.join("\n"));
+  }
 
+  if (CREATION_CONFIG.nftDrops) {
     const premadeNFTDropCSV = await createDrops({
       signerAccount,
       factoryAccountId,
@@ -154,7 +157,9 @@ const main = async () => {
     });
     csvFilePath = path.join(dataDir, "premade-nft-drops.csv");
     fs.writeFileSync(csvFilePath, premadeNFTDropCSV.join("\n"));
+  }
 
+    if (CREATION_CONFIG.scavDrops) {
     const premadeScavDropCSV = await createDrops({
       signerAccount,
       factoryAccountId,
@@ -162,6 +167,16 @@ const main = async () => {
     });
     csvFilePath = path.join(dataDir, "premade-scav-drops.csv");
     fs.writeFileSync(csvFilePath, premadeScavDropCSV.join("\n"));
+  }
+
+  if (CREATION_CONFIG.multichainDrops) {
+    const premadeMultichainDropCSV = await createDrops({
+      signerAccount,
+      factoryAccountId,
+      drops: PREMADE_MULTICHAIN_DROPS,
+    });
+    csvFilePath = path.join(dataDir, "premade-multichain-drops.csv");
+    fs.writeFileSync(csvFilePath, premadeMultichainDropCSV.join("\n"));
   }
 
   console.log("Done!");

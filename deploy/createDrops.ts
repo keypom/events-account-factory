@@ -23,7 +23,16 @@ export interface NFTDropInfo {
   };
 }
 
-export type DropInfo = TokenDropInfo | NFTDropInfo;
+export interface MultichainDropInfo {
+  drop_data: DropData;
+  multichain_metadata: {
+    chain_id: number;
+    contract_id: string;
+    series_id: number;
+  }
+}
+
+export type DropInfo = TokenDropInfo | NFTDropInfo | MultichainDropInfo;
 
 export const createDrops = async ({
   signerAccount,
@@ -38,6 +47,7 @@ export const createDrops = async ({
   for (const drop of drops) {
     let res: any;
     let isNFT = false;
+    let dropType;
 
     // Check if it's a token or NFT drop
     if ((drop as TokenDropInfo).token_amount !== undefined) {
@@ -54,7 +64,21 @@ export const createDrops = async ({
         deposit: "0",
         gas: "300000000000000",
       });
-    } else {
+      dropType = "token";
+    } else if((drop as MultichainDropInfo).multichain_metadata !== undefined) {
+      res = await sendTransaction({
+        signerAccount,
+        receiverId: factoryAccountId,
+        methodName: "create_multichain_drop",
+        args: {
+          drop_data: drop.drop_data,
+          multichain_metadata: (drop as MultichainDropInfo).multichain_metadata,
+        },
+        deposit: "0",
+        gas: "300000000000000",
+      });
+      dropType = "multichain";
+    }else {
       isNFT = true;
       res = await sendTransaction({
         signerAccount,
@@ -67,6 +91,7 @@ export const createDrops = async ({
         deposit: "0",
         gas: "300000000000000",
       });
+      dropType = "nft";
     }
 
     console.log("Response:", res);
@@ -83,14 +108,14 @@ export const createDrops = async ({
         for (const piece of drop.drop_data.scavenger_hunt) {
           // Write a CSV entry for each scavenger piece
           dropIds.push(
-            `"${drop.drop_data.name} - Piece ${pieceNum}",${isNFT ? "nft" : "token"}%%${piece.piece}%%${dropId}`,
+            `"${drop.drop_data.name} - Piece ${pieceNum}",${dropType}%%${piece.piece}%%${dropId}`,
           );
           pieceNum++;
         }
       } else {
         // Handle regular token or NFT drop
         dropIds.push(
-          `"${drop.drop_data.name}",${isNFT ? "nft" : "token"}%%${dropId}`,
+          `"${drop.drop_data.name}",${dropType}%%${dropId}`,
         );
       }
     } else {

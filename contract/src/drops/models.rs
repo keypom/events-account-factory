@@ -48,14 +48,7 @@ pub struct NFTDropData {
 #[serde(crate = "near_sdk::serde")]
 pub struct MultichainDropData {
     pub base: DropBase,
-
-    // FOR MPC
-    pub chain_id: u64,
-    // Receiving NFT contract on external chain
-    pub contract_id: String,
-    // Arguments that I pass in to the NFT mint function call on external chain
-    // **NEEDS TO HAVE BEEN CREATED ON THE NFT CONTRACT BEFORE CALLING CREATE DROP**
-    pub series_id: SeriesId,
+    pub metadata: MultichainMetadata,
 }
 
 /// Represents the different types of claimed drops to be returned to the frontend.
@@ -133,6 +126,45 @@ impl DropData {
     }
 }
 
+impl Contract {
+    /// Retrieves external drop given internal drop data.
+    ///
+    /// # Arguments
+    ///
+    /// * `drop` - The DropData to be converted to an external drop.
+    ///
+    /// # Returns
+    ///
+    /// `ExtDropData` for the given internal drop data.
+    pub fn drop_to_external(&self, drop: &DropData) -> ExtDropData {
+        match drop {
+            DropData::Multichain(multichain_data) => ExtDropData::multichain(ExtMultichainDropData {
+                name: multichain_data.base.name.clone(),
+                multichain_metadata: multichain_data.metadata.clone(),
+                num_claimed: multichain_data.base.num_claimed,
+                drop_id: multichain_data.base.id.clone(),
+                scavenger_hunt: multichain_data.base.scavenger_hunt.clone(),
+            }),
+            DropData::Nft(nft_data) => ExtDropData::nft(ExtNFTDropData {
+                name: nft_data.base.name.clone(),
+                num_claimed: nft_data.base.num_claimed,
+                nft_metadata: self.series_by_id.get(&nft_data.series_id).unwrap().metadata.clone(),
+                drop_id: nft_data.base.id.clone(),
+                scavenger_hunt: nft_data.base.scavenger_hunt.clone(),
+            }),
+            DropData::Token(token_data) => ExtDropData::token(ExtTokenDropData {
+                name: token_data.base.name.clone(),
+                image: token_data.base.image.clone(),
+                num_claimed: token_data.base.num_claimed,
+                amount: token_data.amount,
+                drop_id: token_data.base.id.clone(),
+                scavenger_hunt: token_data.base.scavenger_hunt.clone(),
+            }),
+        }
+    }
+}
+
+
 /// Represents what the user has claimed for a specific drop. If scavenger IDs is none, the drop contains no scavengers
 /// If scavengers is Some, the drop needs X amount of scavenger Ids to be found before the reward is allocated
 /// On the frontend, query for drop data to see how many are needed and cross reference with this data structure to see
@@ -157,6 +189,7 @@ impl ClaimedDropData {
             ClaimedDropData::Multichain(multichain_drop_scavs) => multichain_drop_scavs.clone(),
         }
     }
+
 
     /// Adds a scavenger ID to the list of found scavenger IDs.
     ///

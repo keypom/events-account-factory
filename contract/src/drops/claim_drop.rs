@@ -14,7 +14,10 @@ impl Contract {
     /// # Panics
     ///
     /// Panics if the drop is not found or if the user is not registered.
-    pub fn claim_drop(&mut self, drop_id: String, scavenger_id: Option<String>) {
+    pub fn claim_drop(
+        &mut self, drop_id: String, 
+        scavenger_id: Option<String>
+    ) -> ExtDropData {
         self.assert_no_freeze();
         let mut drop_data = self.drop_by_id.get(&drop_id).expect("Drop not found");
 
@@ -101,6 +104,8 @@ impl Contract {
             event: EventLogVariant::KeypomDropClaim(claim_log),
         };
         env::log_str(&event_log.to_string());
+        let external_drop = self.drop_to_external(&drop_data);
+        external_drop
     }
 
     /// Handles the claim process for a token drop.
@@ -320,7 +325,7 @@ impl Contract {
             );
             if found_scavenger_ids == required_scavenger_ids {
                 event_log.reward = Some(DropClaimReward::Multichain);
-                self.handle_multichain_mint(data);
+                //self.handle_multichain_mint(data);
             }
 
             claimed_drops.insert(drop_id, &claimed_drop);
