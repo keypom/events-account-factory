@@ -2,6 +2,30 @@ use crate::*;
 
 #[near]
 impl Contract {
+    pub(crate) fn assert_valid_signature(
+        &self,
+        drop_id: &DropId,
+        receiver_id: &AccountId,
+        signature: &Base64VecU8,
+        scavenger_id: Option<PublicKey>,
+    ) {
+        // Determine the expected public key
+        let drop_data = self.drop_by_id.get(drop_id).expect("Drop not found");
+        let expected_key = if let Some(scavenger_pk) = scavenger_id.clone() {
+            scavenger_pk
+        } else {
+            // Get the drop key from drop_data
+            match &drop_data {
+                DropData::Token(data) => data.key.clone(),
+                DropData::Nft(data) => data.key.clone(),
+                DropData::Multichain(data) => data.key.clone(),
+            }
+        };
+        // Verify the signature
+        let is_valid_signature =
+            verify_signature(signature.clone(), receiver_id.clone(), expected_key.clone());
+        require!(is_valid_signature, "Invalid signature");
+    }
     /// Allows a user to claim an existing drop (if they haven't already).
     ///
     /// # Arguments
@@ -19,42 +43,11 @@ impl Contract {
         signature: Base64VecU8,
     ) -> DropData {
         self.assert_no_freeze();
-        let drop_data = self.drop_by_id.get_mut(&drop_id).expect("Drop not found");
         let receiver_id = self.caller_id_by_signing_pk();
-
-        // Determine the expected public key
-        let expected_key = if let Some(scavenger_pk) = scavenger_id.clone() {
-            scavenger_pk
-        } else {
-            // Get the drop key from drop_data
-            let drop_pk = match &drop_data {
-                DropData::Token(data) => data.key.clone(),
-                DropData::Nft(data) => data.key.clone(),
-                DropData::Multichain(data) => data.key.clone(),
-            };
-            drop_pk
-        };
-        // Verify the signature
-        let is_valid_signature =
-            verify_signature(signature.clone(), receiver_id.clone(), expected_key.clone());
-        require!(is_valid_signature, "Invalid signature");
-
-        // Use entry API to access and modify account details
-        let account_details = self
-            .account_details_by_id
-            .entry(receiver_id.clone())
-            .or_insert_with(|| AccountDetails::new(&receiver_id));
-
-        let mut claimed_drops = account_details.drops_claimed;
+        self.assert_valid_signature(&drop_id, &receiver_id, &signature, scavenger_id.clone());
 
         // Handle the claim logic based on the drop type
-        let claim_log = self.handle_claim_drop(
-            &mut drop_data,
-            &drop_id,
-            &receiver_id,
-            scavenger_id,
-            &mut claimed_drops,
-        );
+        let claim_log = self.handle_claim_drop(&drop_id, &receiver_id, scavenger_id);
 
         let reward = match claim_log.reward {
             Some(DropClaimReward::Token(amount)) => format!("{}", amount.0),
@@ -71,17 +64,16 @@ impl Contract {
 
         self.total_transactions += 1;
 
-        // Update account details with claimed drops
-        account_details.drops_claimed = claimed_drops;
-
         let event_log = EventLog {
             standard: KEYPOM_STANDARD_NAME.to_string(),
             version: KEYPOM_CONFERENCE_METADATA_SPEC.to_string(),
             event: EventLogVariant::KeypomDropClaim(claim_log),
         };
         env::log_str(&event_log.to_string());
-
-        drop_data.clone()
+        self.drop_by_id
+            .get(&drop_id)
+            .expect("Drop not found")
+            .clone()
     }
 
     /// Handles the claim process for any drop type.
@@ -95,12 +87,16 @@ impl Contract {
     /// * `claimed_drops` - The map of claimed drops for the receiver.
     fn handle_claim_drop(
         &mut self,
-        drop_data: &mut DropData,
         drop_id: &DropId,
         receiver_id: &AccountId,
         found_scavenger_id: Option<PublicKey>,
-        claimed_drops: &mut IterableMap<DropId, ClaimedDropData>,
     ) -> KeypomDropClaimLog {
+        let mut drop_data = self
+            .drop_by_id
+            .get(drop_id)
+            .expect("Drop not found")
+            .clone();
+
         let mut event_log = KeypomDropClaimLog {
             claimer_id: receiver_id.to_string(),
             reward: None,
@@ -109,14 +105,14 @@ impl Contract {
         };
 
         // Increment the number of claims for the drop
-        match drop_data {
+        match &mut drop_data {
             DropData::Token(data) => data.num_claimed += 1,
             DropData::Nft(data) => data.num_claimed += 1,
             DropData::Multichain(data) => data.num_claimed += 1,
         }
 
         // Extract scavenger hunt information if available
-        let scavenger_hunt = match drop_data {
+        let scavenger_hunt = match &drop_data {
             DropData::Token(data) => data.scavenger_hunt.as_ref(),
             DropData::Nft(data) => data.scavenger_hunt.as_ref(),
             DropData::Multichain(data) => data.scavenger_hunt.as_ref(),
@@ -127,9 +123,9 @@ impl Contract {
 
             // Handle scavenger hunt logic
             let hunt_complete = self.handle_scavenger_hunt(
+                receiver_id,
                 required_scavenger_ids,
                 found_scavenger_id,
-                claimed_drops,
                 drop_id,
                 &mut event_log,
             );
@@ -137,15 +133,15 @@ impl Contract {
             if hunt_complete {
                 // Process the reward based on drop type
                 let reward = match drop_data {
-                    DropData::Token(data) => {
+                    DropData::Token(ref data) => {
                         self.internal_deposit_ft_transfer(data, drop_id, receiver_id);
                         DropClaimReward::Token(data.amount)
                     }
-                    DropData::Nft(data) => {
+                    DropData::Nft(ref data) => {
                         self.internal_nft_mint(data.series_id, receiver_id.clone());
                         DropClaimReward::Nft
                     }
-                    DropData::Multichain(data) => {
+                    DropData::Multichain(ref data) => {
                         self.handle_multichain_mint(data);
                         DropClaimReward::Multichain
                     }
@@ -153,27 +149,40 @@ impl Contract {
                 event_log.reward = Some(reward);
             }
         } else {
+            // Use entry API to access and modify account details
+            let account_details = self
+                .account_details_by_id
+                .entry(receiver_id.clone())
+                .or_insert_with(|| AccountDetails::new(receiver_id));
+
             // Ensure the drop hasn't been claimed already
-            require!(claimed_drops.get(drop_id).is_none(), "Drop already claimed");
-            claimed_drops.insert(drop_id.to_string(), None);
+            require!(
+                account_details
+                    .drops_claimed
+                    .insert(drop_id.to_string(), None)
+                    .is_none(),
+                "Drop already claimed"
+            );
 
             // Process the reward based on drop type
             let reward = match drop_data {
-                DropData::Token(data) => {
+                DropData::Token(ref data) => {
                     self.internal_deposit_ft_transfer(data, drop_id, receiver_id);
                     DropClaimReward::Token(data.amount)
                 }
-                DropData::Nft(data) => {
+                DropData::Nft(ref data) => {
                     self.internal_nft_mint(data.series_id, receiver_id.clone());
                     DropClaimReward::Nft
                 }
-                DropData::Multichain(data) => {
+                DropData::Multichain(ref data) => {
                     self.handle_multichain_mint(data);
                     DropClaimReward::Multichain
                 }
             };
             event_log.reward = Some(reward);
         }
+
+        self.drop_by_id.insert(drop_id.to_string(), drop_data);
 
         event_log
     }
@@ -193,9 +202,9 @@ impl Contract {
     /// * `bool` - Indicates whether the scavenger hunt is complete.
     fn handle_scavenger_hunt(
         &mut self,
-        required_scavenger_ids: &Vec<ScavengerHuntData>,
+        receiver_id: &AccountId,
+        required_scavenger_ids: &[ScavengerHuntData],
         found_scavenger_id: PublicKey,
-        claimed_drops: &mut IterableMap<DropId, ClaimedDropData>,
         drop_id: &DropId,
         event_log: &mut KeypomDropClaimLog,
     ) -> bool {
@@ -205,7 +214,14 @@ impl Contract {
             .any(|scavenger| scavenger.key == found_scavenger_id);
         require!(is_valid_scavenger_id, "Incorrect scavenger piece passed in");
 
-        let mut claimed_drop = claimed_drops
+        // Use entry API to access and modify account details
+        let account_details = self
+            .account_details_by_id
+            .entry(receiver_id.clone())
+            .or_insert_with(|| AccountDetails::new(receiver_id));
+
+        let mut claimed_drop = account_details
+            .drops_claimed
             .get(drop_id)
             .cloned()
             .unwrap_or(Some(Vec::new()));
@@ -228,7 +244,9 @@ impl Contract {
         event_log.pieces_found = Some(found_scavenger_ids);
         event_log.pieces_required = Some(required_scavenger_ids_count);
 
-        claimed_drops.insert(drop_id.to_string(), claimed_drop);
+        account_details
+            .drops_claimed
+            .insert(drop_id.to_string(), claimed_drop);
 
         found_scavenger_ids == required_scavenger_ids_count
     }
@@ -275,7 +293,7 @@ impl Contract {
             // Mint tokens internally if the creator is an admin
             self.internal_deposit_ft_mint(
                 receiver_id,
-                amount_to_claim,
+                NearToken::from_yoctonear(amount_to_claim),
                 Some(drop_id.clone()),
                 true,
             );
@@ -286,12 +304,17 @@ impl Contract {
 
             // Check if the creator has enough tokens to cover the amount to be claimed
             require!(
-                cur_creator_tokens >= amount_to_claim,
+                cur_creator_tokens.ge(&NearToken::from_yoctonear(amount_to_claim)),
                 "The creator does not have enough tokens to cover the amount to be claimed."
             );
 
             // Perform FT transfer from the drop creator to the receiver
-            self.internal_ft_transfer(&drop_creator, receiver_id, amount_to_claim, true);
+            self.internal_ft_transfer(
+                &drop_creator,
+                receiver_id,
+                NearToken::from_yoctonear(amount_to_claim),
+                true,
+            );
         }
     }
 }
