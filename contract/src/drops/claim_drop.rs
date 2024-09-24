@@ -1,5 +1,3 @@
-use std::convert::TryInto;
-
 use crate::*;
 
 #[near]
@@ -22,8 +20,24 @@ impl Contract {
     ) -> DropData {
         self.assert_no_freeze();
         let drop_data = self.drop_by_id.get_mut(&drop_id).expect("Drop not found");
-
         let receiver_id = self.caller_id_by_signing_pk();
+
+        // Determine the expected public key
+        let expected_key = if let Some(scavenger_pk) = scavenger_id.clone() {
+            scavenger_pk
+        } else {
+            // Get the drop key from drop_data
+            let drop_pk = match &drop_data {
+                DropData::Token(data) => data.key.clone(),
+                DropData::Nft(data) => data.key.clone(),
+                DropData::Multichain(data) => data.key.clone(),
+            };
+            drop_pk
+        };
+        // Verify the signature
+        let is_valid_signature =
+            verify_signature(signature.clone(), receiver_id.clone(), expected_key.clone());
+        require!(is_valid_signature, "Invalid signature");
 
         // Use entry API to access and modify account details
         let account_details = self
@@ -33,39 +47,14 @@ impl Contract {
 
         let mut claimed_drops = account_details.drops_claimed;
 
-        // Match on the DropData enum to handle token and NFT drops
-        let claim_log = match &mut drop_data {
-            DropData::Token(data) => {
-                data.num_claimed += 1;
-                self.handle_claim_token_drop(
-                    data,
-                    &drop_id,
-                    &receiver_id,
-                    scavenger_id,
-                    &mut claimed_drops,
-                )
-            }
-            DropData::Nft(data) => {
-                data.num_claimed += 1;
-                self.handle_claim_nft_drop(
-                    data,
-                    &drop_id,
-                    &receiver_id,
-                    scavenger_id,
-                    &mut claimed_drops,
-                )
-            }
-            DropData::Multichain(data) => {
-                data.num_claimed += 1;
-                self.handle_claim_multichain_drop(
-                    data,
-                    &drop_id,
-                    &receiver_id,
-                    scavenger_id,
-                    &mut claimed_drops,
-                )
-            }
-        };
+        // Handle the claim logic based on the drop type
+        let claim_log = self.handle_claim_drop(
+            &mut drop_data,
+            &drop_id,
+            &receiver_id,
+            scavenger_id,
+            &mut claimed_drops,
+        );
 
         let reward = match claim_log.reward {
             Some(DropClaimReward::Token(amount)) => format!("{}", amount.0),
@@ -95,20 +84,21 @@ impl Contract {
         drop_data.clone()
     }
 
-    /// Handles the claim process for a token drop.
+    /// Handles the claim process for any drop type.
     ///
     /// # Arguments
     ///
-    /// * `data` - The internal token drop data.
+    /// * `drop_data` - The mutable reference to the drop data.
+    /// * `drop_id` - The ID of the drop.
     /// * `receiver_id` - The ID of the receiver claiming the drop.
-    /// * `scavenger_id` - Optional scavenger ID to claim.
+    /// * `found_scavenger_id` - Optional scavenger ID to claim.
     /// * `claimed_drops` - The map of claimed drops for the receiver.
-    fn handle_claim_token_drop(
+    fn handle_claim_drop(
         &mut self,
-        data: &TokenDropData,
+        drop_data: &mut DropData,
         drop_id: &DropId,
         receiver_id: &AccountId,
-        found_scavenger_id: Option<String>,
+        found_scavenger_id: Option<PublicKey>,
         claimed_drops: &mut IterableMap<DropId, ClaimedDropData>,
     ) -> KeypomDropClaimLog {
         let mut event_log = KeypomDropClaimLog {
@@ -118,212 +108,129 @@ impl Contract {
             pieces_required: None,
         };
 
-        if let Some(required_scavenger_ids) = &data.base.scavenger_hunt {
+        // Increment the number of claims for the drop
+        match drop_data {
+            DropData::Token(data) => data.num_claimed += 1,
+            DropData::Nft(data) => data.num_claimed += 1,
+            DropData::Multichain(data) => data.num_claimed += 1,
+        }
+
+        // Extract scavenger hunt information if available
+        let scavenger_hunt = match drop_data {
+            DropData::Token(data) => data.scavenger_hunt.as_ref(),
+            DropData::Nft(data) => data.scavenger_hunt.as_ref(),
+            DropData::Multichain(data) => data.scavenger_hunt.as_ref(),
+        };
+
+        if let Some(required_scavenger_ids) = scavenger_hunt {
             let found_scavenger_id = found_scavenger_id.expect("This drop requires a scavenger ID");
 
-            // Check if the found_scavenger_id is valid and hasn't been claimed yet
-            let is_valid_scavenger_id = required_scavenger_ids
-                .iter()
-                .any(|scavenger| scavenger.piece == found_scavenger_id);
-            require!(is_valid_scavenger_id, "Incorrect scavenger piece passed in");
-
-            let mut claimed_drop = claimed_drops
-                .get(drop_id)
-                .unwrap_or(ClaimedDropData::Token(Some(Vec::new())));
-
-            let already_claimed = claimed_drop
-                .get_found_scavenger_ids()
-                .unwrap_or_default()
-                .contains(&found_scavenger_id);
-            require!(!already_claimed, "Scavenger piece already claimed");
-
-            // Add the valid scavenger_id to the claimed_drop
-            claimed_drop.add_scavenger_id(found_scavenger_id.clone());
-
-            let found_scavenger_ids = claimed_drop
-                .get_found_scavenger_ids()
-                .unwrap_or_default()
-                .len();
-            let required_scavenger_ids = required_scavenger_ids.len();
-
-            event_log.pieces_found = Some(
-                found_scavenger_ids
-                    .try_into()
-                    .expect("Too many pieces found to convert to u16"),
+            // Handle scavenger hunt logic
+            let hunt_complete = self.handle_scavenger_hunt(
+                required_scavenger_ids,
+                found_scavenger_id,
+                claimed_drops,
+                drop_id,
+                &mut event_log,
             );
-            event_log.pieces_required = Some(
-                required_scavenger_ids
-                    .try_into()
-                    .expect("Too many pieces required to convert to u16"),
-            );
-            if found_scavenger_ids == required_scavenger_ids {
-                event_log.reward = Some(DropClaimReward::Token(data.amount));
-                self.internal_deposit_ft_transfer(data, drop_id, receiver_id);
+
+            if hunt_complete {
+                // Process the reward based on drop type
+                let reward = match drop_data {
+                    DropData::Token(data) => {
+                        self.internal_deposit_ft_transfer(data, drop_id, receiver_id);
+                        DropClaimReward::Token(data.amount)
+                    }
+                    DropData::Nft(data) => {
+                        self.internal_nft_mint(data.series_id, receiver_id.clone());
+                        DropClaimReward::Nft
+                    }
+                    DropData::Multichain(data) => {
+                        self.handle_multichain_mint(data);
+                        DropClaimReward::Multichain
+                    }
+                };
+                event_log.reward = Some(reward);
             }
-
-            claimed_drops.insert(drop_id, &claimed_drop);
-            event_log
         } else {
+            // Ensure the drop hasn't been claimed already
             require!(claimed_drops.get(drop_id).is_none(), "Drop already claimed");
-            claimed_drops.insert(drop_id, &ClaimedDropData::Token(None));
-            self.internal_deposit_ft_transfer(data, drop_id, receiver_id);
-            event_log.reward = Some(DropClaimReward::Token(data.amount));
-            event_log
+            claimed_drops.insert(drop_id.to_string(), None);
+
+            // Process the reward based on drop type
+            let reward = match drop_data {
+                DropData::Token(data) => {
+                    self.internal_deposit_ft_transfer(data, drop_id, receiver_id);
+                    DropClaimReward::Token(data.amount)
+                }
+                DropData::Nft(data) => {
+                    self.internal_nft_mint(data.series_id, receiver_id.clone());
+                    DropClaimReward::Nft
+                }
+                DropData::Multichain(data) => {
+                    self.handle_multichain_mint(data);
+                    DropClaimReward::Multichain
+                }
+            };
+            event_log.reward = Some(reward);
         }
+
+        event_log
     }
 
-    /// Handles the claim process for an NFT drop.
+    /// Handles the scavenger hunt logic common to all drop types.
     ///
     /// # Arguments
     ///
-    /// * `data` - The internal NFT drop data.
-    /// * `receiver_id` - The ID of the receiver claiming the drop.
-    /// * `scavenger_id` - Optional scavenger ID to claim.
+    /// * `required_scavenger_ids` - The list of required scavenger IDs.
+    /// * `found_scavenger_id` - The scavenger ID found by the user.
     /// * `claimed_drops` - The map of claimed drops for the receiver.
-    fn handle_claim_nft_drop(
-        &mut self,
-        data: &NFTDropData,
-        drop_id: &DropId,
-        receiver_id: &AccountId,
-        found_scavenger_id: Option<String>,
-        claimed_drops: &mut IterableMap<DropId, ClaimedDropData>,
-    ) -> KeypomDropClaimLog {
-        let mut event_log = KeypomDropClaimLog {
-            claimer_id: receiver_id.to_string(),
-            reward: None,
-            pieces_found: None,
-            pieces_required: None,
-        };
-
-        if let Some(required_scavenger_ids) = &data.base.scavenger_hunt {
-            let found_scavenger_id = found_scavenger_id.expect("This drop requires a scavenger ID");
-
-            // Check if the found_scavenger_id is valid and hasn't been claimed yet
-            let is_valid_scavenger_id = required_scavenger_ids
-                .iter()
-                .any(|scavenger| scavenger.piece == found_scavenger_id);
-            require!(is_valid_scavenger_id, "Incorrect scavenger piece passed in");
-
-            let mut claimed_drop = claimed_drops
-                .get(drop_id)
-                .unwrap_or(ClaimedDropData::Nft(Some(Vec::new())));
-
-            let already_claimed = claimed_drop
-                .get_found_scavenger_ids()
-                .unwrap_or_default()
-                .contains(&found_scavenger_id);
-            require!(!already_claimed, "Scavenger piece already claimed");
-
-            // Add the valid scavenger_id to the claimed_drop
-            claimed_drop.add_scavenger_id(found_scavenger_id.clone());
-
-            let found_scavenger_ids = claimed_drop
-                .get_found_scavenger_ids()
-                .unwrap_or_default()
-                .len();
-            let required_scavenger_ids = required_scavenger_ids.len();
-
-            event_log.pieces_found = Some(
-                found_scavenger_ids
-                    .try_into()
-                    .expect("Too many pieces found to convert to u16"),
-            );
-            event_log.pieces_required = Some(
-                required_scavenger_ids
-                    .try_into()
-                    .expect("Too many pieces required to convert to u16"),
-            );
-            if found_scavenger_ids == required_scavenger_ids {
-                self.internal_nft_mint(data.series_id, receiver_id.clone());
-                event_log.reward = Some(DropClaimReward::Nft);
-            }
-
-            claimed_drops.insert(drop_id, &claimed_drop);
-            event_log
-        } else {
-            require!(claimed_drops.get(drop_id).is_none(), "Drop already claimed");
-            claimed_drops.insert(drop_id, &ClaimedDropData::Nft(None));
-            self.internal_nft_mint(data.series_id, receiver_id.clone());
-            event_log.reward = Some(DropClaimReward::Nft);
-            event_log
-        }
-    }
-
-    /// Handles the claim process for a multichain drop.
+    /// * `drop_id` - The ID of the drop.
+    /// * `event_log` - The event log to update with scavenger hunt info.
     ///
-    /// # Arguments
+    /// # Returns
     ///
-    /// * `data` - The internal token drop data.
-    /// * `receiver_id` - The ID of the receiver claiming the drop.
-    /// * `scavenger_id` - Optional scavenger ID to claim.
-    /// * `claimed_drops` - The map of claimed drops for the receiver.
-    fn handle_claim_multichain_drop(
+    /// * `bool` - Indicates whether the scavenger hunt is complete.
+    fn handle_scavenger_hunt(
         &mut self,
-        data: &MultichainDropData,
-        drop_id: &DropId,
-        receiver_id: &AccountId,
-        found_scavenger_id: Option<String>,
+        required_scavenger_ids: &Vec<ScavengerHuntData>,
+        found_scavenger_id: PublicKey,
         claimed_drops: &mut IterableMap<DropId, ClaimedDropData>,
-    ) -> KeypomDropClaimLog {
-        let mut event_log = KeypomDropClaimLog {
-            claimer_id: receiver_id.to_string(),
-            reward: None,
-            pieces_found: None,
-            pieces_required: None,
-        };
+        drop_id: &DropId,
+        event_log: &mut KeypomDropClaimLog,
+    ) -> bool {
+        // Check if the found_scavenger_id is valid and hasn't been claimed yet
+        let is_valid_scavenger_id = required_scavenger_ids
+            .iter()
+            .any(|scavenger| scavenger.key == found_scavenger_id);
+        require!(is_valid_scavenger_id, "Incorrect scavenger piece passed in");
 
-        if let Some(required_scavenger_ids) = &data.base.scavenger_hunt {
-            let found_scavenger_id = found_scavenger_id.expect("This drop requires a scavenger ID");
+        let mut claimed_drop = claimed_drops
+            .get(drop_id)
+            .cloned()
+            .unwrap_or(Some(Vec::new()));
 
-            // Check if the found_scavenger_id is valid and hasn't been claimed yet
-            let is_valid_scavenger_id = required_scavenger_ids
-                .iter()
-                .any(|scavenger| scavenger.piece == found_scavenger_id);
-            require!(is_valid_scavenger_id, "Incorrect scavenger piece passed in");
+        let already_claimed = claimed_drop
+            .clone()
+            .unwrap_or_default()
+            .contains(&found_scavenger_id);
+        require!(!already_claimed, "Scavenger piece already claimed");
 
-            let mut claimed_drop = claimed_drops
-                .get(drop_id)
-                .unwrap_or(ClaimedDropData::Multichain(Some(Vec::new())));
+        // Add the valid scavenger_id to the claimed_drop
+        claimed_drop
+            .as_mut()
+            .unwrap_or(&mut Vec::new())
+            .push(found_scavenger_id);
 
-            let already_claimed = claimed_drop
-                .get_found_scavenger_ids()
-                .unwrap_or_default()
-                .contains(&found_scavenger_id);
-            require!(!already_claimed, "Scavenger piece already claimed");
+        let found_scavenger_ids = claimed_drop.clone().unwrap_or_default().len() as u16;
+        let required_scavenger_ids_count = required_scavenger_ids.len() as u16;
 
-            // Add the valid scavenger_id to the claimed_drop
-            claimed_drop.add_scavenger_id(found_scavenger_id.clone());
+        event_log.pieces_found = Some(found_scavenger_ids);
+        event_log.pieces_required = Some(required_scavenger_ids_count);
 
-            let found_scavenger_ids = claimed_drop
-                .get_found_scavenger_ids()
-                .unwrap_or_default()
-                .len();
-            let required_scavenger_ids = required_scavenger_ids.len();
+        claimed_drops.insert(drop_id.to_string(), claimed_drop);
 
-            event_log.pieces_found = Some(
-                found_scavenger_ids
-                    .try_into()
-                    .expect("Too many pieces found to convert to u16"),
-            );
-            event_log.pieces_required = Some(
-                required_scavenger_ids
-                    .try_into()
-                    .expect("Too many pieces required to convert to u16"),
-            );
-            if found_scavenger_ids == required_scavenger_ids {
-                event_log.reward = Some(DropClaimReward::Multichain);
-                //self.handle_multichain_mint(data);
-            }
-
-            claimed_drops.insert(drop_id, &claimed_drop);
-            event_log
-        } else {
-            require!(claimed_drops.get(drop_id).is_none(), "Drop already claimed");
-            claimed_drops.insert(drop_id, &ClaimedDropData::Multichain(None));
-            self.handle_multichain_mint(data);
-            event_log.reward = Some(DropClaimReward::Multichain);
-            event_log
-        }
+        found_scavenger_ids == required_scavenger_ids_count
     }
 
     /// Decrements the tokens from the sponsor's balance for a token drop.

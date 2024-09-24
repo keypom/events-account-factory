@@ -2,6 +2,7 @@ use crate::*;
 use near_sdk::CryptoHash;
 
 pub type DropId = String;
+pub type ClaimedDropData = Option<Vec<PublicKey>>;
 
 #[near]
 #[derive(BorshStorageKey)]
@@ -105,7 +106,7 @@ pub struct AccountDetails {
     /// On the frontend, query for drop data to see how many are needed and cross reference with this data structure to see
     /// how many more IDs are left to be found
     /// This is done to optimize the contract and not require duplicate data to be stored
-    pub drops_claimed: IterableMap<DropId, Option<Vec<PublicKey>>>,
+    pub drops_claimed: IterableMap<DropId, ClaimedDropData>,
 }
 
 impl AccountDetails {

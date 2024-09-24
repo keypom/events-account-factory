@@ -109,7 +109,6 @@ const main = async () => {
 
   // STEP 4: Add Tickets
   if (CREATION_CONFIG.addTickets) {
-    // TODO: Add airtable integration
     const defaultAttendeeInfo = new Array(NUM_TICKETS_TO_ADD).fill({
       name: "Test User",
       email: "test",
@@ -159,7 +158,7 @@ const main = async () => {
     fs.writeFileSync(csvFilePath, premadeNFTDropCSV.join("\n"));
   }
 
-    if (CREATION_CONFIG.scavDrops) {
+  if (CREATION_CONFIG.scavDrops) {
     const premadeScavDropCSV = await createDrops({
       signerAccount,
       factoryAccountId,

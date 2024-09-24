@@ -3,7 +3,10 @@ use std::collections::HashMap;
 use near_sdk::json_types::{Base64VecU8, U128};
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::store::{IterableMap, IterableSet, LookupMap};
-use near_sdk::{env, near, require, AccountId, BorshStorageKey, CryptoHash, NearToken, PublicKey};
+use near_sdk::{
+    env, near, require, AccountId, BorshStorageKey, CryptoHash, NearToken, PanicOnDefault,
+    PublicKey,
+};
 
 mod cleanup;
 mod drops;
@@ -37,6 +40,7 @@ pub const DATA_SETTER_KEY_METHOD_NAMES: &str = "set_alerts,set_agenda";
 pub const DROP_DELIMITER: &str = "||";
 
 #[near(contract_state, serializers = [borsh])]
+#[derive(PanicOnDefault)]
 pub struct Contract {
     // ------------------------ Contract Global ---------------------------- //
     pub account_details_by_id: IterableMap<AccountId, AccountDetails>, // clearable

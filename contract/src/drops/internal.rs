@@ -15,25 +15,20 @@ pub fn parse_drop_id(drop_id: &DropId) -> AccountId {
 pub(crate) fn verify_signature(
     signature: Base64VecU8,
     caller_id: AccountId,
-    drop_name: String,
-    drop_id: DropId,
+    expected_key: PublicKey,
 ) -> bool {
-    let pk = env::signer_account_pk();
+    // Serialize the public key to base58
+    let expected_key_base58 = bs58::encode(expected_key.as_bytes()).into_string();
 
-    let expected_message = format!(
-        "{},{},{},{}",
-        caller_id,
-        serde_json::to_string(&pk).unwrap(),
-        drop_name,
-        drop_id
-    );
+    // The message that should have been signed
+    let expected_message = format!("{},{}", caller_id, expected_key_base58);
 
-    // Verify the signature is the valid message and signed by the linkdrop PK
-    let pk_bytes = pk_to_32_byte_array(&pk).unwrap();
-    let sig_bytes = vec_to_64_byte_array(signature.into()).unwrap();
-    let is_valid = env::ed25519_verify(&sig_bytes, expected_message.as_bytes(), pk_bytes);
+    // Convert the public key and signature into byte arrays
+    let pk_bytes = pk_to_32_byte_array(&expected_key).expect("Invalid public key length");
+    let sig_bytes = vec_to_64_byte_array(signature.into()).expect("Invalid signature length");
 
-    is_valid
+    // Verify the signature
+    env::ed25519_verify(&sig_bytes, expected_message.as_bytes(), &pk_bytes)
 }
 
 pub(crate) fn pk_to_32_byte_array(pk: &PublicKey) -> Option<&[u8; 32]> {
@@ -69,4 +64,3 @@ pub(crate) fn vec_to_64_byte_array(vec: Vec<u8>) -> Option<[u8; 64]> {
 
     Some(array)
 }
-

@@ -40,6 +40,12 @@ dependencies = [
 
 [[package]]
 name = "bs58"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "771fe0050b883fcc3ea2359b1a96bcfbc090b7116eae7c3c512c7a083fdf23d3"
+
+[[package]]
+name = "bs58"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bf88ba1141d185c399bee5288d850d63b8369520c1eafc32a0430b5b6c287bf4"
@@ -185,7 +191,7 @@ checksum = "4e296b02c85539c16659e171242d6c6bbea87eec7c9ef860d8dfd3fb3168a18a"
 dependencies = [
  "base64",
  "borsh",
- "bs58",
+ "bs58 0.5.1",
  "near-account-id",
  "near-gas",
  "near-sdk-macros",
@@ -234,6 +240,7 @@ dependencies = [
 name = "nearcon-factory-contract"
 version = "0.1.0"
 dependencies = [
+ "bs58 0.4.0",
  "near-sdk",
  "serde_json",
 ]

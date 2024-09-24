@@ -67,7 +67,7 @@ impl Contract {
     /// A vector of `ExtClaimedDrop` containing the drops that match the filter criteria.
     fn get_claimed_drops<F>(&self, account_id: AccountId, filter: F) -> Vec<ExtClaimedDrop>
     where
-        F: Fn(&DropData, &Option<Vec<PublicKey>>) -> bool, // Use DropData here
+        F: Fn(&DropData, &ClaimedDropData) -> bool, // Use DropData here
     {
         let mut result_drops = Vec::new();
 

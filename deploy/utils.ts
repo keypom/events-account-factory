@@ -133,7 +133,7 @@ export const convertMapToRawJsonCsv = (
 
   for (const [encodedTicket, attendeeInfo] of map.entries()) {
     const rawJsonData = JSON.stringify(attendeeInfo);
-    csvString += `${TICKET_URL_BASE}${encodedTicket},"${rawJsonData}"\n`;
+    csvString += `"${rawJsonData}",${TICKET_URL_BASE}${encodedTicket}\n`;
   }
 
   return csvString;

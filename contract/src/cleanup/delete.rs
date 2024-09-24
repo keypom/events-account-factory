@@ -1,3 +1,5 @@
+use cleanup::helpers::on_storage_cleared;
+
 use crate::*;
 
 #[near]
@@ -25,9 +27,10 @@ impl Contract {
     /// # Panics
     ///
     /// Panics if the contract is not frozen or if the caller is not an admin.
-    pub fn clear_storage(&mut self, limit: Option<u32>) -> u64 {
+    pub fn clear_storage(&mut self, limit: Option<u32>, refund_account: AccountId) -> u64 {
         // Ensure that only an admin can perform this operation.
         self.assert_admin();
+        let storage_initial = env::storage_usage();
         // Ensure that the contract is frozen before clearing storage.
         require!(
             self.is_contract_frozen,
@@ -92,7 +95,12 @@ impl Contract {
             }
         }
 
+        // Calculate the storage usage after the removals.
+        let storage_used = env::storage_usage() - storage_initial;
+        on_storage_cleared(refund_account, storage_used);
+
         // Calculate and return the number of accounts left to clear.
-        (total - processed) as u64
+        let accounts_to_clear = (total - processed) as u64;
+        accounts_to_clear
     }
 }
