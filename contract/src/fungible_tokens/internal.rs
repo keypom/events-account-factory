@@ -20,7 +20,7 @@ impl Contract {
             let balance = account_details.ft_balance;
 
             if add_to_leaderboard {
-                account_details
+                account_details.tokens_collected = account_details
                     .tokens_collected
                     .checked_add(amount)
                     .expect("NearToken overflow");
@@ -44,10 +44,13 @@ impl Contract {
         }
 
         // Increment the total supply and log events (done outside the account_details mutable borrow)
-        self.ft_total_supply
+        self.ft_total_supply = self
+            .ft_total_supply
             .checked_add(amount)
             .expect("NearToken overflow");
-        self.total_tokens_transferred
+
+        self.total_tokens_transferred = self
+            .total_tokens_transferred
             .checked_add(amount)
             .expect("NearToken overflow");
 
@@ -98,7 +101,7 @@ impl Contract {
             let balance = account_details.ft_balance;
 
             if add_to_leaderboard {
-                account_details
+                account_details.tokens_collected = account_details
                     .tokens_collected
                     .checked_add(amount)
                     .expect("NearToken overflow");
@@ -162,9 +165,11 @@ impl Contract {
         self.internal_ft_withdraw(sender_id, amount);
         self.internal_ft_deposit(receiver_id, amount, add_to_leaderboard);
 
-        self.total_tokens_transferred
+        self.total_tokens_transferred = self
+            .total_tokens_transferred
             .checked_add(amount)
             .expect("NearToken overflow");
+
         // Emit a Transfer event
         env::log_str(
             &EventLog {

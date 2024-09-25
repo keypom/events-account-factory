@@ -6,6 +6,7 @@ interface DropDataInput {
   image: string;
   scavenger_hunt?: Array<{
     description: string;
+    id: number;
     key?: string; // We'll generate `key` during processing
     // We won't include `secretKey` here to avoid exposing it
   }>;
@@ -93,8 +94,9 @@ export const createDrops = async ({
       image: drop.drop_data.image,
       key: drop.drop_data.key,
       scavenger_hunt: drop.drop_data.scavenger_hunt?.map(
-        ({ key, description }) => ({
+        ({ key, description, id }) => ({
           key,
+          id,
           description,
         }),
       ),

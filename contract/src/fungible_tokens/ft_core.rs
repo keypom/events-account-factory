@@ -77,9 +77,6 @@ impl Contract {
         });
         self.total_transactions += 1;
 
-        self.total_tokens_transferred
-            .checked_add(amount)
-            .expect("Overflow");
         Ok(amount)
     }
 
