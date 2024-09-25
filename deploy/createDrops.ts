@@ -155,7 +155,7 @@ export const createDrops = async ({
         for (const piece of scavengerSecretKeys) {
           // Write a CSV entry for each scavenger piece with the secret key
           dropIds.push(
-            `"${drop.drop_data.name} - Piece ${pieceNum}",${dropType}%%${piece.secretKey}%%${dropId}`,
+            `"${drop.drop_data.name} - Piece ${pieceNum}",${dropType}%%piece%%${piece.secretKey}%%${dropId}`,
           );
           pieceNum++;
         }
@@ -170,9 +170,6 @@ export const createDrops = async ({
       console.error("SuccessValue is not available");
     }
   }
-
-  // Optionally write dropIds to a file
-  writeFileSync("drops.csv", dropIds.join("\n"));
 
   return dropIds;
 };

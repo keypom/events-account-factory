@@ -46,7 +46,7 @@ impl Contract {
                         num_claimed: 0,
                         scavenger_hunt: scavenger_hunt.clone(),
                         id: drop_id.clone(),
-                        amount: token_amount
+                        token_amount
                     })
                 )
                 .is_none(),
@@ -130,8 +130,8 @@ impl Contract {
                         num_claimed: 0,
                         scavenger_hunt: scavenger_hunt.clone(),
                         id: drop_id.clone(),
-                        metadata: nft_metadata,
-                        series_id
+                        nft_metadata,
+                        nft_series_id: series_id
                     })
                 )
                 .is_none(),
@@ -203,7 +203,7 @@ impl Contract {
                         num_claimed: 0,
                         scavenger_hunt: scavenger_hunt.clone(),
                         id: drop_id.clone(),
-                        metadata: multichain_metadata
+                        mc_metadata: multichain_metadata
                     })
                 )
                 .is_none(),
@@ -249,7 +249,7 @@ impl Contract {
 
         // If the drop is an NFT drop and the series doesn't have any claims, delete the series
         if let Some(DropData::Nft(nft_drop)) = self.drop_by_id.remove(&drop_id) {
-            self.internal_delete_series(nft_drop.series_id);
+            self.internal_delete_series(nft_drop.nft_series_id);
         }
 
         // Access and update the creator's drop IDs using the `entry` API

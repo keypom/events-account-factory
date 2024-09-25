@@ -65,6 +65,6 @@ impl Contract {
         self.attendee_ticket_by_pk
             .get(&env::signer_account_pk())
             .and_then(|t| t.account_id.clone()) // Clone the account_id to move it
-            .unwrap_or_else(|| env::predecessor_account_id()) // Use the predecessor account ID if not found
+            .unwrap_or_else(env::predecessor_account_id) // Use the predecessor account ID if not found
     }
 }

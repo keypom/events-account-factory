@@ -100,7 +100,7 @@ impl Contract {
         on_storage_cleared(refund_account, storage_used);
 
         // Calculate and return the number of accounts left to clear.
-        let accounts_to_clear = (total - processed) as u64;
-        accounts_to_clear
+
+        (total - processed) as u64
     }
 }

@@ -108,6 +108,5 @@ impl Contract {
             .get(&account_id)
             .map(|d| d.ft_balance)
             .unwrap_or(NearToken::from_yoctonear(0))
-            .into()
     }
 }

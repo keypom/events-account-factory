@@ -76,6 +76,7 @@ impl DropData {
 #[near(serializers = [json, borsh])]
 pub struct ScavengerHuntData {
     pub key: PublicKey,
+    pub id: u16,
     pub description: String,
 }
 
@@ -91,7 +92,7 @@ pub struct TokenDropData {
     pub scavenger_hunt: Option<Vec<ScavengerHuntData>>,
     pub num_claimed: u64,
 
-    pub amount: U128,
+    pub token_amount: U128,
 }
 
 /// Represents the internal data for a token drop.
@@ -105,8 +106,8 @@ pub struct NFTDropData {
     pub scavenger_hunt: Option<Vec<ScavengerHuntData>>,
     pub num_claimed: u64,
 
-    pub metadata: TokenMetadata,
-    pub series_id: SeriesId,
+    pub nft_metadata: TokenMetadata,
+    pub nft_series_id: SeriesId,
 }
 
 /// Represents the internal data for a token drop.
@@ -120,5 +121,5 @@ pub struct MultichainDropData {
     pub scavenger_hunt: Option<Vec<ScavengerHuntData>>,
     pub num_claimed: u64,
 
-    pub metadata: MultichainMetadata,
+    pub mc_metadata: MultichainMetadata,
 }

@@ -12,41 +12,46 @@ pub fn parse_drop_id(drop_id: &DropId) -> AccountId {
     AccountId::try_from(split[0].to_string()).expect("invalid account Id")
 }
 
+use std::convert::TryInto;
+
 pub(crate) fn verify_signature(
     signature: Base64VecU8,
     caller_id: AccountId,
     expected_key: PublicKey,
 ) -> bool {
+    // Extract the key bytes without the curve type prefix
+    let key_bytes = expected_key.as_bytes();
+    let key_bytes_without_prefix = &key_bytes[1..]; // Skip the first byte
+
+    // Convert the key bytes slice to a reference to a 32-byte array
+    let key_bytes_array: &[u8; 32] = key_bytes_without_prefix
+        .try_into()
+        .expect("Invalid key length");
+
     // Serialize the public key to base58
-    let expected_key_base58 = bs58::encode(expected_key.as_bytes()).into_string();
+    let expected_key_base58 = bs58::encode(key_bytes_without_prefix).into_string();
 
     // The message that should have been signed
     let expected_message = format!("{},{}", caller_id, expected_key_base58);
 
-    // Convert the public key and signature into byte arrays
-    let pk_bytes = pk_to_32_byte_array(&expected_key).expect("Invalid public key length");
-    let sig_bytes = vec_to_64_byte_array(signature.into()).expect("Invalid signature length");
+    // Convert the signature into a 64-byte array
+    let sig_bytes =
+        vec_to_64_byte_array(signature.clone().into()).expect("Invalid signature length");
 
-    // Verify the signature
-    env::ed25519_verify(&sig_bytes, expected_message.as_bytes(), &pk_bytes)
-}
+    // Verify the signature using the key bytes array
+    let is_valid = env::ed25519_verify(&sig_bytes, expected_message.as_bytes(), key_bytes_array);
 
-pub(crate) fn pk_to_32_byte_array(pk: &PublicKey) -> Option<&[u8; 32]> {
-    let len = pk.as_bytes().len();
-    // Check if the string is exactly 32 or 33 bytes
-    if len != 32 && len != 33 {
-        return None;
+    if !is_valid {
+        env::log_str(
+            format!(
+                "Invalid signature. Expected message: {}, signature: {:?}, public_key: {}",
+                expected_message, signature, expected_key_base58,
+            )
+            .as_str(),
+        );
     }
 
-    // Explicitly import TryInto trait
-    use std::convert::TryInto;
-
-    // if the public key has the prefix appended, remove it to ensure it's 32 bytes
-    if len == 33 {
-        return pk.as_bytes()[1..33].try_into().ok();
-    }
-
-    pk.as_bytes()[0..32].try_into().ok()
+    is_valid
 }
 
 pub(crate) fn vec_to_64_byte_array(vec: Vec<u8>) -> Option<[u8; 64]> {

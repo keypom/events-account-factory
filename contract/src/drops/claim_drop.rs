@@ -2,30 +2,6 @@ use crate::*;
 
 #[near]
 impl Contract {
-    pub(crate) fn assert_valid_signature(
-        &self,
-        drop_id: &DropId,
-        receiver_id: &AccountId,
-        signature: &Base64VecU8,
-        scavenger_id: Option<PublicKey>,
-    ) {
-        // Determine the expected public key
-        let drop_data = self.drop_by_id.get(drop_id).expect("Drop not found");
-        let expected_key = if let Some(scavenger_pk) = scavenger_id.clone() {
-            scavenger_pk
-        } else {
-            // Get the drop key from drop_data
-            match &drop_data {
-                DropData::Token(data) => data.key.clone(),
-                DropData::Nft(data) => data.key.clone(),
-                DropData::Multichain(data) => data.key.clone(),
-            }
-        };
-        // Verify the signature
-        let is_valid_signature =
-            verify_signature(signature.clone(), receiver_id.clone(), expected_key.clone());
-        require!(is_valid_signature, "Invalid signature");
-    }
     /// Allows a user to claim an existing drop (if they haven't already).
     ///
     /// # Arguments
@@ -135,10 +111,10 @@ impl Contract {
                 let reward = match drop_data {
                     DropData::Token(ref data) => {
                         self.internal_deposit_ft_transfer(data, drop_id, receiver_id);
-                        DropClaimReward::Token(data.amount)
+                        DropClaimReward::Token(data.token_amount)
                     }
                     DropData::Nft(ref data) => {
-                        self.internal_nft_mint(data.series_id, receiver_id.clone());
+                        self.internal_nft_mint(data.nft_series_id, receiver_id.clone());
                         DropClaimReward::Nft
                     }
                     DropData::Multichain(ref data) => {
@@ -168,10 +144,10 @@ impl Contract {
             let reward = match drop_data {
                 DropData::Token(ref data) => {
                     self.internal_deposit_ft_transfer(data, drop_id, receiver_id);
-                    DropClaimReward::Token(data.amount)
+                    DropClaimReward::Token(data.token_amount)
                 }
                 DropData::Nft(ref data) => {
-                    self.internal_nft_mint(data.series_id, receiver_id.clone());
+                    self.internal_nft_mint(data.nft_series_id, receiver_id.clone());
                     DropClaimReward::Nft
                 }
                 DropData::Multichain(ref data) => {
@@ -286,7 +262,7 @@ impl Contract {
             .as_ref()
             .expect("Drop creator not found");
 
-        let amount_to_claim = drop.amount.0;
+        let amount_to_claim = drop.token_amount.0;
 
         if creator_status.is_admin() {
             env::log_str(format!("Creator is admin: {}", drop_creator).as_str());
@@ -316,5 +292,30 @@ impl Contract {
                 true,
             );
         }
+    }
+
+    pub(crate) fn assert_valid_signature(
+        &self,
+        drop_id: &DropId,
+        receiver_id: &AccountId,
+        signature: &Base64VecU8,
+        scavenger_id: Option<PublicKey>,
+    ) {
+        // Determine the expected public key
+        let drop_data = self.drop_by_id.get(drop_id).expect("Drop not found");
+        let expected_key = if let Some(scavenger_pk) = scavenger_id.clone() {
+            scavenger_pk
+        } else {
+            // Get the drop key from drop_data
+            match &drop_data {
+                DropData::Token(data) => data.key.clone(),
+                DropData::Nft(data) => data.key.clone(),
+                DropData::Multichain(data) => data.key.clone(),
+            }
+        };
+        // Verify the signature
+        let is_valid_signature =
+            verify_signature(signature.clone(), receiver_id.clone(), expected_key.clone());
+        require!(is_valid_signature, "Invalid signature");
     }
 }
