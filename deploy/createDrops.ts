@@ -1,6 +1,5 @@
 import { sendTransaction } from "./utils";
 import { utils, KeyPair } from "near-api-js";
-import { writeFileSync } from "fs";
 
 interface DropDataInput {
   name: string;

@@ -100,6 +100,7 @@ impl Contract {
                                             found_scavenger_ids: found_scavenger_ids.clone(),
                                             needed_scavenger_ids: drop_data.get_scavenger_data(),
                                             name: multichain_data.name.clone(),
+                                            image: multichain_data.image.clone(),
                                             mc_metadata: multichain_data.mc_metadata.clone(),
                                             drop_id: drop_id.to_string(),
                                             key: multichain_data.key.clone(),
@@ -113,6 +114,7 @@ impl Contract {
                                         found_scavenger_ids: found_scavenger_ids.clone(),
                                         needed_scavenger_ids: drop_data.get_scavenger_data(),
                                         name: nft_data.name.clone(),
+                                        image: nft_data.image.clone(),
                                         key: nft_data.key.clone(),
                                         nft_metadata: self
                                             .series_by_id
@@ -129,6 +131,7 @@ impl Contract {
                                     result_drops.push(ExtClaimedDrop::token(
                                         ExtClaimedTokenDropData {
                                             found_scavenger_ids: found_scavenger_ids.clone(),
+                                            image: token_data.image.clone(),
                                             needed_scavenger_ids: drop_data.get_scavenger_data(),
                                             key: token_data.key.clone(),
                                             name: token_data.name.clone(),
@@ -182,6 +185,7 @@ impl Contract {
                 if let DropData::Multichain(multichain_data) = &drop_data {
                     ExtClaimedDrop::multichain(ExtClaimedMultichainDropData {
                         found_scavenger_ids: found_scavenger_ids.clone(),
+                        image: multichain_data.image.clone(),
                         needed_scavenger_ids: drop_data.get_scavenger_data(),
                         name: multichain_data.name.clone(),
                         mc_metadata: multichain_data.mc_metadata.clone(),
@@ -197,6 +201,7 @@ impl Contract {
                     ExtClaimedDrop::nft(ExtClaimedNFTDropData {
                         found_scavenger_ids: found_scavenger_ids.clone(),
                         needed_scavenger_ids: drop_data.get_scavenger_data(),
+                        image: nft_data.image.clone(),
                         name: nft_data.name.clone(),
                         key: nft_data.key.clone(),
                         nft_metadata: self
@@ -217,6 +222,7 @@ impl Contract {
                         found_scavenger_ids: found_scavenger_ids.clone(),
                         key: token_data.key.clone(),
                         needed_scavenger_ids: drop_data.get_scavenger_data(),
+                        image: token_data.image.clone(),
                         name: token_data.name.clone(),
                         token_amount: token_data.token_amount,
                         drop_id: drop_id.clone(),
