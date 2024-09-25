@@ -6,15 +6,19 @@ export const PREMADE_SCAVENGER_HUNTS = [
       image: "bafkreihgosptxbojx37vxo4bly5opn5iqx2hmffdmg6ztokjmvtwa36axu",
       scavenger_hunt: [
         {
+          id: 1,
           description: "Find at location 1",
         },
         {
+          id: 2,
           description: "Find at location 2",
         },
         {
+          id: 3,
           description: "Find at location 3",
         },
         {
+          id: 4,
           description: "Find at location 4",
         },
       ],
@@ -32,15 +36,19 @@ export const PREMADE_SCAVENGER_HUNTS = [
       image: "bafkreihgosptxbojx37vxo4bly5opn5iqx2hmffdmg6ztokjmvtwa36axu",
       scavenger_hunt: [
         {
+          id: 1,
           description: "Find at location 1",
         },
         {
+          id: 2,
           description: "Find at location 2",
         },
         {
+          id: 3,
           description: "Find at location 3",
         },
         {
+          id: 4,
           description: "Find at location 4",
         },
       ],
@@ -58,15 +66,19 @@ export const PREMADE_SCAVENGER_HUNTS = [
       image: "bafkreihgosptxbojx37vxo4bly5opn5iqx2hmffdmg6ztokjmvtwa36axu",
       scavenger_hunt: [
         {
+          id: 1,
           description: "Find at location 1",
         },
         {
+          id: 2,
           description: "Find at location 2",
         },
         {
+          id: 3,
           description: "Find at location 3",
         },
         {
+          id: 4,
           description: "Find at location 4",
         },
       ],
@@ -84,15 +96,19 @@ export const PREMADE_SCAVENGER_HUNTS = [
       image: "bafkreihgosptxbojx37vxo4bly5opn5iqx2hmffdmg6ztokjmvtwa36axu",
       scavenger_hunt: [
         {
+          id: 1,
           description: "Find at location 1",
         },
         {
+          id: 2,
           description: "Find at location 2",
         },
         {
+          id: 3,
           description: "Find at location 3",
         },
         {
+          id: 4,
           description: "Find at location 4",
         },
       ],
@@ -110,15 +126,19 @@ export const PREMADE_SCAVENGER_HUNTS = [
       image: "bafkreihgosptxbojx37vxo4bly5opn5iqx2hmffdmg6ztokjmvtwa36axu",
       scavenger_hunt: [
         {
+          id: 1,
           description: "Find at location 1",
         },
         {
+          id: 2,
           description: "Find at location 2",
         },
         {
+          id: 3,
           description: "Find at location 3",
         },
         {
+          id: 4,
           description: "Find at location 4",
         },
       ],
@@ -131,15 +151,19 @@ export const PREMADE_SCAVENGER_HUNTS = [
       image: "bafkreihgosptxbojx37vxo4bly5opn5iqx2hmffdmg6ztokjmvtwa36axu",
       scavenger_hunt: [
         {
+          id: 1,
           description: "Find at location 1",
         },
         {
+          id: 2,
           description: "Find at location 2",
         },
         {
+          id: 3,
           description: "Find at location 3",
         },
         {
+          id: 4,
           description: "Find at location 4",
         },
       ],
@@ -152,15 +176,19 @@ export const PREMADE_SCAVENGER_HUNTS = [
       image: "bafkreihgosptxbojx37vxo4bly5opn5iqx2hmffdmg6ztokjmvtwa36axu",
       scavenger_hunt: [
         {
+          id: 1,
           description: "Find at location 1",
         },
         {
+          id: 2,
           description: "Find at location 2",
         },
         {
+          id: 3,
           description: "Find at location 3",
         },
         {
+          id: 4,
           description: "Find at location 4",
         },
       ],
