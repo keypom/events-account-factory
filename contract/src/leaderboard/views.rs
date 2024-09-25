@@ -1,16 +1,15 @@
 use crate::*;
 
-#[derive(Serialize, Deserialize)]
-#[serde(crate = "near_sdk::serde")]
+#[near(serializers = [json, borsh])]
 pub struct LeaderboardInformation {
     pub recent_transactions: Vec<TransactionType>,
     pub total_transactions: u64,
-    pub total_tokens_transferred: U128,
-    pub token_leaderboard: Vec<(AccountId, U128)>,
+    pub total_tokens_transferred: NearToken,
+    pub token_leaderboard: Vec<(AccountId, NearToken)>,
     pub poap_leaderboard: Vec<(AccountId, u16)>,
 }
 
-#[near_bindgen]
+#[near]
 impl Contract {
     /// View function to get all leaderboard information in one call.
     ///
@@ -29,12 +28,12 @@ impl Contract {
         let total_tokens_transferred = self.total_tokens_transferred;
 
         // Get token leaderboard
-        let token_leaderboard = self
+        let token_leaderboard: Vec<(AccountId, NearToken)> = self
             .token_leaderboard
             .iter()
             .map(|account_id| {
                 let account_details = self.account_details_by_id.get(account_id).unwrap();
-                (account_id.clone(), U128(account_details.tokens_collected.0))
+                (account_id.clone(), account_details.tokens_collected)
             })
             .collect();
 
@@ -52,7 +51,7 @@ impl Contract {
         LeaderboardInformation {
             recent_transactions,
             total_transactions,
-            total_tokens_transferred: U128(total_tokens_transferred),
+            total_tokens_transferred,
             token_leaderboard,
             poap_leaderboard,
         }

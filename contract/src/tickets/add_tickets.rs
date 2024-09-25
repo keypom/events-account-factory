@@ -1,16 +1,16 @@
-use near_sdk::PublicKey;
+use near_sdk::{Allowance, Promise, PublicKey};
 
 use crate::*;
 
 /// Data for each new ticket key issued such as the users encrypted metadata
-#[derive(Serialize, Deserialize, Debug, BorshDeserialize, BorshSerialize, Clone)]
-#[serde(crate = "near_sdk::serde")]
+#[derive(Clone)]
+#[near(serializers = [json, borsh])]
 pub struct KeyData {
     pub public_key: PublicKey,
     pub metadata: Option<String>,
 }
 
-#[near_bindgen]
+#[near]
 impl Contract {
     /// Creates a new account with the given parameters.
     ///
@@ -36,9 +36,8 @@ impl Contract {
         // More than 100 keys leads to promise rejection
         require!(key_data.len() < 100, "Maximum number of keys exceeded");
 
-        // Create a new promise batch to create all the access keys
+        // Get the current account ID (which will be cloned later as needed)
         let current_account_id = env::current_account_id();
-        let promise = env::promise_batch_create(&current_account_id);
 
         // Loop through each key and add it to the account and insert into the maps
         for key in key_data.iter() {
@@ -48,25 +47,23 @@ impl Contract {
                 account_id: None,
                 metadata: key.metadata.clone(),
             };
+
             require!(
                 self.attendee_ticket_by_pk
-                    .insert(&key.public_key, &attendee_info)
+                    .insert(key.public_key.clone(), attendee_info.clone())
                     .is_none(),
                 "Key already exists"
             );
 
-            // Add this key to the batch
-            env::promise_batch_action_add_key_with_function_call(
-                promise,
-                &key.public_key,
-                0, // Nonce
-                0, // unlimited allowance
-                &current_account_id,
-                ATTENDEE_KEY_METHOD_NAMES,
+            // Add this key to the batch, clone the `current_account_id`
+            Promise::new(current_account_id.clone()).add_access_key_allowance(
+                key.public_key.clone(),
+                Allowance::unlimited(),
+                current_account_id.clone(), // Clone again as it's being moved
+                ATTENDEE_KEY_METHOD_NAMES.to_string(),
             );
         }
 
         self.total_transactions += 1;
-        env::promise_return(promise);
     }
 }

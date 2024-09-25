@@ -1,8 +1,6 @@
-use std::convert::TryInto;
-
 use crate::*;
 
-#[near_bindgen]
+#[near]
 impl Contract {
     /// Allows a sponsor or admin to create a token drop so people can scan a QR code and get the amount of tokens.
     ///
@@ -14,32 +12,41 @@ impl Contract {
     /// # Panics
     ///
     /// Panics if the sponsor is not authorized.
-    pub fn create_token_drop(&mut self, drop_data: ExtDropBase, token_amount: U128) -> String {
+    pub fn create_token_drop(
+        &mut self,
+        image: String,
+        name: String,
+        scavenger_hunt: Option<Vec<ScavengerHuntData>>,
+        key: PublicKey,
+        token_amount: U128,
+    ) -> String {
         self.assert_no_freeze();
         let drop_creator = self.assert_sponsor();
 
-        let mut account_details = self
+        let account_details = self
             .account_details_by_id
-            .get(&drop_creator)
-            .unwrap_or(AccountDetails::new(&drop_creator));
-        let mut creator_drop_ids = account_details.drops_created;
+            .entry(drop_creator.clone())
+            .or_insert_with(|| AccountDetails::new(&drop_creator));
 
         // The drop ID will be a concatenation of the creator, delimiter, and the drop number
-        let drop_number: u64 = creator_drop_ids.len();
-        let drop_id = format!("{}{}{}", drop_creator, DROP_DELIMITER, drop_number);
+        let drop_id = format!(
+            "{}{}{}",
+            drop_creator,
+            DROP_DELIMITER,
+            account_details.drops_created.len()
+        );
         require!(
             self.drop_by_id
                 .insert(
-                    &drop_id,
-                    &DropData::Token(TokenDropData {
-                        base: DropBase {
-                            name: drop_data.name,
-                            image: drop_data.image,
-                            num_claimed: 0,
-                            scavenger_hunt: drop_data.scavenger_hunt.clone(),
-                            id: drop_id.clone()
-                        },
-                        amount: token_amount
+                    drop_id.clone(),
+                    DropData::Token(TokenDropData {
+                        key,
+                        name,
+                        image,
+                        num_claimed: 0,
+                        scavenger_hunt: scavenger_hunt.clone(),
+                        id: drop_id.clone(),
+                        token_amount
                     })
                 )
                 .is_none(),
@@ -47,10 +54,7 @@ impl Contract {
         );
 
         // Add the drop ID to the creator's list of drop IDs
-        creator_drop_ids.insert(&drop_id);
-        account_details.drops_created = creator_drop_ids;
-        self.account_details_by_id
-            .insert(&drop_creator, &account_details);
+        account_details.drops_created.insert(drop_id.clone());
 
         let drop_creation_log: EventLog = EventLog {
             standard: KEYPOM_STANDARD_NAME.to_string(),
@@ -58,12 +62,7 @@ impl Contract {
             event: EventLogVariant::KeypomDropCreation(KeypomDropCreationLog {
                 creator_id: drop_creator.to_string(),
                 drop_reward: DropClaimReward::Token(token_amount),
-                num_scavengers: drop_data.scavenger_hunt.map(|scavs| {
-                    scavs
-                        .len()
-                        .try_into()
-                        .expect("Too many scavs to fit in u16")
-                }),
+                num_scavengers: scavenger_hunt.map(|scavenger_hunt| scavenger_hunt.len() as u16),
             }),
         };
         env::log_str(&drop_creation_log.to_string());
@@ -84,35 +83,55 @@ impl Contract {
     /// Panics if the sponsor is not authorized.
     pub fn create_nft_drop(
         &mut self,
-        drop_data: ExtDropBase,
+        image: String,
+        name: String,
+        key: PublicKey,
+        scavenger_hunt: Option<Vec<ScavengerHuntData>>,
         nft_metadata: TokenMetadata,
     ) -> String {
         let drop_creator = self.assert_sponsor();
 
-        let mut account_details = self
+        let account_details = self
             .account_details_by_id
-            .get(&drop_creator)
-            .unwrap_or(AccountDetails::new(&drop_creator));
-        let mut creator_drop_ids = account_details.drops_created;
+            .entry(drop_creator.clone())
+            .or_insert_with(|| AccountDetails::new(&drop_creator));
 
         // The drop ID will be a concatenation of the creator, delimiter, and the drop number
-        let drop_number: u64 = creator_drop_ids.len();
-        let drop_id = format!("{}{}{}", drop_creator, DROP_DELIMITER, drop_number);
+        let drop_id = format!(
+            "{}{}{}",
+            drop_creator,
+            DROP_DELIMITER,
+            account_details.drops_created.len()
+        );
 
-        let series_id = self.internal_create_series(&nft_metadata, &drop_creator);
+        // Create the series
+        let series_id = self.series_by_id.len();
+        let tokens = IterableSet::new(StorageKeys::SeriesByIdInner {
+            account_id_hash: hash_string(&format!("{}{}", drop_creator, series_id)),
+        });
+        let series = Series {
+            metadata: nft_metadata.clone(),
+            royalty: None,
+            tokens,
+        };
+        require!(
+            self.series_by_id.insert(series_id, series).is_none(),
+            "Series ID already exists on the contract"
+        );
+
         require!(
             self.drop_by_id
                 .insert(
-                    &drop_id,
-                    &DropData::Nft(NFTDropData {
-                        base: DropBase {
-                            name: drop_data.name,
-                            image: drop_data.image,
-                            num_claimed: 0,
-                            scavenger_hunt: drop_data.scavenger_hunt.clone(),
-                            id: drop_id.clone()
-                        },
-                        series_id
+                    drop_id.clone(),
+                    DropData::Nft(NFTDropData {
+                        name,
+                        key,
+                        image,
+                        num_claimed: 0,
+                        scavenger_hunt: scavenger_hunt.clone(),
+                        id: drop_id.clone(),
+                        nft_metadata,
+                        nft_series_id: series_id
                     })
                 )
                 .is_none(),
@@ -120,10 +139,7 @@ impl Contract {
         );
 
         // Add the drop ID to the creator's list of drop IDs
-        creator_drop_ids.insert(&drop_id);
-        account_details.drops_created = creator_drop_ids;
-        self.account_details_by_id
-            .insert(&drop_creator, &account_details);
+        account_details.drops_created.insert(drop_id.clone());
 
         let drop_creation_log: EventLog = EventLog {
             standard: KEYPOM_STANDARD_NAME.to_string(),
@@ -131,12 +147,7 @@ impl Contract {
             event: EventLogVariant::KeypomDropCreation(KeypomDropCreationLog {
                 creator_id: drop_creator.to_string(),
                 drop_reward: DropClaimReward::Nft,
-                num_scavengers: drop_data.scavenger_hunt.map(|scavs| {
-                    scavs
-                        .len()
-                        .try_into()
-                        .expect("Too many scavs to fit in u16")
-                }),
+                num_scavengers: scavenger_hunt.map(|scavs| scavs.len() as u16),
             }),
         };
         env::log_str(&drop_creation_log.to_string());
@@ -160,34 +171,39 @@ impl Contract {
     /// Panics if the account is not an admin.
     pub fn create_multichain_drop(
         &mut self,
-        drop_data: ExtDropBase,
+        image: String,
+        name: String,
+        key: PublicKey,
+        scavenger_hunt: Option<Vec<ScavengerHuntData>>,
         multichain_metadata: MultichainMetadata,
     ) -> String {
         let drop_creator = self.assert_admin();
 
-        let mut account_details = self
+        let account_details = self
             .account_details_by_id
-            .get(&drop_creator)
-            .unwrap_or(AccountDetails::new(&drop_creator));
-        let mut creator_drop_ids = account_details.drops_created;
+            .entry(drop_creator.clone())
+            .or_insert_with(|| AccountDetails::new(&drop_creator));
 
         // The drop ID will be a concatenation of the creator, delimiter, and the drop number
-        let drop_number: u64 = creator_drop_ids.len();
-        let drop_id = format!("{}{}{}", drop_creator, DROP_DELIMITER, drop_number);
+        let drop_id = format!(
+            "{}{}{}",
+            drop_creator,
+            DROP_DELIMITER,
+            account_details.drops_created.len()
+        );
 
         require!(
             self.drop_by_id
                 .insert(
-                    &drop_id,
-                    &DropData::Multichain(MultichainDropData {
-                        base: DropBase {
-                            name: drop_data.name,
-                            image: drop_data.image,
-                            num_claimed: 0,
-                            scavenger_hunt: drop_data.scavenger_hunt.clone(),
-                            id: drop_id.clone()
-                        },
-                        metadata: multichain_metadata
+                    drop_id.clone(),
+                    DropData::Multichain(MultichainDropData {
+                        name,
+                        key,
+                        image,
+                        num_claimed: 0,
+                        scavenger_hunt: scavenger_hunt.clone(),
+                        id: drop_id.clone(),
+                        mc_metadata: multichain_metadata
                     })
                 )
                 .is_none(),
@@ -195,10 +211,7 @@ impl Contract {
         );
 
         // Add the drop ID to the creator's list of drop IDs
-        creator_drop_ids.insert(&drop_id);
-        account_details.drops_created = creator_drop_ids;
-        self.account_details_by_id
-            .insert(&drop_creator, &account_details);
+        account_details.drops_created.insert(drop_id.clone());
 
         let drop_creation_log: EventLog = EventLog {
             standard: KEYPOM_STANDARD_NAME.to_string(),
@@ -206,12 +219,7 @@ impl Contract {
             event: EventLogVariant::KeypomDropCreation(KeypomDropCreationLog {
                 creator_id: drop_creator.to_string(),
                 drop_reward: DropClaimReward::Multichain,
-                num_scavengers: drop_data.scavenger_hunt.map(|scavs| {
-                    scavs
-                        .len()
-                        .try_into()
-                        .expect("Too many scavs to fit in u16")
-                }),
+                num_scavengers: scavenger_hunt.map(|scavs| scavs.len() as u16),
             }),
         };
         env::log_str(&drop_creation_log.to_string());
@@ -232,26 +240,28 @@ impl Contract {
     pub fn delete_drop(&mut self, drop_id: String) {
         let caller_id = self.assert_sponsor();
         let drop_creator = parse_drop_id(&drop_id);
+
+        // Ensure that only the creator of the drop can delete it
         require!(
             drop_creator == caller_id,
             "Only the drop creator can delete this drop"
         );
 
-        // If the drop is an NFT drop AND the series doesn't have any claims, delete the series
+        // If the drop is an NFT drop and the series doesn't have any claims, delete the series
         if let Some(DropData::Nft(nft_drop)) = self.drop_by_id.remove(&drop_id) {
-            self.internal_delete_series(nft_drop.series_id);
+            self.internal_delete_series(nft_drop.nft_series_id);
         }
-        // Remove the drop ID from the creator's list of drop IDs
-        let mut account_details = self
-            .account_details_by_id
-            .get(&drop_creator)
-            .unwrap_or(AccountDetails::new(&drop_creator));
-        let mut creator_drop_ids = account_details.drops_created;
-        creator_drop_ids.remove(&drop_id);
-        account_details.drops_created = creator_drop_ids;
-        self.account_details_by_id
-            .insert(&drop_creator, &account_details);
 
+        // Access and update the creator's drop IDs using the `entry` API
+        let account_details = self
+            .account_details_by_id
+            .entry(drop_creator.clone())
+            .or_insert_with(|| AccountDetails::new(&drop_creator));
+
+        // Remove the drop ID from the creator's list of drop IDs
+        account_details.drops_created.remove(&drop_id);
+
+        // Increment the total number of transactions
         self.total_transactions += 1;
     }
 }

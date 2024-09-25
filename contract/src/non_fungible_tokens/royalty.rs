@@ -2,7 +2,7 @@ use near_sdk::assert_one_yocto;
 
 use crate::*;
 
-#[near_bindgen]
+#[near]
 impl Contract {
     //calculates the payout for a token given the passed in balance. This is a view method
     pub fn nft_payout(&self, token_id: TokenId, balance: U128, max_len_payout: u32) -> Payout {
@@ -10,11 +10,11 @@ impl Contract {
         let token = self.nft_tokens_by_id.get(&token_id).expect("No token");
 
         //get the owner of the token
-        let owner_id = token.owner_id;
+        let owner_id = token.owner_id.clone();
         //keep track of the total perpetual royalties
         let mut total_perpetual = 0;
         //get the u128 version of the passed in balance (which was U128 before)
-        let balance_u128 = u128::from(balance);
+        let balance_u128 = NearToken::from_yoctonear(balance.0);
         //keep track of the payout object to send back
         let mut payout_object = Payout {
             payout: HashMap::new(),
@@ -24,7 +24,7 @@ impl Contract {
             .series_by_id
             .get(&token.series_id)
             .expect("Not a series");
-        let royalty_option = cur_series.royalty;
+        let royalty_option = cur_series.royalty.clone();
         if royalty_option.is_none() {
             let mut payout = HashMap::new();
             payout.insert(owner_id, balance);
@@ -86,7 +86,7 @@ impl Contract {
         //keep track of the total perpetual royalties
         let mut total_perpetual = 0;
         //get the u128 version of the passed in balance (which was U128 before)
-        let balance_u128 = u128::from(balance);
+        let balance_u128 = NearToken::from_yoctonear(balance.0);
         //keep track of the payout object to send back
         let mut payout_object = Payout {
             payout: HashMap::new(),
@@ -97,7 +97,7 @@ impl Contract {
             .series_by_id
             .get(&previous_token.series_id)
             .expect("Not a series");
-        let royalty_option = cur_series.royalty;
+        let royalty_option = cur_series.royalty.clone();
         if royalty_option.is_none() {
             let mut payout = HashMap::new();
             payout.insert(owner_id, balance);
@@ -135,4 +135,3 @@ impl Contract {
         payout_object
     }
 }
-

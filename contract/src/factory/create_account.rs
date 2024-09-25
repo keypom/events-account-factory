@@ -1,18 +1,8 @@
-use near_sdk::{Promise, PublicKey};
+use near_sdk::{Allowance, Promise, PublicKey};
 
 use crate::*;
 
-/// Keypom Args struct to be sent to external contracts
-#[derive(Serialize, Deserialize, Debug, BorshDeserialize, BorshSerialize, Clone)]
-#[serde(crate = "near_sdk::serde")]
-pub struct KeypomArgs {
-    pub account_id_field: Option<String>,
-    pub drop_id_field: Option<String>,
-    pub key_id_field: Option<String>,
-    pub funder_id_field: Option<String>,
-}
-
-#[near_bindgen]
+#[near]
 impl Contract {
     /// Scans the ticket into the event
     ///
@@ -24,18 +14,15 @@ impl Contract {
         self.assert_no_freeze();
         let ticket_pk = env::signer_account_pk();
 
-        let mut attendee_ticket = self
+        let attendee_ticket = self
             .attendee_ticket_by_pk
-            .get(&ticket_pk)
+            .get_mut(&ticket_pk)
             .expect("No ticket information found for public key");
         require!(
             !attendee_ticket.has_scanned,
             "Ticket has already been scanned"
         );
         attendee_ticket.has_scanned = true;
-
-        self.attendee_ticket_by_pk
-            .insert(&ticket_pk, &attendee_ticket);
 
         self.total_transactions += 1;
     }
@@ -61,9 +48,9 @@ impl Contract {
         self.assert_no_freeze();
         let ticket_pk = env::signer_account_pk();
 
-        let mut attendee_ticket = self
+        let attendee_ticket = self
             .attendee_ticket_by_pk
-            .get(&ticket_pk)
+            .get_mut(&ticket_pk)
             .expect("No ticket information found for public key");
         require!(
             attendee_ticket.has_scanned,
@@ -75,35 +62,6 @@ impl Contract {
         );
 
         // Get the next available account ID in case the one passed in is taken
-        let account_id: AccountId = self.find_available_account_id(new_account_id);
-
-        // Update the attendee ticket with the new account ID and make sure that it doesnt get
-        // scanned in again
-        attendee_ticket.account_id = Some(account_id.clone());
-        self.attendee_ticket_by_pk
-            .insert(&ticket_pk, &attendee_ticket);
-
-        let ticket_drop_id = attendee_ticket
-            .drop_id
-            .expect("No drop ID found. Admin accounts should be created via internal functions");
-        let ticket_data = self.ticket_data_by_id.get(&ticket_drop_id).unwrap();
-
-        self.total_transactions += 1;
-        self.internal_create_account(account_id, ticket_pk, ticket_data, false)
-    }
-
-    /// Finds the next available account ID if the given one is already taken.
-    /// If multiple users choose the same username (e.g., ben.nearcon.near) simultaneously,
-    /// appends a number to the end of the username (e.g., ben1.nearcon.near, ben2.nearcon.near).
-    ///
-    /// # Arguments
-    ///
-    /// * `new_account_id` - The desired account ID.
-    ///
-    /// # Returns
-    ///
-    /// Returns the available account ID.
-    pub(crate) fn find_available_account_id(&self, new_account_id: AccountId) -> AccountId {
         let delim = format!(".{}", env::current_account_id()).to_string();
         let binding = new_account_id.to_string();
         let split: Vec<&str> = binding.split(&delim).collect();
@@ -116,7 +74,7 @@ impl Contract {
             let is_new_account = self.account_details_by_id.get(&account_id).is_none();
 
             if is_new_account {
-                return account_id;
+                break;
             }
 
             i += 1;
@@ -124,6 +82,19 @@ impl Contract {
                 .parse()
                 .unwrap();
         }
+
+        // Update the attendee ticket with the new account ID and make sure that it doesnt get
+        // scanned in again
+        attendee_ticket.account_id = Some(account_id.clone());
+
+        let ticket_drop_id = attendee_ticket
+            .drop_id
+            .clone()
+            .expect("No drop ID found. Admin accounts should be created via internal functions");
+        let ticket_data = self.ticket_data_by_id.get(&ticket_drop_id).unwrap();
+
+        self.total_transactions += 1;
+        self.internal_create_account(account_id, ticket_pk, ticket_data.clone(), false)
     }
 
     /// Creates a new account with the given parameters.
@@ -155,7 +126,7 @@ impl Contract {
         };
         require!(
             self.attendee_ticket_by_pk
-                .insert(&new_public_key, &attendee_info)
+                .insert(new_public_key.clone(), attendee_info)
                 .is_none(),
             "Key already exists"
         );
@@ -211,14 +182,14 @@ impl Contract {
         near_sdk::log!(
             "Creating account: {} with starting balance: {}",
             new_account_id,
-            near_to_start.0
+            near_to_start.as_yoctonear()
         );
 
         self.account_details_by_id
-            .insert(&new_account_id, &account_details);
+            .insert(new_account_id.clone(), account_details);
 
         // Deposit the starting balance into the account and then create it
-        self.internal_deposit_ft_mint(&new_account_id, tokens_to_start.0, None, false);
+        self.internal_deposit_ft_mint(&new_account_id, tokens_to_start, None, false);
 
         let final_storage_usage = env::storage_usage();
         near_sdk::log!(
@@ -230,9 +201,9 @@ impl Contract {
         // are not an attendee (since their original ticket contains the key already and its been
         // created)
         if add_key {
-            Promise::new(env::current_account_id()).add_access_key(
+            Promise::new(env::current_account_id()).add_access_key_allowance(
                 new_public_key.clone(),
-                0, // unlimited allowance
+                Allowance::unlimited(), // unlimited allowance
                 env::current_account_id(),
                 access_key_method_names.to_string(),
             );
@@ -241,7 +212,7 @@ impl Contract {
         // Add the same full access key to the account so that they can offboard later
         Promise::new(new_account_id.clone())
             .create_account()
-            .transfer(near_to_start.0)
+            .transfer(near_to_start)
             .add_full_access_key(new_public_key)
     }
 }

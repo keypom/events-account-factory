@@ -1,22 +1,24 @@
 export const PREMADE_SCAVENGER_HUNTS = [
   {
+    image: "bafkreihgosptxbojx37vxo4bly5opn5iqx2hmffdmg6ztokjmvtwa36axu",
     drop_data: {
       name: "Official Scavenger Hunt",
+      image: "bafkreihgosptxbojx37vxo4bly5opn5iqx2hmffdmg6ztokjmvtwa36axu",
       scavenger_hunt: [
         {
-          piece: "1",
+          id: 1,
           description: "Find at location 1",
         },
         {
-          piece: "2",
+          id: 2,
           description: "Find at location 2",
         },
         {
-          piece: "3",
+          id: 3,
           description: "Find at location 3",
         },
         {
-          piece: "4",
+          id: 4,
           description: "Find at location 4",
         },
       ],
@@ -31,21 +33,22 @@ export const PREMADE_SCAVENGER_HUNTS = [
   {
     drop_data: {
       name: "Keypom Scavenger Hunt",
+      image: "bafkreihgosptxbojx37vxo4bly5opn5iqx2hmffdmg6ztokjmvtwa36axu",
       scavenger_hunt: [
         {
-          piece: "1",
+          id: 1,
           description: "Find at location 1",
         },
         {
-          piece: "2",
+          id: 2,
           description: "Find at location 2",
         },
         {
-          piece: "3",
+          id: 3,
           description: "Find at location 3",
         },
         {
-          piece: "4",
+          id: 4,
           description: "Find at location 4",
         },
       ],
@@ -60,21 +63,22 @@ export const PREMADE_SCAVENGER_HUNTS = [
   {
     drop_data: {
       name: "Proximity Scavenger Hunt",
+      image: "bafkreihgosptxbojx37vxo4bly5opn5iqx2hmffdmg6ztokjmvtwa36axu",
       scavenger_hunt: [
         {
-          piece: "1",
+          id: 1,
           description: "Find at location 1",
         },
         {
-          piece: "2",
+          id: 2,
           description: "Find at location 2",
         },
         {
-          piece: "3",
+          id: 3,
           description: "Find at location 3",
         },
         {
-          piece: "4",
+          id: 4,
           description: "Find at location 4",
         },
       ],
@@ -89,21 +93,22 @@ export const PREMADE_SCAVENGER_HUNTS = [
   {
     drop_data: {
       name: "Nuffle Labs Scavenger Hunt",
+      image: "bafkreihgosptxbojx37vxo4bly5opn5iqx2hmffdmg6ztokjmvtwa36axu",
       scavenger_hunt: [
         {
-          piece: "1",
+          id: 1,
           description: "Find at location 1",
         },
         {
-          piece: "2",
+          id: 2,
           description: "Find at location 2",
         },
         {
-          piece: "3",
+          id: 3,
           description: "Find at location 3",
         },
         {
-          piece: "4",
+          id: 4,
           description: "Find at location 4",
         },
       ],
@@ -118,21 +123,22 @@ export const PREMADE_SCAVENGER_HUNTS = [
   {
     drop_data: {
       name: "DevHub Scavenger Hunt",
+      image: "bafkreihgosptxbojx37vxo4bly5opn5iqx2hmffdmg6ztokjmvtwa36axu",
       scavenger_hunt: [
         {
-          piece: "1",
+          id: 1,
           description: "Find at location 1",
         },
         {
-          piece: "2",
+          id: 2,
           description: "Find at location 2",
         },
         {
-          piece: "3",
+          id: 3,
           description: "Find at location 3",
         },
         {
-          piece: "4",
+          id: 4,
           description: "Find at location 4",
         },
       ],
@@ -142,21 +148,22 @@ export const PREMADE_SCAVENGER_HUNTS = [
   {
     drop_data: {
       name: "NEAR Horizons Scavenger Hunt",
+      image: "bafkreihgosptxbojx37vxo4bly5opn5iqx2hmffdmg6ztokjmvtwa36axu",
       scavenger_hunt: [
         {
-          piece: "1",
+          id: 1,
           description: "Find at location 1",
         },
         {
-          piece: "2",
+          id: 2,
           description: "Find at location 2",
         },
         {
-          piece: "3",
+          id: 3,
           description: "Find at location 3",
         },
         {
-          piece: "4",
+          id: 4,
           description: "Find at location 4",
         },
       ],
@@ -166,21 +173,22 @@ export const PREMADE_SCAVENGER_HUNTS = [
   {
     drop_data: {
       name: "NEAR AI Scavenger Hunt",
+      image: "bafkreihgosptxbojx37vxo4bly5opn5iqx2hmffdmg6ztokjmvtwa36axu",
       scavenger_hunt: [
         {
-          piece: "1",
+          id: 1,
           description: "Find at location 1",
         },
         {
-          piece: "2",
+          id: 2,
           description: "Find at location 2",
         },
         {
-          piece: "3",
+          id: 3,
           description: "Find at location 3",
         },
         {
-          piece: "4",
+          id: 4,
           description: "Find at location 4",
         },
       ],

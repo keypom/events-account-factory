@@ -3,8 +3,8 @@ use crate::*;
 pub const KEYPOM_CONFERENCE_METADATA_SPEC: &str = "1.0.0";
 pub const KEYPOM_STANDARD_NAME: &str = "kpom101";
 
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Debug)]
-#[serde(crate = "near_sdk::serde")]
+#[derive(Debug)]
+#[near(serializers = [json, borsh])]
 #[allow(non_camel_case_types)]
 pub enum DropClaimReward {
     Nft,

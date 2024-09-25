@@ -6,36 +6,55 @@ impl Contract {
     pub(crate) fn internal_deposit_ft_mint(
         &mut self,
         account_id: &AccountId,
-        amount: Balance,
+        amount: NearToken,
         drop_id: Option<String>,
         add_to_leaderboard: bool,
     ) {
-        // Get the current balance of the account. If they're not registered, panic.
-        let mut account_details = self
-            .account_details_by_id
-            .get(account_id)
-            .expect("Receiver not found in map");
-        let balance = account_details.ft_balance;
+        // Scope the mutable borrow of account_details to limit the duration
+        {
+            let account_details = self
+                .account_details_by_id
+                .get_mut(account_id)
+                .expect("Receiver not found in map");
 
+            let balance = account_details.ft_balance;
+
+            if add_to_leaderboard {
+                account_details.tokens_collected = account_details
+                    .tokens_collected
+                    .checked_add(amount)
+                    .expect("NearToken overflow");
+            }
+
+            // Add the amount to the balance and update account details
+            account_details.ft_balance = balance.checked_add(amount).expect("NearToken overflow");
+        }
+
+        // Now, update the leaderboard outside of the borrow scope
         if add_to_leaderboard {
-            let mut tokens_collected = account_details.tokens_collected.0;
-            tokens_collected += amount;
-            self.update_token_leaderboard(account_id.clone(), tokens_collected);
-            account_details.tokens_collected.0 = tokens_collected;
+            let account_details = self
+                .account_details_by_id
+                .get(account_id)
+                .expect("Receiver not found in map");
+
+            self.update_token_leaderboard(
+                account_id.clone(),
+                account_details.tokens_collected.as_yoctonear(),
+            );
         }
 
-        // Add the amount to the balance and insert the new balance into the accounts map
-        if let Some(new_balance) = balance.checked_add(amount) {
-            account_details.ft_balance = new_balance;
-            self.account_details_by_id
-                .insert(account_id, &account_details);
-        } else {
-            env::panic_str("Balance overflow");
-        }
+        // Increment the total supply and log events (done outside the account_details mutable borrow)
+        self.ft_total_supply = self
+            .ft_total_supply
+            .checked_add(amount)
+            .expect("NearToken overflow");
 
-        // Increment the total supply and log a mint event
-        self.ft_total_supply += amount;
-        self.total_tokens_transferred += amount;
+        self.total_tokens_transferred = self
+            .total_tokens_transferred
+            .checked_add(amount)
+            .expect("NearToken overflow");
+
+        // Log the mint event
         env::log_str(
             &EventLog {
                 standard: FT_STANDARD_NAME.to_string(),
@@ -48,6 +67,8 @@ impl Contract {
             }
             .to_string(),
         );
+
+        // Log Keypom-specific token mint event
         env::log_str(
             &EventLog {
                 standard: KEYPOM_STANDARD_NAME.to_string(),
@@ -55,8 +76,8 @@ impl Contract {
                 event: EventLogVariant::KeypomTokenMint(KeypomTokenMintLog {
                     drop_id,
                     receiver_id: account_id.to_string(),
-                    amount: U128(amount),
-                    new_balance: self.ft_balance_of(account_id.clone()),
+                    amount: U128(amount.as_yoctonear()),
+                    new_balance: U128(self.ft_balance_of(account_id.clone()).as_yoctonear()),
                 }),
             }
             .to_string(),
@@ -67,47 +88,55 @@ impl Contract {
     pub(crate) fn internal_ft_deposit(
         &mut self,
         account_id: &AccountId,
-        amount: Balance,
+        amount: NearToken,
         add_to_leaderboard: bool,
     ) {
-        // Get the current balance of the account. If they're not registered, panic.
-        let mut account_details = self
-            .account_details_by_id
-            .get(account_id)
-            .expect("Receiver not found in map");
-        let balance = account_details.ft_balance;
+        // Modify the account details in a scoped mutable borrow
+        {
+            let account_details = self
+                .account_details_by_id
+                .get_mut(account_id)
+                .expect("Receiver not found in map");
 
-        if add_to_leaderboard {
-            let mut tokens_collected = account_details.tokens_collected.0;
-            tokens_collected += amount;
-            self.update_token_leaderboard(account_id.clone(), tokens_collected);
-            account_details.tokens_collected.0 = tokens_collected;
+            let balance = account_details.ft_balance;
+
+            if add_to_leaderboard {
+                account_details.tokens_collected = account_details
+                    .tokens_collected
+                    .checked_add(amount)
+                    .expect("NearToken overflow");
+            }
+
+            // Add the amount to the balance
+            account_details.ft_balance = balance.checked_add(amount).expect("NearToken overflow");
         }
 
-        // Add the amount to the balance and insert the new balance into the accounts map
-        if let Some(new_balance) = balance.checked_add(amount) {
-            account_details.ft_balance = new_balance;
-            self.account_details_by_id
-                .insert(account_id, &account_details);
-        } else {
-            env::panic_str("Balance overflow");
+        // Now that the mutable borrow of account_details is done, we can safely update the leaderboard
+        if add_to_leaderboard {
+            let account_details = self
+                .account_details_by_id
+                .get(account_id)
+                .expect("Receiver not found in map");
+
+            self.update_token_leaderboard(
+                account_id.clone(),
+                account_details.tokens_collected.as_yoctonear(),
+            );
         }
     }
 
     /// Internal method for withdrawing some amount of FTs from an account.
-    pub(crate) fn internal_ft_withdraw(&mut self, account_id: &AccountId, amount: Balance) {
+    pub(crate) fn internal_ft_withdraw(&mut self, account_id: &AccountId, amount: NearToken) {
         // Get the current balance of the account. If they're not registered, panic.
-        let mut account_details = self
+        let account_details = self
             .account_details_by_id
-            .get(account_id)
+            .get_mut(account_id)
             .expect("Receiver not found in map");
         let balance = account_details.ft_balance;
 
         // Decrease the amount from the balance and insert the new balance into the accounts map
         if let Some(new_balance) = balance.checked_sub(amount) {
             account_details.ft_balance = new_balance;
-            self.account_details_by_id
-                .insert(account_id, &account_details);
         } else {
             env::panic_str("The account doesn't have enough balance");
         }
@@ -118,7 +147,7 @@ impl Contract {
         &mut self,
         sender_id: &AccountId,
         receiver_id: &AccountId,
-        amount: Balance,
+        amount: NearToken,
         add_to_leaderboard: bool,
     ) {
         // Ensure the sender can't transfer to themselves
@@ -127,13 +156,20 @@ impl Contract {
             "Sender and receiver should be different"
         );
         // Ensure the sender can't transfer 0 tokens
-        require!(amount > 0, "The amount should be a positive number");
+        require!(
+            amount.gt(&NearToken::from_yoctonear(0)),
+            "The amount should be a positive number"
+        );
 
         // Withdraw from the sender and deposit into the receiver
         self.internal_ft_withdraw(sender_id, amount);
         self.internal_ft_deposit(receiver_id, amount, add_to_leaderboard);
 
-        self.total_tokens_transferred += amount;
+        self.total_tokens_transferred = self
+            .total_tokens_transferred
+            .checked_add(amount)
+            .expect("NearToken overflow");
+
         // Emit a Transfer event
         env::log_str(
             &EventLog {
@@ -158,8 +194,10 @@ impl Contract {
                     sender_id: sender_id.to_string(),
                     receiver_id: receiver_id.to_string(),
                     amount: amount.to_string(),
-                    new_sender_balance: self.ft_balance_of(sender_id.clone()),
-                    new_receiver_balance: self.ft_balance_of(receiver_id.clone()),
+                    new_sender_balance: U128(self.ft_balance_of(sender_id.clone()).as_yoctonear()),
+                    new_receiver_balance: U128(
+                        self.ft_balance_of(receiver_id.clone()).as_yoctonear(),
+                    ),
                 }),
             }
             .to_string(),

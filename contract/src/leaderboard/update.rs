@@ -1,6 +1,6 @@
 use crate::*;
 
-#[near_bindgen]
+#[near]
 impl Contract {
     // Updates tokens collected leaderboard
     pub(crate) fn update_token_leaderboard(
@@ -30,7 +30,7 @@ impl Contract {
         // Insert the account in the correct position based on tokens_collected
         let insert_pos = self.token_leaderboard.iter().position(|id| {
             let details = self.account_details_by_id.get(id).unwrap();
-            details.tokens_collected.0 < tokens_collected
+            details.tokens_collected.as_yoctonear() < tokens_collected
         });
 
         if let Some(pos) = insert_pos {

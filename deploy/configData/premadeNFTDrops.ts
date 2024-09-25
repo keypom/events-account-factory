@@ -2,6 +2,7 @@ export const PREMADE_NFT_DROP_DATA = [
   {
     drop_data: {
       name: "Illia's Talk POAP",
+      image: "bafkreihgosptxbojx37vxo4bly5opn5iqx2hmffdmg6ztokjmvtwa36axu",
     },
     nft_metadata: {
       title: "Illia Talk POAP",
@@ -13,6 +14,7 @@ export const PREMADE_NFT_DROP_DATA = [
   {
     drop_data: {
       name: "Opening Ceremony POAP",
+      image: "bafkreihgosptxbojx37vxo4bly5opn5iqx2hmffdmg6ztokjmvtwa36axu",
     },
     nft_metadata: {
       title: "Opening Ceremony POAP",
@@ -24,6 +26,7 @@ export const PREMADE_NFT_DROP_DATA = [
   {
     drop_data: {
       name: "Closing Ceremony POAP",
+      image: "bafkreihgosptxbojx37vxo4bly5opn5iqx2hmffdmg6ztokjmvtwa36axu",
     },
     nft_metadata: {
       title: "Closing Ceremony POAP",
@@ -35,6 +38,7 @@ export const PREMADE_NFT_DROP_DATA = [
   {
     drop_data: {
       name: "Keypom Booth POAP",
+      image: "bafkreihgosptxbojx37vxo4bly5opn5iqx2hmffdmg6ztokjmvtwa36axu",
     },
     nft_metadata: {
       title: "Keypom Booth POAP",
@@ -46,6 +50,7 @@ export const PREMADE_NFT_DROP_DATA = [
   {
     drop_data: {
       name: "Nuffle Waffles POAP",
+      image: "bafkreihgosptxbojx37vxo4bly5opn5iqx2hmffdmg6ztokjmvtwa36axu",
     },
     nft_metadata: {
       title: "Nuffle Waffles POAP",
@@ -57,6 +62,7 @@ export const PREMADE_NFT_DROP_DATA = [
   {
     drop_data: {
       name: "Proximity Booth POAP",
+      image: "bafkreihgosptxbojx37vxo4bly5opn5iqx2hmffdmg6ztokjmvtwa36axu",
     },
     nft_metadata: {
       title: "Proximity Booth POAP",
@@ -68,6 +74,7 @@ export const PREMADE_NFT_DROP_DATA = [
   {
     drop_data: {
       name: "Snowden Talk POAP",
+      image: "bafkreihgosptxbojx37vxo4bly5opn5iqx2hmffdmg6ztokjmvtwa36axu",
     },
     nft_metadata: {
       title: "Snowden Talk POAP",
@@ -79,6 +86,7 @@ export const PREMADE_NFT_DROP_DATA = [
   {
     drop_data: {
       name: "Eric Winer Talk POAP",
+      image: "bafkreihgosptxbojx37vxo4bly5opn5iqx2hmffdmg6ztokjmvtwa36axu",
     },
     nft_metadata: {
       title: "Eric Winer Talk POAP",

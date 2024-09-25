@@ -2,10 +2,10 @@ use crate::*;
 use near_sdk::serde_json::json;
 use near_sdk::{assert_one_yocto, Gas, GasWeight, Promise, PromiseOrValue, PromiseResult};
 
-const GAS_FOR_RESOLVE_TRANSFER: Gas = Gas(10_000_000_000_000);
-const GAS_FOR_NFT_ON_TRANSFER: Gas = Gas(25_000_000_000_000);
+const GAS_FOR_RESOLVE_TRANSFER: Gas = Gas::from_tgas(10); // 10 TGas = 10^13 gas units
+const GAS_FOR_NFT_ON_TRANSFER: Gas = Gas::from_tgas(25); // 25 TGas = 25^13 gas units
 
-#[near_bindgen]
+#[near]
 impl Contract {
     //implementation of the nft_transfer method. This transfers the NFT from the current owner to the receiver.
     #[payable]
@@ -68,7 +68,7 @@ impl Contract {
                     json!({ "sender_id": sender_id, "previous_owner_id": previous_token.owner_id, "token_id": token_id, "msg": msg })
                         .to_string()
                         .into_bytes(),
-                    0,
+                    NearToken::from_yoctonear(0),
                     GAS_FOR_NFT_ON_TRANSFER,
                     GasWeight(0),
                 )
@@ -97,7 +97,7 @@ impl Contract {
                 .series_by_id
                 .get(&token.series_id)
                 .expect("Not a series");
-            let mut metadata = cur_series.metadata;
+            let mut metadata = cur_series.metadata.clone();
 
             let split: Vec<&str> = token_id.split(":").collect();
             let edition_number = split[1];
@@ -113,10 +113,10 @@ impl Contract {
             Some(JsonToken {
                 series_id: token.series_id,
                 token_id,
-                owner_id: token.owner_id,
+                owner_id: token.owner_id.clone(),
                 metadata,
-                approved_account_ids: token.approved_account_ids,
-                royalty: cur_series.royalty,
+                approved_account_ids: token.approved_account_ids.clone(),
+                royalty: cur_series.royalty.clone(),
             })
         } else {
             //if there wasn't a token ID in the nft_tokens_by_id collection, we return None
@@ -156,7 +156,7 @@ impl Contract {
         }
 
         //get the token object if there is some token object
-        let mut token = if let Some(token) = self.nft_tokens_by_id.get(&token_id) {
+        let mut token = if let Some(token) = self.nft_tokens_by_id.get(&token_id).cloned() {
             if token.owner_id != receiver_id {
                 // The token is not owner by the receiver anymore. Can't return it.
                 return true;
@@ -179,7 +179,8 @@ impl Contract {
         token.approved_account_ids = approved_account_ids;
 
         //we inset the token back into the nft_tokens_by_id collection
-        self.nft_tokens_by_id.insert(&token_id, &token);
+        self.nft_tokens_by_id
+            .insert(token_id.clone(), token.clone());
 
         /*
             We need to log that the NFT was reverted back to the original owner.
@@ -213,4 +214,3 @@ impl Contract {
         false
     }
 }
-
