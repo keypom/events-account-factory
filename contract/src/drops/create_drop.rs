@@ -176,6 +176,7 @@ impl Contract {
         key: PublicKey,
         scavenger_hunt: Option<Vec<ScavengerHuntData>>,
         multichain_metadata: MultichainMetadata,
+        nft_metadata: TokenMetadata,
     ) -> String {
         let drop_creator = self.assert_admin();
 
@@ -201,6 +202,7 @@ impl Contract {
                         key,
                         image,
                         num_claimed: 0,
+                        nft_metadata,
                         scavenger_hunt: scavenger_hunt.clone(),
                         id: drop_id.clone(),
                         mc_metadata: multichain_metadata
