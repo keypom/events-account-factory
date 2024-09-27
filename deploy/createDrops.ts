@@ -29,6 +29,11 @@ export interface NFTDropInfo {
 
 export interface MultichainDropInfo {
   drop_data: DropDataInput;
+  nft_metadata: {
+    title?: string;
+    description?: string;
+    media?: string;
+  };
   multichain_metadata: {
     chain_id: number;
     contract_id: string;
@@ -120,6 +125,7 @@ export const createDrops = async ({
       args.multichain_metadata = (
         drop as MultichainDropInfo
       ).multichain_metadata;
+      args.nft_metadata = (drop as MultichainDropInfo).nft_metadata;
       res = await sendTransaction({
         signerAccount,
         receiverId: factoryAccountId,
