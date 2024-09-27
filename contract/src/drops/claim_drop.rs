@@ -17,7 +17,7 @@ impl Contract {
         drop_id: String,
         scavenger_id: Option<PublicKey>,
         signature: Base64VecU8,
-    ) -> DropData {
+    ) -> ExtClaimedDrop {
         self.assert_no_freeze();
         let receiver_id = self.caller_id_by_signing_pk();
         self.assert_valid_signature(&drop_id, &receiver_id, &signature, scavenger_id.clone());
@@ -46,10 +46,7 @@ impl Contract {
             event: EventLogVariant::KeypomDropClaim(claim_log),
         };
         env::log_str(&event_log.to_string());
-        self.drop_by_id
-            .get(&drop_id)
-            .expect("Drop not found")
-            .clone()
+        self.get_claimed_drop_for_account(receiver_id,  drop_id)
     }
 
     /// Handles the claim process for any drop type.
