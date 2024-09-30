@@ -197,7 +197,6 @@ impl Contract {
             account_id: account_id.to_string(),
             ft_balance: account_details.ft_balance,
             account_status: account_details.account_status.clone(), // Clone account_status
-            is_conference_over: self.is_contract_frozen,
         }
     }
 

@@ -12,6 +12,11 @@ impl Contract {
         self.is_contract_frozen = is_freeze;
     }
 
+    // Query for the status of the contract (i.e is the conference over?)
+    pub fn is_contract_frozen(&self) -> bool {
+        self.is_contract_frozen
+    }
+
     /// Clears storage by removing account details in batches.
     ///
     /// This function will only work when the contract is frozen. It iterates
