@@ -1,6 +1,7 @@
-export const PREMADE_SCAVENGER_HUNTS = [
+import { PremadeScavengerHunts } from "../../types";
+
+export const PREMADE_SCAVENGER_HUNTS: PremadeScavengerHunts = [
   {
-    image: "bafkreihgosptxbojx37vxo4bly5opn5iqx2hmffdmg6ztokjmvtwa36axu",
     drop_data: {
       name: "Official Scavenger Hunt",
       image: "bafkreihgosptxbojx37vxo4bly5opn5iqx2hmffdmg6ztokjmvtwa36axu",

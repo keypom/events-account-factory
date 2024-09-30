@@ -1,4 +1,6 @@
-export const PREMADE_TOKEN_DROP_DATA = [
+import { PremadeTokenDrops } from "../../types";
+
+export const PREMADE_TOKEN_DROP_DATA: PremadeTokenDrops = [
   {
     drop_data: {
       name: "10 Tokens",

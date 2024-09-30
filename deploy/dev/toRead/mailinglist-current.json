@@ -1,0 +1,11 @@
+[
+  {
+    "email": "minqianlu00@gmail.com",
+    "name": "Oscar Leclerc",
+    "merge_fields": {
+      "FNAME": "Oscar",
+      "LNAME": "Leclerc",
+      "KEY": "DUMMY-KEY"
+    }
+  }
+]

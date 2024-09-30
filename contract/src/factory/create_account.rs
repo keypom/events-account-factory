@@ -32,17 +32,10 @@ impl Contract {
     /// # Arguments
     ///
     /// * `new_account_id` - The ID of the new account to be created.
-    /// * `new_public_key` - The public key for the new account.
-    /// * `drop_id` - The ID of the drop associated with the account creation.
-    /// * `keypom_args` - Additional arguments from Keypom.
     ///
     /// # Returns
     ///
     /// Returns a promise to create the new account.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the Keypom arguments are invalid or the drop ID does not exist.
     #[payable]
     pub fn create_account(&mut self, new_account_id: AccountId) -> Promise {
         self.assert_no_freeze();

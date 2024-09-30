@@ -1,36 +1,81 @@
 import { addPremadeTickets, addTickets } from "./addTickets";
 import { adminCreateAccount } from "./adminCreateAccounts";
-import {
-  ADMIN_ACCOUNTS,
-  CREATION_CONFIG,
-  EXISTING_FACTORY,
-  GLOBAL_NETWORK,
-  NUM_TICKETS_TO_ADD,
-  PREMADE_TICKET_DATA,
-  SIGNER_ACCOUNT,
-} from "./config";
-import { deployFactory } from "./createEvent";
-import { convertMapToRawJsonCsv, initNear, updateConfigFile } from "./utils";
 import fs from "fs";
 import path from "path";
 import { createDrops } from "./createDrops";
-import { TICKET_DATA } from "./configData/ticketData";
-import { SPONSOR_DATA } from "./configData/sponsorData";
-import { PREMADE_TOKEN_DROP_DATA } from "./configData/premadeTokenDrops";
-import { PREMADE_NFT_DROP_DATA } from "./configData/premadeNFTDrops";
-import { PREMADE_SCAVENGER_HUNTS } from "./configData/premadeScavengers";
-import { PREMADE_MULTICHAIN_DROPS } from "./configData/premadeMultichainDrops";
+import { Config } from "./types";
+import {
+  convertMapToRawJsonCsv,
+  initNear,
+  setFactoryFullAccessKey,
+  updateConfigFile,
+} from "./utils";
+import { deployFactory } from "./createEvent";
+import { cleanupContract } from "./cleanup";
+
+// Get the environment (dev or prod) from the command-line arguments
+const env = process.argv[2] || "dev"; // Default to "dev" if no argument is provided
+
+// Helper function to dynamically load the config
+const loadConfig = async (env: string) => {
+  console.log(`Loading config for ${env}`);
+  const config: Config = await import(`./${env}/config`);
+  const ticketData = await import(`./${env}/configData/ticketData`);
+  const sponsorData = await import(`./${env}/configData/sponsorData`);
+  const premadeTokenDrops = await import(
+    `./${env}/configData/premadeTokenDrops`
+  );
+  const premadeNftDrops = await import(`./${env}/configData/premadeNFTDrops`);
+  const premadeScavengers = await import(
+    `./${env}/configData/premadeScavengers`
+  );
+  const premadeMultichainDrops = await import(
+    `./${env}/configData/premadeMultichainDrops`
+  );
+
+  return {
+    config,
+    ticketData,
+    sponsorData,
+    premadeTokenDrops,
+    premadeNftDrops,
+    premadeScavengers,
+    premadeMultichainDrops,
+  };
+};
 
 const main = async () => {
-  const near = await initNear();
+  const {
+    config,
+    ticketData: { TICKET_DATA },
+    sponsorData: { SPONSOR_DATA },
+    premadeTokenDrops: { PREMADE_TOKEN_DROP_DATA },
+    premadeNftDrops: { PREMADE_NFT_DROP_DATA },
+    premadeScavengers: { PREMADE_SCAVENGER_HUNTS },
+    premadeMultichainDrops: { PREMADE_MULTICHAIN_DROPS },
+  } = await loadConfig(env);
+
+  const {
+    ADMIN_ACCOUNTS,
+    CLEANUP_CONTRACT,
+    CREATION_CONFIG,
+    EXISTING_FACTORY,
+    GLOBAL_NETWORK,
+    NUM_TICKETS_TO_ADD,
+    PREMADE_TICKET_DATA,
+    SIGNER_ACCOUNT,
+  } = config;
+
+  const near = await initNear(config);
   console.log("Connected to Near: ", near);
 
   const signerAccount = await near.account(SIGNER_ACCOUNT);
+  let factoryKey: string | undefined = undefined;
 
   // Ensure the "data" directory exists, create it if it doesn't
-  const dataDir = path.join(__dirname, "data");
+  const dataDir = path.join(__dirname, env, "data");
   if (!fs.existsSync(dataDir)) {
-    fs.mkdirSync(dataDir);
+    fs.mkdirSync(dataDir, { recursive: true });
   }
 
   // STEP 1: Deploy the factory contract
@@ -38,8 +83,9 @@ const main = async () => {
   let factoryAccountId = EXISTING_FACTORY;
   if (CREATION_CONFIG.deployContract) {
     factoryAccountId = `${Date.now().toString()}-factory.${GLOBAL_NETWORK === "testnet" ? "testnet" : "near"}`;
-    let factoryKey = await deployFactory({
+    factoryKey = await deployFactory({
       near,
+      config,
       signerAccount,
       adminAccounts: ADMIN_ACCOUNTS,
       factoryAccountId,
@@ -51,7 +97,7 @@ const main = async () => {
     fs.writeFileSync(csvFilePath, `${factoryAccountId},${factoryKey}`);
 
     // STEP 1.1: Update the EXISTING_FACTORY in config.ts
-    updateConfigFile(factoryAccountId);
+    updateConfigFile(factoryAccountId, env);
   }
 
   // STEP 2: Create Sponsors
@@ -120,7 +166,7 @@ const main = async () => {
       attendeeInfo: defaultAttendeeInfo,
     });
     // Convert the keyPairMap to CSV with raw JSON and write to a file
-    const csvData = convertMapToRawJsonCsv(keyPairMap);
+    const csvData = convertMapToRawJsonCsv(keyPairMap, config);
     csvFilePath = path.join(dataDir, "tickets.csv");
     fs.writeFileSync(csvFilePath, csvData);
   }
@@ -132,6 +178,7 @@ const main = async () => {
       factoryAccountId,
       dropId: "ga_pass",
       attendeeInfo: PREMADE_TICKET_DATA,
+      config,
     });
     // Write the sponsors CSV to the "data" directory
     csvFilePath = path.join(dataDir, "premade-tickets.csv");
@@ -176,6 +223,24 @@ const main = async () => {
     });
     csvFilePath = path.join(dataDir, "premade-multichain-drops.csv");
     fs.writeFileSync(csvFilePath, premadeMultichainDropCSV.join("\n"));
+  }
+
+  // Reset the key in file system to be full access key
+  if (factoryKey !== undefined) {
+    await setFactoryFullAccessKey(factoryKey, factoryAccountId, config);
+  }
+
+  if (CLEANUP_CONTRACT) {
+    const summary = await cleanupContract({
+      near,
+      signerAccount,
+      factoryAccountId,
+    });
+
+    const summaryFilePath = path.join(dataDir, "cleanup_summary.json");
+    fs.writeFileSync(summaryFilePath, JSON.stringify(summary, null, 2));
+
+    console.log(`Cleanup complete. Summary written to ${summaryFilePath}`);
   }
 
   console.log("Done!");

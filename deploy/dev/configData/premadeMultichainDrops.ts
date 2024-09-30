@@ -1,4 +1,6 @@
-export const PREMADE_MULTICHAIN_DROPS = [
+import { PremadeMultichainDrops } from "../../types";
+
+export const PREMADE_MULTICHAIN_DROPS: PremadeMultichainDrops = [
   {
     drop_data: {
       image: "bafkreihgosptxbojx37vxo4bly5opn5iqx2hmffdmg6ztokjmvtwa36axu",

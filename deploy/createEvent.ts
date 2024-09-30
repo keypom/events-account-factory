@@ -1,4 +1,5 @@
 const { utils } = require("near-api-js");
+import { Config } from "./types";
 import { createAccountDeployContract } from "./utils";
 
 export async function deployFactory({
@@ -6,11 +7,13 @@ export async function deployFactory({
   signerAccount,
   adminAccounts,
   factoryAccountId,
+  config,
   ticketData,
 }: {
   near: any;
   signerAccount: any;
   adminAccounts: string[];
+  config: Config;
   ticketData: Record<
     string,
     {
@@ -36,6 +39,7 @@ export async function deployFactory({
 
   return await createAccountDeployContract({
     signerAccount,
+    config,
     newAccountId: factoryAccountId,
     amount: "200",
     near,

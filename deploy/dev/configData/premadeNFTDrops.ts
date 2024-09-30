@@ -1,4 +1,6 @@
-export const PREMADE_NFT_DROP_DATA = [
+import { PremadeNFTDrops } from "../../types";
+
+export const PREMADE_NFT_DROP_DATA: PremadeNFTDrops = [
   {
     drop_data: {
       name: "Illia's Talk POAP",
