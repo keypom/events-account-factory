@@ -63,6 +63,7 @@ impl AccountStatus {
 pub struct ExtAccountDetails {
     pub account_id: String,
     pub ft_balance: NearToken,
+    pub is_conference_over: bool,
 
     // ------------------------ Account Information ------------------------- //
     pub account_status: Option<AccountStatus>,
