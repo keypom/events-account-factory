@@ -3,7 +3,7 @@ import { CreationConfig, PremadeTicketData, TicketDataMap } from "../types";
 export const GLOBAL_NETWORK = "testnet";
 
 export const SIGNER_ACCOUNT = "benjiman.testnet";
-export const TIME_DELAY = 10000;
+export const TIME_DELAY = 0;
 export const CLEANUP_CONTRACT = true;
 export const CREATION_CONFIG: CreationConfig = {
   deployContract: true,
@@ -26,7 +26,7 @@ export const NUM_TICKETS_TO_ADD = 10;
 
 export const TICKET_URL_BASE =
   "https://2930bf5d.keypom-redacted-app.pages.dev/tickets/ticket/ga_pass#";
-export const EXISTING_FACTORY = `1727809762536-factory.testnet`;
+export const EXISTING_FACTORY = `1727815024644-factory.testnet`;
 export const ADMIN_ACCOUNTS = [SIGNER_ACCOUNT];
 
 export const PREMADE_TICKET_DATA: PremadeTicketData = [

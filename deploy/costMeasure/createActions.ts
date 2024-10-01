@@ -1,158 +1,84 @@
 import { Account } from "near-api-js";
 import { adminCreateAccount } from "../adminCreateAccounts";
-import { addTickets } from "../addTickets";
-import { createDrops } from "../createDrops";
+import { addTickets as addTicketsUtil } from "../addTickets";
+import { createDrops as createDropsUtil } from "../createDrops";
 
-// Create sponsor account
-export async function createSponsorAccount(
+// Create accounts
+export async function createAccount(
   signerAccount: Account,
   factoryAccountId: string,
+  accountType: string,
+  accountName: string,
 ): Promise<{ accountId: string; secretKey: string }> {
   const result = await adminCreateAccount({
     signerAccount,
-    factoryAccountId: factoryAccountId,
-    newAccountName: "sponsor",
+    factoryAccountId,
+    newAccountName: accountName,
     startingNearBalance: "0.01",
-    startingTokenBalance: "50",
-    accountType: "Sponsor",
+    startingTokenBalance: accountType === "Sponsor" ? "50" : "0",
+    accountType,
   });
   return { accountId: result.accountId, secretKey: result.secretKey };
 }
 
-// Create worker account
-export async function createWorkerAccount(
+// Add tickets
+export async function addTickets(
   signerAccount: Account,
   factoryAccountId: string,
-): Promise<{ accountId: string; secretKey: string }> {
-  const result = await adminCreateAccount({
-    signerAccount,
-    factoryAccountId: factoryAccountId,
-    newAccountName: "worker",
-    startingNearBalance: "0.01",
-    startingTokenBalance: "0",
-    accountType: "DataSetter",
-  });
-  return { accountId: result.accountId, secretKey: result.secretKey };
-}
-
-// Create admin account
-export async function createAdminAccount(
-  signerAccount: Account,
-  factoryAccountId: string,
-): Promise<{ accountId: string; secretKey: string }> {
-  const result = await adminCreateAccount({
-    signerAccount,
-    factoryAccountId: factoryAccountId,
-    newAccountName: "admin",
-    startingNearBalance: "0.01",
-    startingTokenBalance: "0",
-    accountType: "Admin",
-  });
-
-  return { accountId: result.accountId, secretKey: result.secretKey };
-}
-
-// Add one ticket
-export async function addOneTicket(
-  signerAccount: Account,
-  factoryAccountId: string,
+  attendeeInfo: Array<Record<string, string>>,
 ) {
-  const result = await addTickets({
+  const result = await addTicketsUtil({
     signerAccount,
-    factoryAccountId: factoryAccountId,
+    factoryAccountId,
     dropId: "ga_pass",
-    attendeeInfo: [{ name: "Test User", email: "test@example.com" }],
+    attendeeInfo,
     encodeTickets: false,
   });
-  // Return ticket keys if needed
   return { ticketKeys: Array.from(result.keys()) };
 }
 
-// Add fifty tickets
-export async function addTenTickets(
+// Add drops
+export async function addDrop(
   signerAccount: Account,
   factoryAccountId: string,
+  dropType: string,
 ) {
-  const attendees = Array(10).fill({
-    name: "Test User",
-    email: "test@example.com",
-  });
-  const result = await addTickets({
+  const dropConfig: any = {
     signerAccount,
-    factoryAccountId: factoryAccountId,
-    dropId: "ga_pass",
-    attendeeInfo: attendees,
-    encodeTickets: false,
-  });
-  // Return ticket keys
-  return { ticketKeys: Array.from(result.keys()) };
-}
+    factoryAccountId,
+    drops: [],
+  };
 
-// Add token drop
-export async function addTokenDrop(
-  signerAccount: Account,
-  factoryAccountId: string,
-) {
-  const drops = await createDrops({
-    signerAccount,
-    factoryAccountId: factoryAccountId,
-    drops: [
-      {
-        drop_data: {
-          name: "Illia's Talk POAP",
-          image: "bafkreihgosptxbojx37vxo4bly5opn5iqx2hmffdmg6ztokjmvtwa36axu",
-        },
+  const commonData = {
+    drop_data: {
+      name: `${dropType} Drop`,
+      image: "bafkreihgosptxbojx37vxo4bly5opn5iqx2hmffdmg6ztokjmvtwa36axu",
+    },
+  };
+
+  switch (dropType) {
+    case "Token":
+      dropConfig.drops.push({
+        ...commonData,
         token_amount: "1",
-      },
-    ],
-  });
-  return drops;
-}
-
-// Add NFT drop
-export async function addNFTDrop(
-  signerAccount: Account,
-  factoryAccountId: string,
-) {
-  const drops = await createDrops({
-    signerAccount,
-    factoryAccountId: factoryAccountId,
-    drops: [
-      {
-        drop_data: {
-          name: "Illia's Talk POAP",
-          image: "bafkreihgosptxbojx37vxo4bly5opn5iqx2hmffdmg6ztokjmvtwa36axu",
-        },
+      });
+      break;
+    case "NFT":
+      dropConfig.drops.push({
+        ...commonData,
         nft_metadata: {
-          title: "Illia Talk POAP",
-          description:
-            "Here are some instructions on how to retrieve this collectible. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas placerat mauris turpis, vel consequat mi ultricies eu. Quisque ligula neque, placerat ut dui.",
+          title: "NFT Drop",
+          description: "NFT Drop Description",
           media: "bafkreihgosptxbojx37vxo4bly5opn5iqx2hmffdmg6ztokjmvtwa36axu",
         },
-      },
-    ],
-  });
-  return drops;
-}
-
-// Add multichain drop
-export async function addMultichainDrop(
-  signerAccount: Account,
-  factoryAccountId: string,
-) {
-  const drops = await createDrops({
-    signerAccount,
-    factoryAccountId: factoryAccountId,
-    drops: [
-      {
-        drop_data: {
-          image: "bafkreihgosptxbojx37vxo4bly5opn5iqx2hmffdmg6ztokjmvtwa36axu",
-          name: "Surfer Dog POAP",
-        },
+      });
+      break;
+    case "Multichain":
+      dropConfig.drops.push({
+        ...commonData,
         nft_metadata: {
-          title: "Multichain Test Drop",
-          description:
-            "Here are some instructions on how to retrieve this collectible. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas placerat mauris turpis, vel consequat mi ultricies eu. Quisque ligula neque, placerat ut dui.",
+          title: "Multichain NFT",
+          description: "Multichain NFT Description",
           media: "bafkreihgosptxbojx37vxo4bly5opn5iqx2hmffdmg6ztokjmvtwa36axu",
         },
         multichain_metadata: {
@@ -160,8 +86,76 @@ export async function addMultichainDrop(
           contract_id: "0xD6B95F11213cC071B982D717721B1aC7Bc628d46",
           series_id: 1,
         },
-      },
-    ],
-  });
-  return drops;
+      });
+      break;
+    default:
+      throw new Error(`Unknown drop type: ${dropType}`);
+  }
+
+  return await createDropsUtil(dropConfig);
+}
+
+// Add scavenger hunts
+export async function addScavengerHunt(
+  signerAccount: Account,
+  factoryAccountId: string,
+  huntType: string,
+  pieces: number,
+) {
+  const scavengerHunt = Array.from({ length: pieces }, (_, idx) => ({
+    id: idx + 1,
+    description: `Find this item at location ${idx + 1}`,
+  }));
+
+  const commonData = {
+    drop_data: {
+      name: `Scavenger ${huntType} Hunt`,
+      image: "bafkreihgosptxbojx37vxo4bly5opn5iqx2hmffdmg6ztokjmvtwa36axu",
+      scavenger_hunt: scavengerHunt,
+    },
+  };
+
+  const dropConfig: any = {
+    signerAccount,
+    factoryAccountId,
+    drops: [],
+  };
+
+  switch (huntType) {
+    case "Token":
+      dropConfig.drops.push({
+        ...commonData,
+        token_amount: "1",
+      });
+      break;
+    case "NFT":
+      dropConfig.drops.push({
+        ...commonData,
+        nft_metadata: {
+          title: "Scavenger NFT",
+          description: "Scavenger NFT Description",
+          media: "bafkreihgosptxbojx37vxo4bly5opn5iqx2hmffdmg6ztokjmvtwa36axu",
+        },
+      });
+      break;
+    case "Multichain":
+      dropConfig.drops.push({
+        ...commonData,
+        nft_metadata: {
+          title: "Scavenger Multichain NFT",
+          description: "Scavenger Multichain NFT Description",
+          media: "bafkreihgosptxbojx37vxo4bly5opn5iqx2hmffdmg6ztokjmvtwa36axu",
+        },
+        multichain_metadata: {
+          chain_id: 84532,
+          contract_id: "0xD6B95F11213cC071B982D717721B1aC7Bc628d46",
+          series_id: 1,
+        },
+      });
+      break;
+    default:
+      throw new Error(`Unknown hunt type: ${huntType}`);
+  }
+
+  return await createDropsUtil(dropConfig);
 }
