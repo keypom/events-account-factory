@@ -7,6 +7,7 @@
     "build": "cd contract && ./build.sh",
     "deployDev": "ts-node deploy/main.ts dev",
     "deployProd": "ts-node deploy/main.ts prod",
+    "profile": "yarn build && ts-node deploy/costMeasure/main.ts",
     "sendTicketsDev": "ts-node dev/prodAddKeys.ts",
     "sendTicketsProd": "ts-node prod/prodAddKeys.ts",
     "buildAndDeployDev": "yarn build && yarn deployDev",
