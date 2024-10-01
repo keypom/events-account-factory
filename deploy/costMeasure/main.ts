@@ -1,4 +1,3 @@
-import { actions } from "./actions";
 import { getAccountBalance, getContractStorageUsage } from "./helpers";
 import { initNear, updateConfigFile } from "../utils";
 import { Config } from "../types";
@@ -12,12 +11,50 @@ import {
   SIGNER_ACCOUNT,
   TICKET_DATA,
   TICKET_URL_BASE,
+  TIME_DELAY,
 } from "./config";
 import fs from "fs";
 import path from "path";
-import { generateSignature } from "./cryptoHelpers";
+import { generateSignature, getPublicKey } from "./cryptoHelpers";
 import { utils, KeyPair } from "near-api-js";
 import { deployFactory } from "../createEvent";
+
+import {
+  createSponsorAccount,
+  createWorkerAccount,
+  createAdminAccount,
+  addOneTicket,
+  addTenTickets,
+  addTokenDrop,
+  addNFTDrop,
+  addMultichainDrop,
+} from "./createActions";
+
+import {
+  addScavengerTokenHunt2Piece,
+  addScavengerTokenHunt4Pieces,
+  addScavengerTokenHunt10Pieces,
+  addScavengerNFTHunt2Piece,
+  addScavengerNFTHunt4Pieces,
+  addScavengerNFTHunt10Pieces,
+  addScavengerMultichainHunt2Piece,
+  addScavengerMultichainHunt4Pieces,
+  addScavengerMultichainHunt10Pieces,
+} from "./scavengerActions";
+
+import {
+  claimNFTDrop,
+  claimTokenDrop,
+  claimMultichainDrop,
+  claimScavengerHuntPiece,
+} from "./claimActions";
+
+import { scanTicket, scan10Tickets } from "./ticketActions";
+import {
+  createConferenceAccount,
+  create10ConferenceAccounts,
+} from "./accountActions";
+import { getPubFromSecret } from "@keypom/core";
 
 async function main() {
   const config: Config = {
@@ -41,30 +78,28 @@ async function main() {
     fs.mkdirSync(dataDir);
   }
 
-  // STEP 1: Deploy the factory contract
-  let factoryAccountId = EXISTING_FACTORY;
-  let factoryKey: string | undefined;
+  const factoryAccountId = `${Date.now().toString()}-factory.${
+    GLOBAL_NETWORK === "testnet" ? "testnet" : "near"
+  }`;
+  const factoryKey = await deployFactory({
+    near,
+    config,
+    signerAccount: await near.account(SIGNER_ACCOUNT),
+    adminAccounts: ADMIN_ACCOUNTS,
+    factoryAccountId,
+    ticketData: TICKET_DATA,
+  });
 
-  if (CREATION_CONFIG.deployContract) {
-    factoryAccountId = `${Date.now().toString()}-factory.${
-      GLOBAL_NETWORK === "testnet" ? "testnet" : "near"
-    }`;
-    factoryKey = await deployFactory({
-      near,
-      config,
-      signerAccount: await near.account(SIGNER_ACCOUNT),
-      adminAccounts: ADMIN_ACCOUNTS,
-      factoryAccountId,
-      ticketData: TICKET_DATA,
-    });
+  // Write the factory key to the "data" directory
+  const csvFilePath = path.join(dataDir, "factoryKey.csv");
+  fs.writeFileSync(csvFilePath, `${factoryAccountId},${factoryKey}`);
 
-    // Write the factory key to the "data" directory
-    const csvFilePath = path.join(dataDir, "factoryKey.csv");
-    fs.writeFileSync(csvFilePath, `${factoryAccountId},${factoryKey}`);
+  // Update the factoryAccountId in config.ts
+  updateConfigFile(factoryAccountId, "costMeasure");
 
-    // Update the EXISTING_FACTORY in config.ts
-    updateConfigFile(factoryAccountId, "costMeasure");
-  }
+  // wait 4 seconds
+  console.log("Waiting 4 seconds...");
+  await new Promise((resolve) => setTimeout(resolve, TIME_DELAY));
 
   // Initialize data structures
   const accounts: {
@@ -74,7 +109,6 @@ async function main() {
     [key: string]: {
       dropId: string;
       privateKey: string;
-      scavengerKeys?: { id: string; privateKey: string }[];
     };
   } = {};
 
@@ -84,7 +118,8 @@ async function main() {
   const results: {
     action: string;
     storage_used_bytes: number;
-    cost_in_near: string;
+    balance_before: string;
+    balance_after: string;
   }[] = [];
 
   // Helper to measure storage and balance
@@ -92,8 +127,6 @@ async function main() {
     actionName: string,
     actionFn: () => Promise<any>,
   ) {
-    console.log(`\nPerforming action: ${actionName}`);
-
     const storageBefore = await getContractStorageUsage(
       signerAccount,
       factoryAccountId,
@@ -104,6 +137,8 @@ async function main() {
     );
 
     const result = await actionFn();
+    // wait 4 seconds for the transaction to be processed
+    await new Promise((resolve) => setTimeout(resolve, TIME_DELAY));
 
     const storageAfter = await getContractStorageUsage(
       signerAccount,
@@ -115,33 +150,27 @@ async function main() {
     );
 
     const storageDiff = storageAfter - storageBefore;
-    const balanceDiff = balanceBefore - balanceAfter;
 
     results.push({
       action: actionName,
       storage_used_bytes: storageDiff,
-      cost_in_near: utils.format.formatNearAmount(balanceDiff.toString(), 8),
+      balance_before: balanceBefore.toString(),
+      balance_after: balanceAfter.toString(),
     });
 
     console.log(`Action: ${actionName}`);
     console.log(`Storage used (bytes): ${storageDiff}`);
-    console.log(
-      `Cost (NEAR): ${utils.format.formatNearAmount(
-        balanceDiff.toString(),
-        8,
-      )}`,
-    );
 
     return result;
   }
 
-  // Perform actions
+  // Perform actions by calling the functions directly
 
   // Action 1: Create Sponsor Account
   const sponsorAccountData = await measureAction(
     "Create 1 sponsor account",
     async () => {
-      const data = await actions[0].function(signerAccount);
+      const data = await createSponsorAccount(signerAccount, factoryAccountId);
       accounts["sponsor"] = data.secretKey;
       return data;
     },
@@ -151,7 +180,7 @@ async function main() {
   const workerAccountData = await measureAction(
     "Create 1 worker account",
     async () => {
-      const data = await actions[1].function(signerAccount);
+      const data = await createWorkerAccount(signerAccount, factoryAccountId);
       accounts["worker"] = data.secretKey;
       return data;
     },
@@ -161,7 +190,7 @@ async function main() {
   const adminAccountData = await measureAction(
     "Create 1 admin account",
     async () => {
-      const data = await actions[2].function(signerAccount);
+      const data = await createAdminAccount(signerAccount, factoryAccountId);
       accounts["admin"] = data.secretKey;
       return data;
     },
@@ -169,7 +198,7 @@ async function main() {
 
   // Action 4: Add 1 Ticket
   const oneTicketData = await measureAction("Add 1 ticket", async () => {
-    const data = await actions[3].function(signerAccount);
+    const data = await addOneTicket(signerAccount, factoryAccountId);
 
     // Since data.ticketKeys contains the private keys in base64, assign them to the appropriate user
     accounts["user0"] = data.ticketKeys[0]; // Map the first ticket to user0
@@ -179,7 +208,7 @@ async function main() {
 
   // Action 5: Add 10 Tickets
   const tenTicketsData = await measureAction("Add 10 tickets", async () => {
-    const data = await actions[4].function(signerAccount);
+    const data = await addTenTickets(signerAccount, factoryAccountId);
 
     // Loop through ticketKeys and map them to user1 through user50
     for (let i = 0; i < data.ticketKeys.length; i++) {
@@ -189,10 +218,11 @@ async function main() {
 
     return data;
   });
+  console.log("Accounts: ", accounts);
 
   // Action 6: Scan a ticket
   const scanTicketData = await measureAction("Scan a ticket", async () => {
-    const data = await actions[5].function(near, accounts["user0"]);
+    const data = await scanTicket(near, accounts["user0"], factoryAccountId);
     return data;
   });
 
@@ -205,7 +235,7 @@ async function main() {
         (_, i) => `user${i + 1}`,
       );
       const users = user1Through10.map((user) => accounts[user]);
-      const data = await actions[6].function(near, users);
+      const data = await scan10Tickets(near, users, factoryAccountId);
       return data;
     },
   );
@@ -214,10 +244,11 @@ async function main() {
   const createAccountData = await measureAction(
     "Create Conference Account",
     async () => {
-      const data = await actions[7].function(
+      const data = await createConferenceAccount(
         near,
-        accounts["user1"],
-        `user1.${EXISTING_FACTORY}`,
+        accounts["user0"],
+        `user0.${factoryAccountId}`,
+        factoryAccountId,
       );
       return data;
     },
@@ -232,35 +263,40 @@ async function main() {
         (_, i) => `user${i + 1}`,
       );
       const userKeys = user1Through10.map((user) => accounts[user]);
-      const userAccountIds = user1Through10.map((user) => {
-        return `user1.${EXISTING_FACTORY}.${user}`;
-      });
-      const data = await actions[8].function(near, userKeys, userAccountIds);
+      const userAccountIds = user1Through10.map(
+        (user) => `${user}.${factoryAccountId}`,
+      );
+      const data = await create10ConferenceAccounts(
+        near,
+        userKeys,
+        userAccountIds,
+        factoryAccountId,
+      );
       return data;
     },
   );
 
   // Switch signer to Sponsor Account
-  signerAccount = await near.account(EXISTING_FACTORY);
+  signerAccount = await near.account(factoryAccountId);
   const keyStore = near.connection.signer.keyStore;
   const sponsorKeyPair = KeyPair.fromString(accounts["sponsor"]);
-  await keyStore.setKey(GLOBAL_NETWORK, EXISTING_FACTORY, sponsorKeyPair);
+  await keyStore.setKey(GLOBAL_NETWORK, factoryAccountId, sponsorKeyPair);
 
   // Action 10: Add a Token Drop
   const tokenDropData = await measureAction("Add a token drop", async () => {
-    const data = await actions[9].function(signerAccount);
+    const data = await addTokenDrop(signerAccount, factoryAccountId);
     const dropId = data[0];
     const secretKey = dropId.split("%%")[1];
-    drops["tokenDrop"] = secretKey;
+    drops["tokenDrop"] = { dropId, privateKey: secretKey };
     return data;
   });
 
   // Action 11: Add an NFT Drop
   const nftDropData = await measureAction("Add an NFT drop", async () => {
-    const data = await actions[10].function(signerAccount);
+    const data = await addNFTDrop(signerAccount, factoryAccountId);
     const dropId = data[0];
     const secretKey = dropId.split("%%")[1];
-    drops["nftDrop"] = secretKey;
+    drops["nftDrop"] = { dropId, privateKey: secretKey };
     return data;
   });
 
@@ -268,22 +304,25 @@ async function main() {
   const multichainDropData = await measureAction(
     "Add a multichain drop",
     async () => {
-      const data = await actions[11].function(signerAccount);
+      const data = await addMultichainDrop(signerAccount, factoryAccountId);
       const dropId = data[0];
       const secretKey = dropId.split("%%")[1];
-      drops["multichainDrop"] = secretKey;
+      drops["multichainDrop"] = { dropId, privateKey: secretKey };
       return data;
     },
   );
 
-  // Action 13: Add Scavenger Token Hunt with 1 Piece
-  const scavengerTokenHunt1Data = await measureAction(
-    "Add scavenger token hunt with 1 piece",
+  // Action 13: Add Scavenger Token Hunt with 2 Piece
+  const scavengerTokenHunt2Data = await measureAction(
+    "Add scavenger token hunt with 2 piece",
     async () => {
-      const data = await actions[12].function(signerAccount);
+      const data = await addScavengerTokenHunt2Piece(
+        signerAccount,
+        factoryAccountId,
+      );
       const dropId = data[0];
       const secretKey = dropId.split("%%")[2];
-      drops["scavengerTokenHunt1"] = secretKey;
+      drops["scavengerTokenHunt2"] = { dropId, privateKey: secretKey };
       return data;
     },
   );
@@ -292,10 +331,13 @@ async function main() {
   const scavengerTokenHunt4Data = await measureAction(
     "Add scavenger token hunt with 4 piece",
     async () => {
-      const data = await actions[13].function(signerAccount);
+      const data = await addScavengerTokenHunt4Pieces(
+        signerAccount,
+        factoryAccountId,
+      );
       const dropId = data[0];
       const secretKey = dropId.split("%%")[2];
-      drops["scavengerTokenHunt4"] = secretKey;
+      drops["scavengerTokenHunt4"] = { dropId, privateKey: secretKey };
       return data;
     },
   );
@@ -303,22 +345,28 @@ async function main() {
   const scavengerTokenHunt10Data = await measureAction(
     "Add scavenger token hunt with 10 pieces",
     async () => {
-      const data = await actions[14].function(signerAccount);
+      const data = await addScavengerTokenHunt10Pieces(
+        signerAccount,
+        factoryAccountId,
+      );
       const dropId = data[0];
       const secretKey = dropId.split("%%")[2];
-      drops["scavengerTokenHunt10"] = secretKey;
+      drops["scavengerTokenHunt10"] = { dropId, privateKey: secretKey };
       return data;
     },
   );
 
-  // Action 16: Add Scavenger NFT Hunt with 1 Pieces
-  const scavengerNftHunt1Data = await measureAction(
-    "Add scavenger nft hunt with 1 piece",
+  // Action 16: Add Scavenger NFT Hunt with 2 Pieces
+  const scavengerNftHunt2Data = await measureAction(
+    "Add scavenger nft hunt with 2 pieces",
     async () => {
-      const data = await actions[15].function(signerAccount);
+      const data = await addScavengerNFTHunt2Piece(
+        signerAccount,
+        factoryAccountId,
+      );
       const dropId = data[0];
       const secretKey = dropId.split("%%")[2];
-      drops["scavengerNftHunt1"] = secretKey;
+      drops["scavengerNftHunt2"] = { dropId, privateKey: secretKey };
       return data;
     },
   );
@@ -327,10 +375,13 @@ async function main() {
   const scavengerNftHunt4Data = await measureAction(
     "Add scavenger nft hunt with 4 piece",
     async () => {
-      const data = await actions[16].function(signerAccount);
+      const data = await addScavengerNFTHunt4Pieces(
+        signerAccount,
+        factoryAccountId,
+      );
       const dropId = data[0];
       const secretKey = dropId.split("%%")[2];
-      drops["scavengerNftHunt4"] = secretKey;
+      drops["scavengerNftHunt4"] = { dropId, privateKey: secretKey };
       return data;
     },
   );
@@ -339,22 +390,28 @@ async function main() {
   const scavengerNftHunt10Data = await measureAction(
     "Add scavenger nft hunt with 10 piece",
     async () => {
-      const data = await actions[17].function(signerAccount);
+      const data = await addScavengerNFTHunt10Pieces(
+        signerAccount,
+        factoryAccountId,
+      );
       const dropId = data[0];
       const secretKey = dropId.split("%%")[2];
-      drops["scavengerNftHunt10"] = secretKey;
+      drops["scavengerNftHunt10"] = { dropId, privateKey: secretKey };
       return data;
     },
   );
 
-  // Action 19: Add Scavenger Multichain Hunt with 1 Pieces
+  // Action 19: Add Scavenger Multichain Hunt with 2 Pieces
   const scavengerMultichainHunt1Data = await measureAction(
-    "Add scavenger multichain hunt with 1 piece",
+    "Add scavenger multichain hunt with 2 piece",
     async () => {
-      const data = await actions[18].function(signerAccount);
+      const data = await addScavengerMultichainHunt2Piece(
+        signerAccount,
+        factoryAccountId,
+      );
       const dropId = data[0];
       const secretKey = dropId.split("%%")[2];
-      drops["scavengerMultichainHunt1"] = secretKey;
+      drops["scavengerMultichainHunt2"] = { dropId, privateKey: secretKey };
       return data;
     },
   );
@@ -363,10 +420,13 @@ async function main() {
   const scavengerMultichainHunt4Data = await measureAction(
     "Add scavenger multichain hunt with 4 piece",
     async () => {
-      const data = await actions[19].function(signerAccount);
+      const data = await addScavengerMultichainHunt4Pieces(
+        signerAccount,
+        factoryAccountId,
+      );
       const dropId = data[0];
       const secretKey = dropId.split("%%")[2];
-      drops["scavengerMultichainHunt4"] = secretKey;
+      drops["scavengerMultichainHunt4"] = { dropId, privateKey: secretKey };
       return data;
     },
   );
@@ -375,96 +435,112 @@ async function main() {
   const scavengerMultichainHunt10Data = await measureAction(
     "Add scavenger multichain hunt with 10 piece",
     async () => {
-      const data = await actions[20].function(signerAccount);
+      const data = await addScavengerMultichainHunt10Pieces(
+        signerAccount,
+        factoryAccountId,
+      );
       const dropId = data[0];
       const secretKey = dropId.split("%%")[2];
-      drops["scavengerMultichainHunt10"] = secretKey;
+      drops["scavengerMultichainHunt10"] = { dropId, privateKey: secretKey };
       return data;
     },
   );
+  console.log("Drops: ", drops);
 
   // Switch signer to Ticket User
   // Assuming you have ticket user data from oneTicketData
-  const ticketUserKey = oneTicketData?.ticketKeys?.[0]?.secretKey;
-  const ticketUserId = "ticket-user.testnet"; // Replace with actual user ID
+  const ticketUserKey = accounts["user0"];
+  const ticketUserId = `user0.${factoryAccountId}`;
 
-  if (ticketUserKey && ticketUserId) {
-    // Add ticket user's key to keystore
-    const keyStore = near.connection.signer.keyStore;
-    const ticketUserKeyPair = KeyPair.fromString(ticketUserKey);
-    await keyStore.setKey(GLOBAL_NETWORK, ticketUserId, ticketUserKeyPair);
+  // Add ticket user's key to keystore
+  const ticketUserKeyPair = KeyPair.fromString(ticketUserKey);
+  await keyStore.setKey(GLOBAL_NETWORK, factoryAccountId, ticketUserKeyPair);
+  signerAccount = await near.account(factoryAccountId);
 
-    signerAccount = await near.account(ticketUserId);
+  // Action: Claim an NFT Drop
+  const nftSignatureData = generateSignature(
+    drops["nftDrop"].privateKey,
+    ticketUserId,
+  );
 
-    // Action: Claim an NFT Drop
-    const nftSignatureData = generateSignature(
-      drops["nftDrop"].privateKey,
-      ticketUserId,
+  // Action 22: Claim an NFT Drop
+  await measureAction("Claim an NFT drop", async () => {
+    const dropId = drops["nftDrop"].dropId.split("%%")[2];
+    await claimNFTDrop(
+      signerAccount,
+      dropId,
+      nftSignatureData,
+      factoryAccountId,
     );
+  });
 
-    await measureAction("Claim an NFT drop", async () => {
-      await actions[21].function(
-        signerAccount,
-        drops["nftDrop"].dropId,
-        nftSignatureData,
-      );
-    });
+  // Action 23: Claim a Token Drop
+  const tokenSignatureData = generateSignature(
+    drops["tokenDrop"].privateKey,
+    ticketUserId,
+  );
 
-    // Action: Claim a Token Drop
-    const tokenSignatureData = generateSignature(
-      drops["tokenDrop"].privateKey,
-      ticketUserId,
+  await measureAction("Claim a token drop", async () => {
+    const dropId = drops["tokenDrop"].dropId.split("%%")[2];
+    await claimTokenDrop(
+      signerAccount,
+      dropId,
+      tokenSignatureData,
+      factoryAccountId,
     );
+  });
 
-    await measureAction("Claim a token drop", async () => {
-      await actions[22].function(
-        signerAccount,
-        drops["tokenDrop"].dropId,
-        tokenSignatureData,
-      );
-    });
+  // Action: Claim a Multichain Drop
+  const multichainSignatureData = generateSignature(
+    drops["multichainDrop"].privateKey,
+    ticketUserId,
+  );
 
-    // Action: Claim a Multichain Drop
-    const multichainSignatureData = generateSignature(
-      drops["multichain"].privateKey,
-      ticketUserId,
+  // Action 24: Claim a Multichain Drop
+  await measureAction("Claim a multichain drop", async () => {
+    const dropId = drops["multichainDrop"].dropId.split("%%")[2];
+    await claimMultichainDrop(
+      signerAccount,
+      dropId,
+      multichainSignatureData,
+      factoryAccountId,
     );
+  });
 
-    await measureAction("Claim a multichain drop", async () => {
-      await actions[23].function(
-        signerAccount,
-        drops["multichain"].dropId,
-        multichainSignatureData,
-      );
-    });
+  const scavengerPieceKey = drops["scavengerTokenHunt2"].privateKey;
+  const scavengerPieceId = getPublicKey(scavengerPieceKey);
+  const scavengerSignatureData = generateSignature(
+    scavengerPieceKey,
+    ticketUserId,
+  );
 
-    // Action: Claim a Scavenger Hunt Piece
-    if (drops["scavengerTokenHunt1"]?.scavengerKeys?.[0]) {
-      const scavengerPieceKey =
-        drops["scavengerTokenHunt1"].scavengerKeys[0].privateKey;
-      const scavengerPieceId = drops["scavengerTokenHunt1"].scavengerKeys[0].id;
-      const scavengerSignatureData = generateSignature(
-        scavengerPieceKey,
-        ticketUserId,
-      );
+  // Action 25: Claim a Scavenger Hunt Piece
+  await measureAction("Claim a scavenger hunt piece", async () => {
+    const dropId = drops["scavengerTokenHunt2"].dropId.split("%%")[3];
+    await claimScavengerHuntPiece(
+      signerAccount,
+      dropId,
+      scavengerPieceId,
+      scavengerSignatureData,
+      factoryAccountId,
+    );
+  });
 
-      await measureAction("Claim a scavenger hunt piece", async () => {
-        await actions[24].function(
-          signerAccount,
-          drops["scavengerTokenHunt1"].dropId,
-          scavengerPieceId,
-          scavengerSignatureData,
-        );
-      });
-    }
-  }
-
-  // Write results to CSV
+  // Write results to CSV with better formatting for Google Sheets
   const csvData = results
-    .map((res) => `${res.action},${res.storage_used_bytes},${res.cost_in_near}`)
+    .map((res) => {
+      // Ensure values are properly quoted if necessary
+      const action = `"${res.action}"`;
+      const storageUsed = `"${res.storage_used_bytes}"`;
+      const balanceBefore = `"${res.balance_before}"`;
+      const balanceAfter = `"${res.balance_after}"`;
+
+      return `${action},${storageUsed},${balanceBefore},${balanceAfter}`;
+    })
     .join("\n");
 
-  const csvHeader = "Action,Storage Used (Bytes),Cost (NEAR)";
+  // Add the header to the CSV file
+  const csvHeader = `"Action","Storage Used (Bytes)","Balance Before","Balance After"`;
   const csvContent = `${csvHeader}\n${csvData}`;
 
   const resultsFilePath = path.join(__dirname, "storage_costs.csv");

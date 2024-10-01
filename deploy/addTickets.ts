@@ -25,11 +25,13 @@ export const addTickets = async ({
   factoryAccountId,
   dropId,
   attendeeInfo,
+  encodeTickets = true,
 }: {
   signerAccount: any;
   factoryAccountId: string;
   dropId: string;
   attendeeInfo: Array<Record<string, string>>;
+  encodeTickets?: boolean;
 }) => {
   // Map to store the KeyPair -> Attendee Info relationship
   const keyPairMap: Map<string, Record<string, string>> = new Map();
@@ -53,9 +55,12 @@ export const addTickets = async ({
           metadata: "", // Store base64-encoded JSON
         });
 
-        const encodedJson = encodeToBase64(jsonObject); // Encode to base64
-        // Map the keypair's public key to the corresponding attendee info
-        keyPairMap.set(encodedJson, curInfo);
+        if (encodeTickets) {
+          const encodedJson = encodeToBase64(jsonObject); // Encode to base64
+          keyPairMap.set(encodedJson, curInfo);
+        } else {
+          keyPairMap.set(keyPair.toString(), curInfo);
+        }
       }
     }
 

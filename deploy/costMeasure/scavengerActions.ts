@@ -1,22 +1,25 @@
 import { Account } from "near-api-js";
 import { createDrops } from "../createDrops";
-import { EXISTING_FACTORY } from "./config";
 
-// Add scavenger token hunt with 1 piece
-export async function addScavengerTokenHunt1Piece(signerAccount: Account) {
+// Add scavenger token hunt with 2 piece
+export async function addScavengerTokenHunt2Piece(
+  signerAccount: Account,
+  factoryAccountId: string,
+) {
   const drops = await createDrops({
     signerAccount,
-    factoryAccountId: EXISTING_FACTORY,
+    factoryAccountId: factoryAccountId,
     drops: [
       {
         drop_data: {
-          name: "Scavenger Hunt - 1 Piece",
-          image: "image-hash",
+          name: "Official Scavenger Hunt",
+          image: "bafkreihgosptxbojx37vxo4bly5opn5iqx2hmffdmg6ztokjmvtwa36axu",
           scavenger_hunt: [
             { id: 1, description: "Find this token at location 1" },
+            { id: 2, description: "Find this token at location 1" },
           ],
         },
-        token_amount: "10",
+        token_amount: "1",
       },
     ],
   });
@@ -24,15 +27,18 @@ export async function addScavengerTokenHunt1Piece(signerAccount: Account) {
 }
 
 // Add scavenger token hunt with 4 pieces
-export async function addScavengerTokenHunt4Pieces(signerAccount: Account) {
+export async function addScavengerTokenHunt4Pieces(
+  signerAccount: Account,
+  factoryAccountId: string,
+) {
   const drops = await createDrops({
     signerAccount,
-    factoryAccountId: EXISTING_FACTORY,
+    factoryAccountId: factoryAccountId,
     drops: [
       {
         drop_data: {
-          name: "Scavenger Hunt - 4 Pieces",
-          image: "image-hash",
+          name: "Official Scavenger Hunt",
+          image: "bafkreihgosptxbojx37vxo4bly5opn5iqx2hmffdmg6ztokjmvtwa36axu",
           scavenger_hunt: Array(4)
             .fill(0)
             .map((_, idx) => ({
@@ -40,7 +46,7 @@ export async function addScavengerTokenHunt4Pieces(signerAccount: Account) {
               description: `Find this token at location ${idx + 1}`,
             })),
         },
-        token_amount: "40",
+        token_amount: "1",
       },
     ],
   });
@@ -48,15 +54,18 @@ export async function addScavengerTokenHunt4Pieces(signerAccount: Account) {
 }
 
 // Add scavenger token hunt with 10 pieces
-export async function addScavengerTokenHunt10Pieces(signerAccount: Account) {
+export async function addScavengerTokenHunt10Pieces(
+  signerAccount: Account,
+  factoryAccountId: string,
+) {
   const drops = await createDrops({
     signerAccount,
-    factoryAccountId: EXISTING_FACTORY,
+    factoryAccountId: factoryAccountId,
     drops: [
       {
         drop_data: {
-          name: "Scavenger Hunt - 10 Pieces",
-          image: "image-hash",
+          name: "Official Scavenger Hunt",
+          image: "bafkreihgosptxbojx37vxo4bly5opn5iqx2hmffdmg6ztokjmvtwa36axu",
           scavenger_hunt: Array(10)
             .fill(0)
             .map((_, idx) => ({
@@ -64,31 +73,36 @@ export async function addScavengerTokenHunt10Pieces(signerAccount: Account) {
               description: `Find this token at location ${idx + 1}`,
             })),
         },
-        token_amount: "100",
+        token_amount: "1",
       },
     ],
   });
   return drops;
 }
 
-// Add scavenger NFT hunt with 1 piece
-export async function addScavengerNFTHunt1Piece(signerAccount: Account) {
+// Add scavenger NFT hunt with 2 piece
+export async function addScavengerNFTHunt2Piece(
+  signerAccount: Account,
+  factoryAccountId: string,
+) {
   const drops = await createDrops({
     signerAccount,
-    factoryAccountId: EXISTING_FACTORY,
+    factoryAccountId: factoryAccountId,
     drops: [
       {
         drop_data: {
-          name: "Scavenger NFT Hunt - 1 Piece",
-          image: "image-hash",
+          name: "Official Scavenger Hunt",
+          image: "bafkreihgosptxbojx37vxo4bly5opn5iqx2hmffdmg6ztokjmvtwa36axu",
           scavenger_hunt: [
             { id: 1, description: "Find this NFT at location 1" },
+            { id: 2, description: "Find this NFT at location 2" },
           ],
         },
         nft_metadata: {
-          title: "Scavenger NFT",
-          description: "An NFT found at location 1",
-          media: "image-hash",
+          title: "Redacted Scavenger Hunt POAP",
+          description:
+            "Here are some instructions on how to retrieve this collectible. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas placerat mauris turpis, vel consequat mi ultricies eu. Quisque ligula neque, placerat ut dui.",
+          media: "bafkreihgosptxbojx37vxo4bly5opn5iqx2hmffdmg6ztokjmvtwa36axu",
         },
       },
     ],
@@ -97,15 +111,18 @@ export async function addScavengerNFTHunt1Piece(signerAccount: Account) {
 }
 
 // Add scavenger NFT hunt with 4 pieces
-export async function addScavengerNFTHunt4Pieces(signerAccount: Account) {
+export async function addScavengerNFTHunt4Pieces(
+  signerAccount: Account,
+  factoryAccountId: string,
+) {
   const drops = await createDrops({
     signerAccount,
-    factoryAccountId: EXISTING_FACTORY,
+    factoryAccountId: factoryAccountId,
     drops: [
       {
         drop_data: {
-          name: "Scavenger NFT Hunt - 4 Pieces",
-          image: "image-hash",
+          name: "Official Scavenger Hunt",
+          image: "bafkreihgosptxbojx37vxo4bly5opn5iqx2hmffdmg6ztokjmvtwa36axu",
           scavenger_hunt: Array(4)
             .fill(0)
             .map((_, idx) => ({
@@ -114,9 +131,10 @@ export async function addScavengerNFTHunt4Pieces(signerAccount: Account) {
             })),
         },
         nft_metadata: {
-          title: "Scavenger NFT",
-          description: "An NFT found at different locations",
-          media: "image-hash",
+          title: "Redacted Scavenger Hunt POAP",
+          description:
+            "Here are some instructions on how to retrieve this collectible. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas placerat mauris turpis, vel consequat mi ultricies eu. Quisque ligula neque, placerat ut dui.",
+          media: "bafkreihgosptxbojx37vxo4bly5opn5iqx2hmffdmg6ztokjmvtwa36axu",
         },
       },
     ],
@@ -125,15 +143,18 @@ export async function addScavengerNFTHunt4Pieces(signerAccount: Account) {
 }
 
 // Add scavenger NFT hunt with 10 pieces
-export async function addScavengerNFTHunt10Pieces(signerAccount: Account) {
+export async function addScavengerNFTHunt10Pieces(
+  signerAccount: Account,
+  factoryAccountId: string,
+) {
   const drops = await createDrops({
     signerAccount,
-    factoryAccountId: EXISTING_FACTORY,
+    factoryAccountId: factoryAccountId,
     drops: [
       {
         drop_data: {
-          name: "Scavenger NFT Hunt - 10 Pieces",
-          image: "image-hash",
+          name: "Official Scavenger Hunt",
+          image: "bafkreihgosptxbojx37vxo4bly5opn5iqx2hmffdmg6ztokjmvtwa36axu",
           scavenger_hunt: Array(10)
             .fill(0)
             .map((_, idx) => ({
@@ -142,9 +163,10 @@ export async function addScavengerNFTHunt10Pieces(signerAccount: Account) {
             })),
         },
         nft_metadata: {
-          title: "Scavenger NFT",
-          description: "An NFT found in different locations",
-          media: "image-hash",
+          title: "Redacted Scavenger Hunt POAP",
+          description:
+            "Here are some instructions on how to retrieve this collectible. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas placerat mauris turpis, vel consequat mi ultricies eu. Quisque ligula neque, placerat ut dui.",
+          media: "bafkreihgosptxbojx37vxo4bly5opn5iqx2hmffdmg6ztokjmvtwa36axu",
         },
       },
     ],
@@ -152,29 +174,34 @@ export async function addScavengerNFTHunt10Pieces(signerAccount: Account) {
   return drops;
 }
 
-// Add scavenger multichain hunt with 1 piece
-export async function addScavengerMultichainHunt1Piece(signerAccount: Account) {
+// Add scavenger multichain hunt with 2 piece
+export async function addScavengerMultichainHunt2Piece(
+  signerAccount: Account,
+  factoryAccountId: string,
+) {
   const drops = await createDrops({
     signerAccount,
-    factoryAccountId: EXISTING_FACTORY,
+    factoryAccountId: factoryAccountId,
     drops: [
       {
         drop_data: {
-          name: "Scavenger Multichain Hunt - 1 Piece",
-          image: "image-hash",
+          image: "bafkreihgosptxbojx37vxo4bly5opn5iqx2hmffdmg6ztokjmvtwa36axu",
+          name: "Surfer Dog POAP",
           scavenger_hunt: [
             { id: 1, description: "Find this multichain item at location 1" },
+            { id: 2, description: "Find this multichain item at location 2" },
           ],
+        },
+        nft_metadata: {
+          title: "Multichain Test Drop",
+          description:
+            "Here are some instructions on how to retrieve this collectible. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas placerat mauris turpis, vel consequat mi ultricies eu. Quisque ligula neque, placerat ut dui.",
+          media: "bafkreihgosptxbojx37vxo4bly5opn5iqx2hmffdmg6ztokjmvtwa36axu",
         },
         multichain_metadata: {
           chain_id: 84532,
-          contract_id: "0xContractAddress",
+          contract_id: "0xD6B95F11213cC071B982D717721B1aC7Bc628d46",
           series_id: 1,
-        },
-        nft_metadata: {
-          title: "Multichain NFT",
-          description: "An NFT found at location 1",
-          media: "image-hash",
         },
       },
     ],
@@ -185,15 +212,16 @@ export async function addScavengerMultichainHunt1Piece(signerAccount: Account) {
 // Add scavenger multichain hunt with 4 pieces
 export async function addScavengerMultichainHunt4Pieces(
   signerAccount: Account,
+  factoryAccountId: string,
 ) {
   const drops = await createDrops({
     signerAccount,
-    factoryAccountId: EXISTING_FACTORY,
+    factoryAccountId: factoryAccountId,
     drops: [
       {
         drop_data: {
-          name: "Scavenger Multichain Hunt - 4 Pieces",
-          image: "image-hash",
+          image: "bafkreihgosptxbojx37vxo4bly5opn5iqx2hmffdmg6ztokjmvtwa36axu",
+          name: "Surfer Dog POAP",
           scavenger_hunt: Array(4)
             .fill(0)
             .map((_, idx) => ({
@@ -201,15 +229,16 @@ export async function addScavengerMultichainHunt4Pieces(
               description: `Find this multichain item at location ${idx + 1}`,
             })),
         },
+        nft_metadata: {
+          title: "Multichain Test Drop",
+          description:
+            "Here are some instructions on how to retrieve this collectible. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas placerat mauris turpis, vel consequat mi ultricies eu. Quisque ligula neque, placerat ut dui.",
+          media: "bafkreihgosptxbojx37vxo4bly5opn5iqx2hmffdmg6ztokjmvtwa36axu",
+        },
         multichain_metadata: {
           chain_id: 84532,
-          contract_id: "0xContractAddress",
+          contract_id: "0xD6B95F11213cC071B982D717721B1aC7Bc628d46",
           series_id: 1,
-        },
-        nft_metadata: {
-          title: "Multichain NFT",
-          description: "An NFT found in different locations",
-          media: "image-hash",
         },
       },
     ],
@@ -220,15 +249,16 @@ export async function addScavengerMultichainHunt4Pieces(
 // Add scavenger multichain hunt with 10 pieces
 export async function addScavengerMultichainHunt10Pieces(
   signerAccount: Account,
+  factoryAccountId: string,
 ) {
   const drops = await createDrops({
     signerAccount,
-    factoryAccountId: EXISTING_FACTORY,
+    factoryAccountId: factoryAccountId,
     drops: [
       {
         drop_data: {
-          name: "Scavenger Multichain Hunt - 10 Pieces",
-          image: "image-hash",
+          image: "bafkreihgosptxbojx37vxo4bly5opn5iqx2hmffdmg6ztokjmvtwa36axu",
+          name: "Surfer Dog POAP",
           scavenger_hunt: Array(10)
             .fill(0)
             .map((_, idx) => ({
@@ -236,15 +266,16 @@ export async function addScavengerMultichainHunt10Pieces(
               description: `Find this multichain item at location ${idx + 1}`,
             })),
         },
+        nft_metadata: {
+          title: "Multichain Test Drop",
+          description:
+            "Here are some instructions on how to retrieve this collectible. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas placerat mauris turpis, vel consequat mi ultricies eu. Quisque ligula neque, placerat ut dui.",
+          media: "bafkreihgosptxbojx37vxo4bly5opn5iqx2hmffdmg6ztokjmvtwa36axu",
+        },
         multichain_metadata: {
           chain_id: 84532,
-          contract_id: "0xContractAddress",
+          contract_id: "0xD6B95F11213cC071B982D717721B1aC7Bc628d46",
           series_id: 1,
-        },
-        nft_metadata: {
-          title: "Multichain NFT",
-          description: "An NFT found in different locations",
-          media: "image-hash",
         },
       },
     ],

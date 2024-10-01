@@ -14,14 +14,11 @@ export async function getContractStorageUsage(
 }
 
 // Fetches account balance
-export async function getAccountBalance(
-  account: Account,
-  accountId: string,
-): Promise<bigint> {
+export async function getAccountBalance(account: Account, accountId: string) {
   const accountState: any = await account.connection.provider.query({
     request_type: "view_account",
     finality: "final",
     account_id: accountId,
   });
-  return BigInt(accountState.amount);
+  return accountState.amount;
 }

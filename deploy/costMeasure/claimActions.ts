@@ -1,15 +1,15 @@
-import { Account, KeyPair } from "near-api-js";
+import { Account } from "near-api-js";
 import { sendTransaction } from "../utils";
-import { EXISTING_FACTORY } from "./config";
 
 export async function claimNFTDrop(
   signerAccount: Account,
   dropId: string,
   signatureData: { signature: string; publicKey: string },
+  factoryAccountId: string,
 ) {
   await sendTransaction({
     signerAccount,
-    receiverId: EXISTING_FACTORY,
+    receiverId: factoryAccountId,
     methodName: "claim_drop",
     args: {
       drop_id: dropId,
@@ -25,10 +25,11 @@ export async function claimTokenDrop(
   signerAccount: Account,
   dropId: string,
   signatureData: { signature: string; publicKey: string },
+  factoryAccountId: string,
 ) {
   await sendTransaction({
     signerAccount,
-    receiverId: EXISTING_FACTORY,
+    receiverId: factoryAccountId,
     methodName: "claim_drop",
     args: {
       drop_id: dropId,
@@ -44,10 +45,11 @@ export async function claimMultichainDrop(
   signerAccount: Account,
   dropId: string,
   signatureData: { signature: string; publicKey: string },
+  factoryAccountId: string,
 ) {
   await sendTransaction({
     signerAccount,
-    receiverId: EXISTING_FACTORY,
+    receiverId: factoryAccountId,
     methodName: "claim_drop",
     args: {
       drop_id: dropId,
@@ -64,10 +66,11 @@ export async function claimScavengerHuntPiece(
   dropId: string,
   scavengerId: string,
   signatureData: { signature: string; publicKey: string },
+  factoryAccountId: string,
 ) {
   await sendTransaction({
     signerAccount,
-    receiverId: EXISTING_FACTORY,
+    receiverId: factoryAccountId,
     methodName: "claim_drop",
     args: {
       drop_id: dropId,
