@@ -31,6 +31,7 @@ pub struct ExtClaimedMultichainDropData {
     pub image: String,
     pub drop_id: DropId,
     pub mc_metadata: MultichainMetadata,
+    pub nft_metadata: TokenMetadata,
     pub key: PublicKey,
 }
 
@@ -102,6 +103,7 @@ impl Contract {
                                             name: multichain_data.name.clone(),
                                             image: multichain_data.image.clone(),
                                             mc_metadata: multichain_data.mc_metadata.clone(),
+                                            nft_metadata: multichain_data.nft_metadata.clone(),
                                             drop_id: drop_id.to_string(),
                                             key: multichain_data.key.clone(),
                                         },
@@ -189,6 +191,7 @@ impl Contract {
                         needed_scavenger_ids: drop_data.get_scavenger_data(),
                         name: multichain_data.name.clone(),
                         mc_metadata: multichain_data.mc_metadata.clone(),
+                        nft_metadata: multichain_data.nft_metadata.clone(),
                         key: multichain_data.key.clone(),
                         drop_id: drop_id.clone(),
                     })

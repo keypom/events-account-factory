@@ -1,7 +1,6 @@
 import { sendTransaction } from "./utils";
-import nacl from "tweetnacl";
 import { KeyPair } from "near-api-js";
-import { GLOBAL_NETWORK, TICKET_URL_BASE } from "./config";
+import { Config, PremadeTicket, PremadeTicketData } from "./types";
 
 // Utility function to base64 encode a JSON object
 const encodeToBase64 = (jsonObject: Record<string, any>) => {
@@ -26,11 +25,13 @@ export const addTickets = async ({
   factoryAccountId,
   dropId,
   attendeeInfo,
+  encodeTickets = true,
 }: {
   signerAccount: any;
   factoryAccountId: string;
   dropId: string;
   attendeeInfo: Array<Record<string, string>>;
+  encodeTickets?: boolean;
 }) => {
   // Map to store the KeyPair -> Attendee Info relationship
   const keyPairMap: Map<string, Record<string, string>> = new Map();
@@ -54,9 +55,12 @@ export const addTickets = async ({
           metadata: "", // Store base64-encoded JSON
         });
 
-        const encodedJson = encodeToBase64(jsonObject); // Encode to base64
-        // Map the keypair's public key to the corresponding attendee info
-        keyPairMap.set(encodedJson, curInfo);
+        if (encodeTickets) {
+          const encodedJson = encodeToBase64(jsonObject); // Encode to base64
+          keyPairMap.set(encodedJson, curInfo);
+        } else {
+          keyPairMap.set(keyPair.toString(), curInfo);
+        }
       }
     }
 
@@ -84,15 +88,17 @@ export const addPremadeTickets = async ({
   near,
   signerAccount,
   attendeeInfo,
+  config,
 }: {
+  config: Config;
   signerAccount: any;
   near: any;
   factoryAccountId: string;
   dropId: string;
-  attendeeInfo: Array<Record<string, string>>;
+  attendeeInfo: PremadeTicketData;
 }) => {
   // Map to store the KeyPair -> Attendee Info relationship
-  const keyPairMap: Map<string, Record<string, string>> = new Map();
+  const keyPairMap: Map<string, PremadeTicket> = new Map();
 
   for (let i = 0; i < attendeeInfo.length; i += 50) {
     let keyData: Array<Record<string, any>> = [];
@@ -138,7 +144,7 @@ export const addPremadeTickets = async ({
     const { ticket, userData } = decodeAndParseBase64(key);
     const keyPair = KeyPair.fromString(ticket);
     await near.config.keyStore.setKey(
-      GLOBAL_NETWORK,
+      config.GLOBAL_NETWORK,
       factoryAccountId,
       keyPair,
     );
@@ -164,7 +170,7 @@ export const addPremadeTickets = async ({
     });
 
     // Push the URL into the premade CSV array
-    premadeCSV.push(`${userData.name}, ${TICKET_URL_BASE}${key}`);
+    premadeCSV.push(`${userData.name}, ${config.TICKET_URL_BASE}${key}`);
   }
 
   return premadeCSV;

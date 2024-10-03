@@ -1,42 +1,8 @@
 import { sendTransaction } from "./utils";
 import { utils, KeyPair } from "near-api-js";
+import { MultichainDrop, NFTDrop, TokenDrop } from "./types";
 
-interface DropDataInput {
-  name: string;
-  image: string;
-  scavenger_hunt?: Array<{
-    description: string;
-    id: number;
-    key?: string; // We'll generate `key` during processing
-    // We won't include `secretKey` here to avoid exposing it
-  }>;
-  key?: string; // We'll generate `key` during processing
-}
-
-export interface TokenDropInfo {
-  drop_data: DropDataInput;
-  token_amount: string;
-}
-
-export interface NFTDropInfo {
-  drop_data: DropDataInput;
-  nft_metadata: {
-    title?: string;
-    description?: string;
-    media?: string;
-  };
-}
-
-export interface MultichainDropInfo {
-  drop_data: DropDataInput;
-  multichain_metadata: {
-    chain_id: number;
-    contract_id: string;
-    series_id: number;
-  };
-}
-
-export type DropInfo = TokenDropInfo | NFTDropInfo | MultichainDropInfo;
+export type DropInfo = TokenDrop | NFTDrop | MultichainDrop;
 
 export const createDrops = async ({
   signerAccount,
@@ -103,9 +69,9 @@ export const createDrops = async ({
     };
 
     // Determine the drop type and send the appropriate transaction
-    if ((drop as TokenDropInfo).token_amount !== undefined) {
+    if ((drop as TokenDrop).token_amount !== undefined) {
       args.token_amount = utils.format.parseNearAmount(
-        (drop as TokenDropInfo).token_amount,
+        (drop as TokenDrop).token_amount,
       );
       res = await sendTransaction({
         signerAccount,
@@ -116,10 +82,9 @@ export const createDrops = async ({
         gas: "300000000000000",
       });
       dropType = "token";
-    } else if ((drop as MultichainDropInfo).multichain_metadata !== undefined) {
-      args.multichain_metadata = (
-        drop as MultichainDropInfo
-      ).multichain_metadata;
+    } else if ((drop as MultichainDrop).multichain_metadata !== undefined) {
+      args.multichain_metadata = (drop as MultichainDrop).multichain_metadata;
+      args.nft_metadata = (drop as MultichainDrop).nft_metadata;
       res = await sendTransaction({
         signerAccount,
         receiverId: factoryAccountId,
@@ -130,7 +95,7 @@ export const createDrops = async ({
       });
       dropType = "multichain";
     } else {
-      args.nft_metadata = (drop as NFTDropInfo).nft_metadata;
+      args.nft_metadata = (drop as NFTDrop).nft_metadata;
       res = await sendTransaction({
         signerAccount,
         receiverId: factoryAccountId,

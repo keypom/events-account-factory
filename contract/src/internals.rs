@@ -67,4 +67,16 @@ impl Contract {
             .and_then(|t| t.account_id.clone()) // Clone the account_id to move it
             .unwrap_or_else(env::predecessor_account_id) // Use the predecessor account ID if not found
     }
+
+    /// Ensures that the caller is the contract account's full access key.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the caller is not the contract account's full access key.
+    pub(crate) fn assert_contract_account(&self) {
+        require!(
+            env::signer_account_pk() == self.contract_key,
+            "Unauthorized"
+        );
+    }
 }

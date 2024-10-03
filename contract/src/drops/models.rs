@@ -121,5 +121,6 @@ pub struct MultichainDropData {
     pub scavenger_hunt: Option<Vec<ScavengerHuntData>>,
     pub num_claimed: u64,
 
+    pub nft_metadata: TokenMetadata,
     pub mc_metadata: MultichainMetadata,
 }

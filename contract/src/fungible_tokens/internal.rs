@@ -61,7 +61,7 @@ impl Contract {
                 version: FT_METADATA_SPEC.to_string(),
                 event: EventLogVariant::FtMint(FtMintLog {
                     owner_id: account_id.to_string(),
-                    amount: amount.to_string(),
+                    amount: amount.as_yoctonear().to_string(),
                     memo: None,
                 }),
             }
@@ -178,7 +178,7 @@ impl Contract {
                 event: EventLogVariant::FtTransfer(FtTransferLog {
                     old_owner_id: sender_id.to_string(),
                     new_owner_id: receiver_id.to_string(),
-                    amount: amount.to_string(),
+                    amount: amount.as_yoctonear().to_string(),
                     memo: None,
                 }),
             }
@@ -193,7 +193,7 @@ impl Contract {
                 event: EventLogVariant::KeypomTokenTransfer(KeypomTokenTransferLog {
                     sender_id: sender_id.to_string(),
                     receiver_id: receiver_id.to_string(),
-                    amount: amount.to_string(),
+                    amount: amount.as_yoctonear().to_string(),
                     new_sender_balance: U128(self.ft_balance_of(sender_id.clone()).as_yoctonear()),
                     new_receiver_balance: U128(
                         self.ft_balance_of(receiver_id.clone()).as_yoctonear(),
