@@ -6,9 +6,19 @@ package-lock.json
 /.pnp
 .pnp.js
 /out
-*/data
-*/toRead
+# Ignore all .json files in any folder
+*.json
+
+# Ignore all .csv files in any folder
 *.csv
+
+# Ignore contents of any folder named "toRead" in any folder
+toRead/
+**/toRead/
+
+# Ignore contents of any folder named "data" in any folder
+data/
+**/data/
 
 #keys
 /neardev
