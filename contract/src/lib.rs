@@ -197,6 +197,7 @@ impl Contract {
             .expect("No account details found");
 
         ExtAccountDetails {
+            ft_collected: account_details.tokens_collected,
             account_id: account_id.to_string(),
             ft_balance: account_details.ft_balance,
             account_status: account_details.account_status.clone(), // Clone account_status

@@ -10,12 +10,14 @@ export const cleanupContract = async ({
 }: {
   near: any;
   factoryAccountId: string;
-  factoryKey: string;
+  factoryKey: string | undefined;
   networkId: string;
 }) => {
-  let factoryKeyPair = KeyPair.fromString(factoryKey);
-  let keyStore = near.connection.signer.keyStore;
-  await keyStore.setKey(networkId, factoryAccountId, factoryKeyPair);
+  if (factoryKey !== undefined) {
+    let factoryKeyPair = KeyPair.fromString(factoryKey);
+    let keyStore = near.connection.signer.keyStore;
+    await keyStore.setKey(networkId, factoryAccountId, factoryKeyPair);
+  }
   const signerAccount = await near.account(factoryAccountId);
 
   // Check if the contract is frozen
