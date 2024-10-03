@@ -92,26 +92,27 @@ export async function createAccountDeployContract({
   gas?: string;
 }) {
   console.log("Creating account: ", newAccountId);
-  let keyPair = await createAccount({
+  let sk = await createAccount({
     signerAccount,
     newAccountId,
     amount,
     config,
   });
+  let keyPair = KeyPair.fromString(sk);
   console.log("Deploying contract: ", newAccountId);
   const accountObj = await near.account(newAccountId);
   await sendTransaction({
     signerAccount: accountObj,
     receiverId: newAccountId,
     methodName,
-    args,
+    args: { ...args, contract_key: keyPair.publicKey.toString() },
     deposit,
     gas,
     wasmPath,
   });
 
   console.log("Deployed.");
-  return keyPair;
+  return sk;
 }
 
 export async function createAccount({

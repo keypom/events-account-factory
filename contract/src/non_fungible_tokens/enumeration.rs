@@ -29,10 +29,7 @@ impl Contract {
     //get the total supply of NFTs for a given owner
     pub fn nft_supply_for_owner(&self, account_id: AccountId) -> U128 {
         //if there is some set of tokens, we'll return the length as a U128
-        if let Some(nft_tokens_per_owner_set) = self
-            .nft_tokens_per_owner
-            .get(&account_id)
-        {
+        if let Some(nft_tokens_per_owner_set) = self.nft_tokens_per_owner.get(&account_id) {
             U128(nft_tokens_per_owner_set.len() as u128)
         } else {
             //if there isn't a set of tokens for the passed in account ID, we'll return 0
@@ -41,22 +38,20 @@ impl Contract {
     }
 
     //Query for all the tokens for an owner
-    pub fn nft_nft_tokens_per_owner(
+    pub fn nft_tokens_for_owner(
         &self,
         account_id: AccountId,
         from_index: Option<U128>,
         limit: Option<u64>,
     ) -> Vec<JsonToken> {
         //if there is some set of tokens, we'll set the tokens variable equal to that set
-        let tokens = if let Some(nft_tokens_per_owner_set) = self
-            .nft_tokens_per_owner
-            .get(&account_id)
-        {
-            nft_tokens_per_owner_set
-        } else {
-            //if there is no set of tokens, we'll simply return an empty vector.
-            return vec![];
-        };
+        let tokens =
+            if let Some(nft_tokens_per_owner_set) = self.nft_tokens_per_owner.get(&account_id) {
+                nft_tokens_per_owner_set
+            } else {
+                //if there is no set of tokens, we'll simply return an empty vector.
+                return vec![];
+            };
 
         //where to start pagination - if we have a from_index, we'll use that - otherwise start from 0 index
         let start = u128::from(from_index.unwrap_or(U128(0)));
@@ -74,4 +69,3 @@ impl Contract {
             .collect()
     }
 }
-

@@ -233,8 +233,9 @@ const main = async () => {
   if (CLEANUP_CONTRACT) {
     const summary = await cleanupContract({
       near,
-      signerAccount,
+      factoryKey,
       factoryAccountId,
+      networkId: config.GLOBAL_NETWORK,
     });
 
     const summaryFilePath = path.join(dataDir, "cleanup_summary.json");

@@ -1,4 +1,4 @@
-import { KeyPair } from "near-api-js";
+import { Account, KeyPair, utils } from "near-api-js";
 import { sendTransaction } from "../utils";
 import { GLOBAL_NETWORK } from "./config";
 
@@ -31,4 +31,23 @@ export async function createConferenceAccounts(
       gas: "300000000000000",
     });
   }
+}
+
+export async function sendConferenceTokens(
+  signerAccount: Account,
+  receiverId: string,
+  amount: string,
+  factoryAccountId: string,
+) {
+  await sendTransaction({
+    signerAccount,
+    receiverId: factoryAccountId,
+    methodName: "ft_transfer",
+    args: {
+      receiver_id: receiverId,
+      amount: utils.format.parseNearAmount(amount),
+    },
+    deposit: "0",
+    gas: "300000000000000",
+  });
 }

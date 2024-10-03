@@ -18,6 +18,7 @@ import { generateSignature, getPublicKey } from "./cryptoHelpers";
 import { KeyPair } from "near-api-js";
 import { deployFactory } from "../createEvent";
 import { scanTickets } from "./ticketActions";
+import { cleanupContract } from "../cleanup"; // Import cleanup function
 
 import {
   createAccount,
@@ -26,14 +27,17 @@ import {
   addScavengerHunt,
 } from "./createActions";
 import { claimDrop } from "./claimActions";
-import { createConferenceAccounts } from "./accountActions";
+import {
+  createConferenceAccounts,
+  sendConferenceTokens,
+} from "./accountActions";
 
 async function main() {
   const config: Config = {
     GLOBAL_NETWORK,
     SIGNER_ACCOUNT,
     TICKET_URL_BASE,
-    CLEANUP_CONTRACT: false,
+    CLEANUP_CONTRACT: true, // Enable cleanup after the process
     CREATION_CONFIG,
     NUM_TICKETS_TO_ADD,
     EXISTING_FACTORY: "", // Will be set after deploying the factory
@@ -64,13 +68,12 @@ async function main() {
   });
 
   // Write the factory key to the "data" directory
-  const csvFilePath = path.join(dataDir, "factoryKey.csv");
-  fs.writeFileSync(csvFilePath, `${factoryAccountId},${factoryKey}`);
+  const factoryKeyFilePath = path.join(dataDir, "factoryKey.csv");
+  fs.writeFileSync(factoryKeyFilePath, `${factoryAccountId},${factoryKey}`);
 
   // Update the factoryAccountId in config.ts
   updateConfigFile(factoryAccountId, "costMeasure");
 
-  // Wait for the transaction to be processed
   console.log("Waiting for transaction to be processed...");
   await new Promise((resolve) => setTimeout(resolve, TIME_DELAY));
 
@@ -86,12 +89,14 @@ async function main() {
     storage_used_bytes: number;
     balance_before: string;
     balance_after: string;
+    refundable: boolean;
   }[] = [];
 
   // Helper to measure storage and balance
   async function measureAction(
     actionName: string,
     actionFn: () => Promise<any>,
+    refundable: boolean,
   ) {
     const storageBefore = await getContractStorageUsage(
       signerAccount,
@@ -103,7 +108,6 @@ async function main() {
     );
 
     const result = await actionFn();
-    // Wait for the transaction to be processed
     await new Promise((resolve) => setTimeout(resolve, TIME_DELAY));
 
     const storageAfter = await getContractStorageUsage(
@@ -122,6 +126,7 @@ async function main() {
       storage_used_bytes: storageDiff,
       balance_before: balanceBefore.toString(),
       balance_after: balanceAfter.toString(),
+      refundable,
     });
 
     console.log(`Action: ${actionName}`);
@@ -130,94 +135,145 @@ async function main() {
     return result;
   }
 
-  // Perform actions by calling the functions directly
-
   // Create Sponsor, Worker, and Admin accounts
-  const accountTypes = ["Sponsor", "DataSetter", "Admin"];
-  for (const type of accountTypes) {
-    await measureAction(`Create ${type} account`, async () => {
+  await measureAction(
+    `Create Admin account`,
+    async () => {
       const data = await createAccount(
         signerAccount,
         factoryAccountId,
-        type,
-        type.toLowerCase(),
+        "Admin",
+        "admin",
       );
-      accounts[type.toLowerCase()] = data.secretKey;
+      accounts["admin"] = data.secretKey;
       return data;
-    });
+    },
+    true,
+  );
+
+  // Switch signer to Admin Account
+  signerAccount = await near.account(factoryAccountId);
+  let keyStore = near.connection.signer.keyStore;
+  const adminKeyPair = KeyPair.fromString(accounts["admin"]);
+  await keyStore.setKey(GLOBAL_NETWORK, factoryAccountId, adminKeyPair);
+
+  // Create Sponsor, Worker accounts
+  const accountTypes = ["Sponsor", "DataSetter"];
+  for (const type of accountTypes) {
+    await measureAction(
+      `Create ${type} account`,
+      async () => {
+        const data = await createAccount(
+          signerAccount,
+          factoryAccountId,
+          type,
+          type.toLowerCase(),
+        );
+        accounts[type.toLowerCase()] = data.secretKey;
+        return data;
+      },
+      true,
+    );
   }
 
   // Add Tickets
   const ticketCounts = [1, 10];
   for (const count of ticketCounts) {
-    await measureAction(`Add ${count} ticket(s)`, async () => {
-      const attendees = Array(count).fill({
-        name: "Test User",
-        email: "test@example.com",
-      });
-      const data = await addTickets(signerAccount, factoryAccountId, attendees);
-      // Map ticket keys to user accounts
-      data.ticketKeys.forEach((key, index) => {
-        const userKey = `user${index}`;
-        accounts[userKey] = key;
-      });
-      return data;
-    });
+    await measureAction(
+      `Add ${count} ticket(s)`,
+      async () => {
+        const attendees = Array(count).fill({
+          name: "Test User",
+          email: "test@example.com",
+        });
+        const data = await addTickets(
+          signerAccount,
+          factoryAccountId,
+          attendees,
+        );
+        data.ticketKeys.forEach((key, index) => {
+          const userKey = `user${index}`;
+          accounts[userKey] = key;
+        });
+        return data;
+      },
+      true,
+    );
   }
 
   console.log("Accounts: ", accounts);
 
   // Scan Tickets
-  await measureAction("Scan a ticket", async () => {
-    await scanTickets(near, [accounts["user0"]], factoryAccountId);
-  });
+  await measureAction(
+    "Scan a ticket",
+    async () => {
+      await scanTickets(near, [accounts["user0"]], factoryAccountId);
+    },
+    true,
+  );
 
   const userKeys = Object.keys(accounts)
     .filter((key) => key.startsWith("user"))
     .map((key) => accounts[key]);
 
-  await measureAction("Scan 10 tickets", async () => {
-    await scanTickets(near, userKeys.slice(1, 11), factoryAccountId);
-  });
+  await measureAction(
+    "Scan 10 tickets",
+    async () => {
+      await scanTickets(near, userKeys.slice(1, 11), factoryAccountId);
+    },
+    true,
+  );
 
   // Create Conference Accounts
-  await measureAction("Create Conference Account", async () => {
-    await createConferenceAccounts(
-      near,
-      [accounts["user0"]],
-      [`user0.${factoryAccountId}`],
-      factoryAccountId,
-    );
-  });
+  await measureAction(
+    "Create Conference Account",
+    async () => {
+      await createConferenceAccounts(
+        near,
+        [accounts["user0"]],
+        [`user0.${factoryAccountId}`],
+        factoryAccountId,
+      );
+    },
+    true,
+  );
 
-  await measureAction("Create 10 Conference Accounts", async () => {
-    const userAccountIds = userKeys
-      .slice(1, 11)
-      .map((_, index) => `user${index + 1}.${factoryAccountId}`);
-    await createConferenceAccounts(
-      near,
-      userKeys.slice(1, 11),
-      userAccountIds,
-      factoryAccountId,
-    );
-  });
+  await measureAction(
+    "Create 10 Conference Accounts",
+    async () => {
+      const userAccountIds = userKeys
+        .slice(1, 11)
+        .map((_, index) => `user${index + 1}.${factoryAccountId}`);
+      await createConferenceAccounts(
+        near,
+        userKeys.slice(1, 11),
+        userAccountIds,
+        factoryAccountId,
+      );
+    },
+    true,
+  );
 
   // Switch signer to Sponsor Account
   signerAccount = await near.account(factoryAccountId);
-  const keyStore = near.connection.signer.keyStore;
+  keyStore = near.connection.signer.keyStore;
   const sponsorKeyPair = KeyPair.fromString(accounts["sponsor"]);
   await keyStore.setKey(GLOBAL_NETWORK, factoryAccountId, sponsorKeyPair);
 
   // Add Drops
   const dropTypes = ["Token", "NFT", "Multichain"];
   for (const type of dropTypes) {
-    await measureAction(`Add a ${type.toLowerCase()} drop`, async () => {
-      const data = await addDrop(signerAccount, factoryAccountId, type);
-      const dropId = data[0];
-      const secretKey = dropId.split("%%")[1];
-      drops[`${type.toLowerCase()}Drop`] = { dropId, privateKey: secretKey };
-      return data;
-    });
+    await measureAction(
+      `Add a ${type.toLowerCase()} drop`,
+      async () => {
+        const data = await addDrop(signerAccount, factoryAccountId, type);
+        const dropId = data[0];
+        const secretKey = dropId.split("%%")[1];
+        drops[`${type.toLowerCase()}Drop`] = { dropId, privateKey: secretKey };
+        return data;
+      },
+      true,
+    );
   }
 
   // Add Scavenger Hunts
@@ -241,6 +297,7 @@ async function main() {
           };
           return data;
         },
+        true,
       );
     }
   }
@@ -251,57 +308,110 @@ async function main() {
   const ticketUserKey = accounts["user0"];
   const ticketUserId = `user0.${factoryAccountId}`;
 
-  // Add ticket user's key to keystore
   const ticketUserKeyPair = KeyPair.fromString(ticketUserKey);
   await keyStore.setKey(GLOBAL_NETWORK, factoryAccountId, ticketUserKeyPair);
   signerAccount = await near.account(factoryAccountId);
 
   // Claim Drops
   for (const type of dropTypes) {
-    await measureAction(`Claim a ${type.toLowerCase()} drop`, async () => {
-      const drop = drops[`${type.toLowerCase()}Drop`];
-      const signatureData = generateSignature(drop.privateKey, ticketUserId);
-      const dropId = drop.dropId.split("%%")[2];
-      await claimDrop(signerAccount, dropId, signatureData, factoryAccountId);
-    });
+    await measureAction(
+      `Claim a ${type.toLowerCase()} drop`,
+      async () => {
+        const drop = drops[`${type.toLowerCase()}Drop`];
+        const signatureData = generateSignature(drop.privateKey, ticketUserId);
+        const dropId = drop.dropId.split("%%")[2];
+        await claimDrop(signerAccount, dropId, signatureData, factoryAccountId);
+      },
+      type.toLowerCase() !== "nft",
+    );
+  }
+
+  // Send Tokens
+  const amounts = ["10", "100", "1000"];
+  for (const amount of amounts) {
+    await measureAction(
+      `Sending ${amount} tokens`,
+      async () => {
+        await sendConferenceTokens(
+          signerAccount,
+          `user1.${factoryAccountId}`,
+          amount,
+          factoryAccountId,
+        );
+      },
+      true,
+    );
   }
 
   // Claim Scavenger Hunt Piece
-  await measureAction("Claim a scavenger hunt piece", async () => {
-    const scavengerHunt = drops["scavengerTokenHunt2"];
-    const scavengerPieceKey = scavengerHunt.privateKey;
-    const scavengerPieceId = getPublicKey(scavengerPieceKey);
-    const signatureData = generateSignature(scavengerPieceKey, ticketUserId);
-    const dropId = scavengerHunt.dropId.split("%%")[3];
-    await claimDrop(
-      signerAccount,
-      dropId,
-      signatureData,
-      factoryAccountId,
-      scavengerPieceId,
-    );
-  });
+  await measureAction(
+    "Claim a scavenger hunt piece",
+    async () => {
+      const scavengerHunt = drops["scavengerTokenHunt2"];
+      const scavengerPieceKey = scavengerHunt.privateKey;
+      const scavengerPieceId = getPublicKey(scavengerPieceKey);
+      const signatureData = generateSignature(scavengerPieceKey, ticketUserId);
+      const dropId = scavengerHunt.dropId.split("%%")[3];
+      await claimDrop(
+        signerAccount,
+        dropId,
+        signatureData,
+        factoryAccountId,
+        scavengerPieceId,
+      );
+    },
+    true,
+  );
 
-  // Write results to CSV with better formatting for Google Sheets
+  // Cleanup Contract (Recursively remove all accounts)
+  await measureAction(
+    "Cleanup contract",
+    async () => {
+      const cleanupSummary = await cleanupContract({
+        near,
+        factoryKey,
+        factoryAccountId,
+        networkId: GLOBAL_NETWORK,
+      });
+      console.log("Cleanup Summary: ", cleanupSummary);
+    },
+    false,
+  );
+
+  // Write results to CSV
   const csvData = results
     .map((res) => {
-      // Ensure values are properly quoted if necessary
-      const action = `"${res.action}"`;
-      const storageUsed = `"${res.storage_used_bytes}"`;
-      const balanceBefore = `"${res.balance_before}"`;
-      const balanceAfter = `"${res.balance_after}"`;
+      const action = `${res.action}`;
+      const storageUsed = `${res.storage_used_bytes}`;
+      const balanceBefore = `${res.balance_before}`;
+      const balanceAfter = `${res.balance_after}`;
+      const refundable = `${res.refundable}`;
 
-      return `${action},${storageUsed},${balanceBefore},${balanceAfter}`;
+      return `${action},${storageUsed},${balanceBefore},${balanceAfter},${refundable}`;
     })
     .join("\n");
 
-  // Add the header to the CSV file
-  const csvHeader = `"Action","Storage Used (Bytes)","Balance Before","Balance After"`;
+  const csvHeader = `Action,Storage Used (Bytes),Balance Before,Balance After,Refundable`;
   const csvContent = `${csvHeader}\n${csvData}`;
 
   const resultsFilePath = path.join(__dirname, "storage_costs.csv");
   fs.writeFileSync(resultsFilePath, csvContent);
 
+  // Write account IDs and private keys to a separate CSV
+  const accountData = Object.entries(accounts)
+    .map(
+      ([accountId, privateKey]) =>
+        `"${accountId}.${factoryAccountId}","${privateKey}"`,
+    )
+    .join("\n");
+
+  const accountCsvHeader = `"Account ID","Private Key"`;
+  const accountCsvContent = `${accountCsvHeader}\n${accountData}`;
+
+  const accountsFilePath = path.join(dataDir, "accounts.csv");
+  fs.writeFileSync(accountsFilePath, accountCsvContent);
+
+  console.log(`Account details written to ${accountsFilePath}`);
   console.log(`\nResults written to ${resultsFilePath}`);
 }
 

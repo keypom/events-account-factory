@@ -8,7 +8,7 @@ impl Contract {
     ///
     /// Panics if the account is not authorized.
     pub fn toggle_freeze(&mut self, is_freeze: bool) {
-        self.assert_admin();
+        self.assert_contract_account();
         self.is_contract_frozen = is_freeze;
     }
 
@@ -34,7 +34,7 @@ impl Contract {
     /// Panics if the contract is not frozen or if the caller is not an admin.
     pub fn clear_storage(&mut self, limit: Option<u32>, refund_account: AccountId) -> u64 {
         // Ensure that only an admin can perform this operation.
-        self.assert_admin();
+        self.assert_contract_account();
         let storage_initial = env::storage_usage();
         // Ensure that the contract is frozen before clearing storage.
         require!(

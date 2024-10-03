@@ -1,14 +1,23 @@
 // cleanup.ts
 
+import { KeyPair } from "near-api-js";
+
 export const cleanupContract = async ({
   near,
-  signerAccount,
+  factoryKey,
   factoryAccountId,
+  networkId,
 }: {
   near: any;
-  signerAccount: any;
   factoryAccountId: string;
+  factoryKey: string;
+  networkId: string;
 }) => {
+  let factoryKeyPair = KeyPair.fromString(factoryKey);
+  let keyStore = near.connection.signer.keyStore;
+  await keyStore.setKey(networkId, factoryAccountId, factoryKeyPair);
+  const signerAccount = await near.account(factoryAccountId);
+
   // Check if the contract is frozen
   const isFrozen: boolean = await signerAccount.viewFunction(
     factoryAccountId,
@@ -61,15 +70,14 @@ export const cleanupContract = async ({
   }
 
   // Delete function call access keys from the contract account
-  const contractAccount = await near.account(factoryAccountId);
-  const accessKeys = await contractAccount.getAccessKeys();
+  const accessKeys = await signerAccount.getAccessKeys();
 
   let keysDeleted = 0;
 
   for (const key of accessKeys) {
     if (key.access_key.permission !== "FullAccess") {
       // Delete function call access key
-      await contractAccount.deleteKey(key.public_key);
+      await signerAccount.deleteKey(key.public_key);
       keysDeleted += 1;
       console.log(`Deleted function call access key: ${key.public_key}`);
     }

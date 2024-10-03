@@ -45,6 +45,7 @@ pub struct Contract {
     // ------------------------ Contract Global ---------------------------- //
     pub account_details_by_id: IterableMap<AccountId, AccountDetails>, // clearable
     pub is_contract_frozen: bool,
+    pub contract_key: PublicKey,
 
     // ------------------------ Fungible Tokens ---------------------------- //
     pub ft_total_supply: NearToken,
@@ -101,6 +102,7 @@ impl Contract {
         symbol: Option<String>,
         icon: Option<String>,
         admin: Vec<AccountId>,
+        contract_key: PublicKey,
     ) -> Self {
         let mut ticket_data_by_id: IterableMap<String, TicketType> =
             IterableMap::new(StorageKeys::TicketDataById);
@@ -125,6 +127,7 @@ impl Contract {
             agenda_timestamp: 0,
             alerts_timestamp: 0,
             nft_tokens_per_owner: LookupMap::new(StorageKeys::TokensForOwner),
+            contract_key,
             is_contract_frozen: false,
             account_details_by_id,
             ft_total_supply: NearToken::from_yoctonear(0),
