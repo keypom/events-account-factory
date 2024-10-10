@@ -279,6 +279,20 @@ impl Contract {
         self.get_claimed_drops(account_id, |drop, _| drop.is_nft_drop())
     }
 
+    /// Retrieves claimed Multichain drops for a specific account.
+    ///
+    /// # Arguments
+    ///
+    /// * `account_id` - The ID of the account to retrieve claimed NFTs for.
+    ///
+    /// # Returns
+    ///
+    /// A vector of `ExtClaimedDrop` containing the claimed NFT drops for the account.
+    pub fn get_claimed_multichain_nfts_for_account(&self, account_id: AccountId) -> Vec<ExtClaimedDrop> {
+        // Filter for NFT drops only
+        self.get_claimed_drops(account_id, |drop, _| drop.is_multichain_drop())
+    }
+
     /// Retrieves all the drops created by a given account.
     ///
     /// # Arguments

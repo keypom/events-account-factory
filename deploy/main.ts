@@ -12,6 +12,7 @@ import {
 } from "./utils";
 import { deployFactory } from "./createEvent";
 import { cleanupContract } from "./cleanup";
+import { addAirtableKeys } from "./addAirtableKeys";
 
 // Get the environment (dev or prod) from the command-line arguments
 const env = process.argv[2] || "dev"; // Default to "dev" if no argument is provided
@@ -61,7 +62,6 @@ const main = async () => {
     CREATION_CONFIG,
     EXISTING_FACTORY,
     GLOBAL_NETWORK,
-    NUM_TICKETS_TO_ADD,
     PREMADE_TICKET_DATA,
     SIGNER_ACCOUNT,
   } = config;
@@ -113,7 +113,7 @@ const main = async () => {
         accountType: sponsorData.accountType,
       });
       sponsorCSV.push(
-        `${sponsorData.accountName}, http://localhost:3000/sponsorDashboard/${accountId}#${secretKey}`,
+        `${sponsorData.accountName}, ${config.SITE_BASE_URL}/sponsorDashboard/${accountId}#${secretKey}`,
       );
     }
 
@@ -155,16 +155,46 @@ const main = async () => {
 
   // STEP 4: Add Tickets
   if (CREATION_CONFIG.addTickets) {
-    const defaultAttendeeInfo = new Array(NUM_TICKETS_TO_ADD).fill({
-      name: "Test User",
-      email: "test",
-    });
-    const keyPairMap = await addTickets({
-      signerAccount,
-      factoryAccountId,
-      dropId: "ga_pass",
-      attendeeInfo: defaultAttendeeInfo,
-    });
+    const mailingListDataDir = path.join(__dirname, env, "toRead");
+    if (!fs.existsSync(mailingListDataDir)) {
+      throw new Error(`Directory ${mailingListDataDir} does not exist.`);
+    }
+    const mailingListPath = path.join(
+      mailingListDataDir,
+      "mailinglist-current.json",
+    );
+    const mailingList = JSON.parse(fs.readFileSync(mailingListPath, "utf-8"));
+    const { keyPairMap, failedTickets, updatedMailingList } =
+      await addAirtableKeys({
+        mailingList,
+        signerAccount,
+        factoryAccountId,
+        dropId: "ga_pass",
+      });
+
+    const updatedMailingListPath = path.join(
+      mailingListDataDir,
+      "mailinglist-with-keys.json",
+    );
+    fs.writeFileSync(
+      updatedMailingListPath,
+      JSON.stringify(updatedMailingList, null, 2),
+    );
+
+    // STEP 6: Write failed tickets to a separate file if there are any
+    if (failedTickets.length > 0) {
+      const failedTicketsPath = path.join(
+        mailingListDataDir,
+        "failed-tickets.json",
+      );
+      fs.writeFileSync(
+        failedTicketsPath,
+        JSON.stringify(failedTickets, null, 2),
+      );
+      console.log(`Failed tickets written to ${failedTicketsPath}`);
+      throw new Error("Failed to add tickets");
+    }
+
     // Convert the keyPairMap to CSV with raw JSON and write to a file
     const csvData = convertMapToRawJsonCsv(keyPairMap, config);
     csvFilePath = path.join(dataDir, "tickets.csv");

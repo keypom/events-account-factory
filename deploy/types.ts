@@ -101,7 +101,7 @@ export interface Config {
   CLEANUP_CONTRACT: boolean;
   CREATION_CONFIG: CreationConfig;
   NUM_TICKETS_TO_ADD: number;
-  TICKET_URL_BASE: string;
+  SITE_BASE_URL: string;
   EXISTING_FACTORY: string;
   ADMIN_ACCOUNTS: string[];
   PREMADE_TICKET_DATA: PremadeTicketData;
