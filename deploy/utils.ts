@@ -19,6 +19,7 @@ export async function initNear(config: Config) {
   const nearConfig = {
     keyStore,
     networkId: config.GLOBAL_NETWORK,
+    // nodeUrl: config.GLOBAL_NETWORK === "testnet" ? "https://test.api.fastnear.com" : "https://api.fastnear.com",
     nodeUrl: `https://rpc.${config.GLOBAL_NETWORK}.near.org`,
   };
   const near = await connect({ ...nearConfig, keyStore });
