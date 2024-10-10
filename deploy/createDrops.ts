@@ -93,7 +93,7 @@ export const createDrops = async ({
         deposit: "0",
         gas: "300000000000000",
       });
-      dropType = "multichain";
+      dropType = "nft";
     } else {
       args.nft_metadata = (drop as NFTDrop).nft_metadata;
       res = await sendTransaction({
