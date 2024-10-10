@@ -163,14 +163,16 @@ export const addPremadeTickets = async ({
       receiverId: factoryAccountId,
       methodName: "create_account",
       args: {
-        new_account_id: `${value.name.toLowerCase()}.${factoryAccountId}`,
+        new_account_id: `${value.name.toLowerCase().replace(/\s+/g, "-")}.${factoryAccountId}`,
       },
       deposit: "0",
       gas: "300000000000000", // Set gas limit
     });
 
     // Push the URL into the premade CSV array
-    premadeCSV.push(`${userData.name}, ${config.TICKET_URL_BASE}${key}`);
+    premadeCSV.push(
+      `${userData.name}, ${config.SITE_BASE_URL}/tickets/ticket/ga_pass#${key}`,
+    );
   }
 
   return premadeCSV;

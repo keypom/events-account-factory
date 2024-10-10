@@ -1,11 +1,17 @@
 import { PremadeMultichainDrops } from "../../types";
 
-const BASE_SEPOLIA_CONTRACT_ADDRESS="0xCeb40Ce9979f2F044031759cCA5a3e2C3fc04c42"
-const BSC_TESTNET_CONTRACT_ADDRESS="0xc3aFb0756eF0Cbd07Bb0fD54817F3d44fF23EDF6"
-const OPTIMISM_SEPOLIA_CONTRACT_ADDRESS="0x7E3192C399b06A547fB3C849aFb6E79Bf9EDBAd1"
-const ARBITRUM_SEPOLIA_CONTRACT_ADDRESS="0x7E3192C399b06A547fB3C849aFb6E79Bf9EDBAd1"
-const ETH_SEPOLIA_BUILDBEAR_CONTRACT_ADDRESS = "0x3B631fc7c985B66BF8fE82A2cf32233CADE28ced"
-const POLYGON_AMOX_CONTRACT_ADDRESS = "0xD6a277D5E38DB435C008Bc604EfA89F9777DB586"
+const BASE_SEPOLIA_CONTRACT_ADDRESS =
+  "0xCeb40Ce9979f2F044031759cCA5a3e2C3fc04c42";
+const BSC_TESTNET_CONTRACT_ADDRESS =
+  "0xc3aFb0756eF0Cbd07Bb0fD54817F3d44fF23EDF6";
+const OPTIMISM_SEPOLIA_CONTRACT_ADDRESS =
+  "0x7E3192C399b06A547fB3C849aFb6E79Bf9EDBAd1";
+const ARBITRUM_SEPOLIA_CONTRACT_ADDRESS =
+  "0x7E3192C399b06A547fB3C849aFb6E79Bf9EDBAd1";
+const ETH_SEPOLIA_BUILDBEAR_CONTRACT_ADDRESS =
+  "0x3B631fc7c985B66BF8fE82A2cf32233CADE28ced";
+const POLYGON_AMOX_CONTRACT_ADDRESS =
+  "0xD6a277D5E38DB435C008Bc604EfA89F9777DB586";
 
 const BASE_SEPOLIA = 84532;
 const BSC_TESTNET = 97;
@@ -13,8 +19,6 @@ const OPTIMISM_SEPOLIA = 11155420;
 const ARBITRUM_SEPOLIA = 421614;
 const ETH_SEPOLIA_BUILDBEAR = 20665;
 const POLYGON_AMOY = 80002;
-
-const CHAINS = ["BASE_SEPOLIA", "BSC_TESTNET", "OPTIMISM_SEPOLIA", "ARBITRUM_SEPOLIA", "ETH_SEPOLIA_BUILDBEAR", "POLYGON_AMOY"];
 
 // each chain has different contract address, chain id, and needs chain name appended to drop_data.name and nft_metadata.title
 const MULTICHAIN_DROP_SHARED_DATA: PremadeMultichainDrops = [
@@ -90,119 +94,129 @@ const MULTICHAIN_DROP_SHARED_DATA: PremadeMultichainDrops = [
       series_id: 6,
     },
   },
-]
+];
 
-const BASE_SEPOLIA_DROPS: PremadeMultichainDrops = MULTICHAIN_DROP_SHARED_DATA.map((drop) => {
-  return {
-    drop_data: {
-      ...drop.drop_data,
-      name: `Base Sepolia ${drop.drop_data.name}`,
-    },
-    nft_metadata: {
-      ...drop.nft_metadata,
-      title: `Base Sepolia ${drop.nft_metadata.title}`,
-    },
-    multichain_metadata: {
-      ...drop.multichain_metadata,
-      chain_id: BASE_SEPOLIA,
-      contract_id: BASE_SEPOLIA_CONTRACT_ADDRESS,
-    },
-  };
-})
+const BASE_SEPOLIA_DROPS: PremadeMultichainDrops =
+  MULTICHAIN_DROP_SHARED_DATA.map((drop) => {
+    return {
+      drop_data: {
+        ...drop.drop_data,
+        name: `Base Sepolia ${drop.drop_data.name}`,
+      },
+      nft_metadata: {
+        ...drop.nft_metadata,
+        title: `Base Sepolia ${drop.nft_metadata.title}`,
+      },
+      multichain_metadata: {
+        ...drop.multichain_metadata,
+        chain_id: BASE_SEPOLIA,
+        contract_id: BASE_SEPOLIA_CONTRACT_ADDRESS,
+      },
+    };
+  });
 
-const BSC_TESTNET_DROPS: PremadeMultichainDrops = MULTICHAIN_DROP_SHARED_DATA.map((drop) => {
-  return {
-    drop_data: {
-      ...drop.drop_data,
-      name: `BSC Testnet ${drop.drop_data.name}`,
-    },
-    nft_metadata: {
-      ...drop.nft_metadata,
-      title: `BSC Testnet ${drop.nft_metadata.title}`,
-    },
-    multichain_metadata: {
-      ...drop.multichain_metadata,
-      chain_id: BSC_TESTNET,
-      contract_id: BSC_TESTNET_CONTRACT_ADDRESS,
-    },
-  };
-})
+const BSC_TESTNET_DROPS: PremadeMultichainDrops =
+  MULTICHAIN_DROP_SHARED_DATA.map((drop) => {
+    return {
+      drop_data: {
+        ...drop.drop_data,
+        name: `BSC Testnet ${drop.drop_data.name}`,
+      },
+      nft_metadata: {
+        ...drop.nft_metadata,
+        title: `BSC Testnet ${drop.nft_metadata.title}`,
+      },
+      multichain_metadata: {
+        ...drop.multichain_metadata,
+        chain_id: BSC_TESTNET,
+        contract_id: BSC_TESTNET_CONTRACT_ADDRESS,
+      },
+    };
+  });
 
-const OPTIMISM_SEPOLIA_DROPS: PremadeMultichainDrops = MULTICHAIN_DROP_SHARED_DATA.map((drop) => {
-  return {
-    drop_data: {
-      ...drop.drop_data,
-      name: `Optimism Sepolia ${drop.drop_data.name}`,
-    },
-    nft_metadata: {
-      ...drop.nft_metadata,
-      title: `Optimism Sepolia ${drop.nft_metadata.title}`,
-    },
-    multichain_metadata: {
-      ...drop.multichain_metadata,
-      chain_id: OPTIMISM_SEPOLIA,
-      contract_id: OPTIMISM_SEPOLIA_CONTRACT_ADDRESS,
-    },
-  };
-})
+const OPTIMISM_SEPOLIA_DROPS: PremadeMultichainDrops =
+  MULTICHAIN_DROP_SHARED_DATA.map((drop) => {
+    return {
+      drop_data: {
+        ...drop.drop_data,
+        name: `Optimism Sepolia ${drop.drop_data.name}`,
+      },
+      nft_metadata: {
+        ...drop.nft_metadata,
+        title: `Optimism Sepolia ${drop.nft_metadata.title}`,
+      },
+      multichain_metadata: {
+        ...drop.multichain_metadata,
+        chain_id: OPTIMISM_SEPOLIA,
+        contract_id: OPTIMISM_SEPOLIA_CONTRACT_ADDRESS,
+      },
+    };
+  });
 
-const ARBITRUM_SEPOLIA_DROPS: PremadeMultichainDrops = MULTICHAIN_DROP_SHARED_DATA.map((drop) => {
-  return {
-    drop_data: {
-      ...drop.drop_data,
-      name: `Arbitrum Sepolia ${drop.drop_data.name}`,
-    },
-    nft_metadata: {
-      ...drop.nft_metadata,
-      title: `Arbitrum Sepolia ${drop.nft_metadata.title}`,
-    },
-    multichain_metadata: {
-      ...drop.multichain_metadata,
-      chain_id: ARBITRUM_SEPOLIA,
-      contract_id: ARBITRUM_SEPOLIA_CONTRACT_ADDRESS,
-    },
-  };
-})
+const ARBITRUM_SEPOLIA_DROPS: PremadeMultichainDrops =
+  MULTICHAIN_DROP_SHARED_DATA.map((drop) => {
+    return {
+      drop_data: {
+        ...drop.drop_data,
+        name: `Arbitrum Sepolia ${drop.drop_data.name}`,
+      },
+      nft_metadata: {
+        ...drop.nft_metadata,
+        title: `Arbitrum Sepolia ${drop.nft_metadata.title}`,
+      },
+      multichain_metadata: {
+        ...drop.multichain_metadata,
+        chain_id: ARBITRUM_SEPOLIA,
+        contract_id: ARBITRUM_SEPOLIA_CONTRACT_ADDRESS,
+      },
+    };
+  });
 
-const ETH_SEPOLIA_BUILDBEAR_DROPS: PremadeMultichainDrops = MULTICHAIN_DROP_SHARED_DATA.map((drop) => {
-  return {
-    drop_data: {
-      ...drop.drop_data,
-      name: `ETH Sepolia Buildbear ${drop.drop_data.name}`,
-    },
-    nft_metadata: {
-      ...drop.nft_metadata,
-      title: `ETH Sepolia Buildbear ${drop.nft_metadata.title}`,
-    },
-    multichain_metadata: {
-      ...drop.multichain_metadata,
-      chain_id: ETH_SEPOLIA_BUILDBEAR,
-      contract_id: ETH_SEPOLIA_BUILDBEAR_CONTRACT_ADDRESS,
-    },
-  };
-})
+const ETH_SEPOLIA_BUILDBEAR_DROPS: PremadeMultichainDrops =
+  MULTICHAIN_DROP_SHARED_DATA.map((drop) => {
+    return {
+      drop_data: {
+        ...drop.drop_data,
+        name: `ETH Sepolia Buildbear ${drop.drop_data.name}`,
+      },
+      nft_metadata: {
+        ...drop.nft_metadata,
+        title: `ETH Sepolia Buildbear ${drop.nft_metadata.title}`,
+      },
+      multichain_metadata: {
+        ...drop.multichain_metadata,
+        chain_id: ETH_SEPOLIA_BUILDBEAR,
+        contract_id: ETH_SEPOLIA_BUILDBEAR_CONTRACT_ADDRESS,
+      },
+    };
+  });
 
-const POLYGON_AMOY_DROPS: PremadeMultichainDrops = MULTICHAIN_DROP_SHARED_DATA.map((drop) => {
-  return {
-    drop_data: {
-      ...drop.drop_data,
-      name: `Polygon Amoy ${drop.drop_data.name}`,
-    },
-    nft_metadata: {
-      ...drop.nft_metadata,
-      title: `Polygon Amoy ${drop.nft_metadata.title}`,
-    },
-    multichain_metadata: {
-      ...drop.multichain_metadata,
-      chain_id: POLYGON_AMOY,
-      contract_id: POLYGON_AMOX_CONTRACT_ADDRESS,
-    },
-  };
-})
-
+const POLYGON_AMOY_DROPS: PremadeMultichainDrops =
+  MULTICHAIN_DROP_SHARED_DATA.map((drop) => {
+    return {
+      drop_data: {
+        ...drop.drop_data,
+        name: `Polygon Amoy ${drop.drop_data.name}`,
+      },
+      nft_metadata: {
+        ...drop.nft_metadata,
+        title: `Polygon Amoy ${drop.nft_metadata.title}`,
+      },
+      multichain_metadata: {
+        ...drop.multichain_metadata,
+        chain_id: POLYGON_AMOY,
+        contract_id: POLYGON_AMOX_CONTRACT_ADDRESS,
+      },
+    };
+  });
 
 export const PREMADE_MULTICHAIN_DROPS: PremadeMultichainDrops = [
-  ...BASE_SEPOLIA_DROPS, ...BSC_TESTNET_DROPS, ...OPTIMISM_SEPOLIA_DROPS, ...ARBITRUM_SEPOLIA_DROPS, ...ETH_SEPOLIA_BUILDBEAR_DROPS, ...POLYGON_AMOY_DROPS
+  ...BASE_SEPOLIA_DROPS,
+  ...BSC_TESTNET_DROPS,
+  ...OPTIMISM_SEPOLIA_DROPS,
+  ...ARBITRUM_SEPOLIA_DROPS,
+  ...ETH_SEPOLIA_BUILDBEAR_DROPS,
+  ...POLYGON_AMOY_DROPS,
 ];
 
 // console.log(PREMADE_MULTICHAIN_DROPS)
@@ -337,3 +351,4 @@ const MULTICHAIN_DROP_SHARED_DATA: PremadeMultichainDrops = [
   },
 ]
 */
+
