@@ -2,7 +2,7 @@ import { CreationConfig, PremadeTicketData } from "../types";
 
 export const GLOBAL_NETWORK = "testnet";
 
-export const SIGNER_ACCOUNT = "benjiman.testnet";
+export const SIGNER_ACCOUNT = "minqi.testnet";
 export const CLEANUP_CONTRACT = false;
 export const CREATION_CONFIG: CreationConfig = {
   deployContract: true,
@@ -16,9 +16,9 @@ export const CREATION_CONFIG: CreationConfig = {
   createWorker: true,
   createAdmin: true,
 
-  nftDrops: true,
-  tokenDrops: true,
-  scavDrops: true,
+  nftDrops: false,
+  tokenDrops: false,
+  scavDrops: false,
   multichainDrops: true,
 };
 
@@ -45,6 +45,14 @@ export const PREMADE_TICKET_DATA: PremadeTicketData = [
   },
   {
     name: "Test User 5",
+    email: "foo",
+  },
+  {
+    name: "Test User 6",
+    email: "foo",
+  },
+  {
+    name: "Test User 7",
     email: "foo",
   },
 ];

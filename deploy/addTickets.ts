@@ -140,6 +140,7 @@ export const addPremadeTickets = async ({
   }
 
   const premadeCSV: string[] = [];
+  const premadeTicketCSV: string[] = [];
   for (const [key, value] of keyPairMap) {
     const { ticket, userData } = decodeAndParseBase64(key);
     const keyPair = KeyPair.fromString(ticket);
@@ -173,7 +174,8 @@ export const addPremadeTickets = async ({
     premadeCSV.push(
       `${userData.name}, ${config.SITE_BASE_URL}/tickets/ticket/ga_pass#${key}`,
     );
+    premadeTicketCSV.push(`${userData.name}, ${ticket}`);
   }
 
-  return premadeCSV;
+  return {premadeCSV, premadeTicketCSV};
 };

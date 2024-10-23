@@ -202,7 +202,7 @@ const main = async () => {
   }
 
   if (CREATION_CONFIG.premadeTickets) {
-    const premadeCSV = await addPremadeTickets({
+    const {premadeCSV, premadeTicketCSV} = await addPremadeTickets({
       near,
       signerAccount,
       factoryAccountId,
@@ -213,6 +213,9 @@ const main = async () => {
     // Write the sponsors CSV to the "data" directory
     csvFilePath = path.join(dataDir, "premade-tickets.csv");
     fs.writeFileSync(csvFilePath, premadeCSV.join("\n"));
+
+    csvFilePath = path.join(dataDir, "premade-ticket-keys.csv");
+    fs.writeFileSync(csvFilePath, premadeTicketCSV.join("\n"));
   }
 
   if (CREATION_CONFIG.tokenDrops) {
