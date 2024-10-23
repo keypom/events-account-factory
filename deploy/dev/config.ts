@@ -8,22 +8,23 @@ export const CREATION_CONFIG: CreationConfig = {
   deployContract: true,
 
   // TICKETS
-  addTickets: true,
+  addTickets: false,
   premadeTickets: true,
 
   // ACCOUNTS
   createSponsors: true,
   createWorker: true,
   createAdmin: true,
+  createTicketAdder: true,
 
-  nftDrops: false,
-  tokenDrops: false,
-  scavDrops: false,
+  nftDrops: true,
+  tokenDrops: true,
+  scavDrops: true,
   multichainDrops: true,
 };
 
 export const SITE_BASE_URL = "https://development.keypom-events-app.pages.dev";
-export const EXISTING_FACTORY = `1728587692346-factory.testnet`;
+export const EXISTING_FACTORY = `1729696964151-factory.testnet`;
 export const ADMIN_ACCOUNTS = [SIGNER_ACCOUNT];
 
 export const PREMADE_TICKET_DATA: PremadeTicketData = [

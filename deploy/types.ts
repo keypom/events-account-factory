@@ -87,6 +87,7 @@ export interface CreationConfig {
   premadeTickets: boolean;
   createSponsors: boolean;
   createWorker: boolean;
+  createTicketAdder: boolean;
   createAdmin: boolean;
   nftDrops: boolean;
   tokenDrops: boolean;

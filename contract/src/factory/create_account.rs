@@ -167,6 +167,10 @@ impl Contract {
                 account_details.account_status = Some(AccountStatus::Admin);
                 access_key_method_names = ADMIN_KEY_METHOD_NAMES;
             }
+            AccountStatus::TicketAdder => {
+                account_details.account_status = Some(AccountStatus::TicketAdder);
+                access_key_method_names = TICKET_ADDER_KEY_METHOD_NAMES;
+            }
             _ => {
                 // Do nothing for other cases, including AccountStatus::Basic
             }

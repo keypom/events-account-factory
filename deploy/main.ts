@@ -138,6 +138,22 @@ const main = async () => {
     fs.writeFileSync(csvFilePath, `worker, ${keyPair.toString()}`);
   }
 
+  // STEP 4: Create Ticket Adder
+  if (CREATION_CONFIG.createTicketAdder) {
+    const { keyPair } = await adminCreateAccount({
+      signerAccount,
+      factoryAccountId,
+      newAccountName: "ticket-worker",
+      startingNearBalance: "0.01",
+      startingTokenBalance: "0",
+      accountType: "TicketAdder",
+    });
+
+    // Write the worker information to the "data" directory
+    csvFilePath = path.join(dataDir, "ticket-adder.csv");
+    fs.writeFileSync(csvFilePath, `ticket-adder, ${keyPair.toString()}`);
+  }
+
   if (CREATION_CONFIG.createAdmin) {
     const { keyPair } = await adminCreateAccount({
       signerAccount,
@@ -153,7 +169,7 @@ const main = async () => {
     fs.writeFileSync(csvFilePath, `admin, ${keyPair.toString()}`);
   }
 
-  // STEP 4: Add Tickets
+  // STEP 5: Add Tickets
   if (CREATION_CONFIG.addTickets) {
     const mailingListDataDir = path.join(__dirname, env, "toRead");
     if (!fs.existsSync(mailingListDataDir)) {
