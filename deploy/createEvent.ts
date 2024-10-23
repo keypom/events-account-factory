@@ -41,7 +41,7 @@ export async function deployFactory({
     signerAccount,
     config,
     newAccountId: factoryAccountId,
-    amount: "200",
+    amount: "20",
     near,
     wasmPath: "./out/factory.wasm",
     methodName: "new",

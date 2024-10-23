@@ -27,6 +27,7 @@ pub enum AccountStatus {
     Sponsor,
     DataSetter,
     Admin,
+    TicketAdder
 }
 
 impl AccountStatus {
@@ -35,6 +36,7 @@ impl AccountStatus {
             AccountStatus::Basic => false,
             AccountStatus::Sponsor => false,
             AccountStatus::DataSetter => false,
+            AccountStatus::TicketAdder => false,
             AccountStatus::Admin => true,
         }
     }
@@ -44,6 +46,7 @@ impl AccountStatus {
             AccountStatus::Basic => false,
             AccountStatus::Sponsor => true,
             AccountStatus::DataSetter => false,
+            AccountStatus::TicketAdder => false,
             AccountStatus::Admin => true,
         }
     }
@@ -53,6 +56,17 @@ impl AccountStatus {
             AccountStatus::Basic => false,
             AccountStatus::Sponsor => false,
             AccountStatus::DataSetter => true,
+            AccountStatus::TicketAdder => false,
+            AccountStatus::Admin => true,
+        }
+    }
+
+    pub fn is_ticket_adder(&self) -> bool {
+        match self {
+            AccountStatus::Basic => false,
+            AccountStatus::Sponsor => false,
+            AccountStatus::DataSetter => false,
+            AccountStatus::TicketAdder => true,
             AccountStatus::Admin => true,
         }
     }

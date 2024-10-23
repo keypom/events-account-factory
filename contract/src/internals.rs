@@ -43,6 +43,10 @@ impl Contract {
         self.assert_role(AccountStatus::is_data_sponsor, "data setter")
     }
 
+    pub(crate) fn assert_ticket_adder(&self) -> AccountId {
+        self.assert_role(AccountStatus::is_ticket_adder, "ticket adder")
+    }
+
     pub(crate) fn assert_no_freeze(&self) {
         require!(
             !self.is_contract_frozen,

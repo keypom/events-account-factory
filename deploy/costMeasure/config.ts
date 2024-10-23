@@ -16,6 +16,7 @@ export const CREATION_CONFIG: CreationConfig = {
   createSponsors: true,
   createWorker: true,
   createAdmin: true,
+  createTicketAdder: true,
 
   nftDrops: false,
   tokenDrops: false,

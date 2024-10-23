@@ -58,6 +58,42 @@ const MULTICHAIN_DROP_SHARED_DATA: PremadeMultichainDrops = [
       series_id: 2,
     },
   },
+  // Surfer
+  {
+    drop_data: {
+      image: "bafkreif2yab3wb4rooxsc56xufkgxjf6uekr3mg72j7lj2mowq554mwqaq",
+      name: "Surfer Dog POAP",
+    },
+    nft_metadata: {
+      title: "Multichain Test Drop",
+      description:
+        "Here are some instructions on how to retrieve this collectible. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas placerat mauris turpis, vel consequat mi ultricies eu. Quisque ligula neque, placerat ut dui.",
+      media: "bafkreif2yab3wb4rooxsc56xufkgxjf6uekr3mg72j7lj2mowq554mwqaq",
+    },
+    multichain_metadata: {
+      chain_id: 84532,
+      contract_id: "0xD6B95F11213cC071B982D717721B1aC7Bc628d46",
+      series_id: 3,
+    },
+  },
+  // California
+  {
+    drop_data: {
+      image: "bafybeifrcuygwadhrsowc4ngbs2t6n3gx2kwununa27v7wplr5ou2cjfka",
+      name: "California Dog POAP",
+    },
+    nft_metadata: {
+      title: "Multichain Test Drop",
+      description:
+        "Here are some instructions on how to retrieve this collectible. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas placerat mauris turpis, vel consequat mi ultricies eu. Quisque ligula neque, placerat ut dui.",
+      media: "bafybeifrcuygwadhrsowc4ngbs2t6n3gx2kwununa27v7wplr5ou2cjfka",
+    },
+    multichain_metadata: {
+      chain_id: 84532,
+      contract_id: "0xD6B95F11213cC071B982D717721B1aC7Bc628d46",
+      series_id: 4,
+    },
+  },
   // Union
   {
     drop_data: {
@@ -94,7 +130,25 @@ const MULTICHAIN_DROP_SHARED_DATA: PremadeMultichainDrops = [
       series_id: 6,
     },
   },
-];
+  // Magic
+  {
+    drop_data: {
+      image: "bafybeicrn2ix4xa5crz7cjjthvp7fukju7ot3v5qfyvcvnjtrosrb5cube",
+      name: "Magic Dog POAP",
+    },
+    nft_metadata: {
+      title: "Multichain Test Drop",
+      description:
+        "Here are some instructions on how to retrieve this collectible. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas placerat mauris turpis, vel consequat mi ultricies eu. Quisque ligula neque, placerat ut dui.",
+      media: "bafybeicrn2ix4xa5crz7cjjthvp7fukju7ot3v5qfyvcvnjtrosrb5cube",
+    },
+    multichain_metadata: {
+      chain_id: 84532,
+      contract_id: "0xD6B95F11213cC071B982D717721B1aC7Bc628d46",
+      series_id: 7,
+    },
+  },
+]
 
 const BASE_SEPOLIA_DROPS: PremadeMultichainDrops =
   MULTICHAIN_DROP_SHARED_DATA.map((drop) => {

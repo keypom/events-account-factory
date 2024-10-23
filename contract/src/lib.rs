@@ -36,6 +36,7 @@ pub const SPONSOR_KEY_METHOD_NAMES: &str =
     "create_token_drop,create_nft_drop,delete_drop,ft_transfer,create_multichain_drop";
 pub const ADMIN_KEY_METHOD_NAMES: &str = "";
 pub const DATA_SETTER_KEY_METHOD_NAMES: &str = "set_alerts,set_agenda";
+pub const TICKET_ADDER_KEY_METHOD_NAMES: &str = "add_tickets";
 
 pub const DROP_DELIMITER: &str = "||";
 
