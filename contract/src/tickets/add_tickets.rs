@@ -31,7 +31,7 @@ impl Contract {
     #[payable]
     pub fn add_tickets(&mut self, drop_id: DropId, key_data: Vec<KeyData>) {
         self.assert_no_freeze();
-        self.assert_admin();
+        self.assert_ticket_adder();
 
         // More than 100 keys leads to promise rejection
         require!(key_data.len() < 100, "Maximum number of keys exceeded");
