@@ -82,7 +82,11 @@ const main = async () => {
   let csvFilePath;
   let factoryAccountId = EXISTING_FACTORY;
   if (CREATION_CONFIG.deployContract) {
-    factoryAccountId = `${Date.now().toString()}-factory.${GLOBAL_NETWORK === "testnet" ? "testnet" : "near"}`;
+    factoryAccountId =
+      GLOBAL_NETWORK === "testnet"
+        ? `${Date.now().toString()}-factory.testnet`
+        : `redacted2024.near`;
+
     factoryKey = await deployFactory({
       near,
       config,
@@ -218,7 +222,7 @@ const main = async () => {
   }
 
   if (CREATION_CONFIG.premadeTickets) {
-    const {premadeCSV, premadeTicketCSV} = await addPremadeTickets({
+    const { premadeCSV, premadeTicketCSV } = await addPremadeTickets({
       near,
       signerAccount,
       factoryAccountId,

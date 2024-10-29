@@ -2,13 +2,13 @@ import { CreationConfig, PremadeTicketData } from "../types";
 
 export const GLOBAL_NETWORK = "testnet";
 
-export const SIGNER_ACCOUNT = "minqi.testnet";
+export const SIGNER_ACCOUNT = "benjiman.testnet";
 export const CLEANUP_CONTRACT = false;
 export const CREATION_CONFIG: CreationConfig = {
   deployContract: true,
 
   // TICKETS
-  addTickets: false,
+  addTickets: true,
   premadeTickets: true,
 
   // ACCOUNTS
@@ -24,7 +24,7 @@ export const CREATION_CONFIG: CreationConfig = {
 };
 
 export const SITE_BASE_URL = "https://development.keypom-events-app.pages.dev";
-export const EXISTING_FACTORY = `1729696964151-factory.testnet`;
+export const EXISTING_FACTORY = `1729883347621-factory.testnet`;
 export const ADMIN_ACCOUNTS = [SIGNER_ACCOUNT];
 
 export const PREMADE_TICKET_DATA: PremadeTicketData = [

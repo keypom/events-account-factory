@@ -35,6 +35,36 @@ export async function setFactoryFullAccessKey(
   await keyStore.setKey(config.GLOBAL_NETWORK, factoryAccountId, keyPair);
 }
 
+async function retryAsync<T>(
+  fn: () => Promise<T>,
+  retries: number = 3,
+  delay: number = 1000,
+  factor: number = 2,
+): Promise<T> {
+  let attempt = 0;
+  let currentDelay = delay;
+
+  while (attempt < retries) {
+    try {
+      return await fn();
+    } catch (error: any) {
+      attempt++;
+      if (attempt >= retries) {
+        throw error;
+      }
+      console.warn(
+        `Attempt ${attempt} failed. Retrying in ${currentDelay}ms...`,
+        `Error: ${error.message || error}`,
+      );
+      await new Promise((resolve) => setTimeout(resolve, currentDelay));
+      currentDelay *= factor; // Exponential backoff
+    }
+  }
+
+  // This point should never be reached
+  throw new Error("Unexpected error in retryAsync");
+}
+
 export async function sendTransaction({
   signerAccount,
   receiverId,
@@ -52,21 +82,27 @@ export async function sendTransaction({
   gas: string;
   wasmPath?: string;
 }) {
-  const result = await signerAccount.signAndSendTransaction({
-    receiverId: receiverId,
-    actions: [
-      ...(wasmPath
-        ? [transactions.deployContract(fs.readFileSync(wasmPath))]
-        : []),
-      transactions.functionCall(
-        methodName,
-        Buffer.from(JSON.stringify(args)),
-        gas,
-        utils.format.parseNearAmount(deposit),
-      ),
-    ],
-  });
-  return result;
+  return retryAsync(
+    async () => {
+      return await signerAccount.signAndSendTransaction({
+        receiverId: receiverId,
+        actions: [
+          ...(wasmPath
+            ? [transactions.deployContract(fs.readFileSync(wasmPath))]
+            : []),
+          transactions.functionCall(
+            methodName,
+            Buffer.from(JSON.stringify(args)),
+            gas,
+            utils.format.parseNearAmount(deposit),
+          ),
+        ],
+      });
+    },
+    4,
+    2000,
+    2,
+  );
 }
 
 export async function createAccountDeployContract({
