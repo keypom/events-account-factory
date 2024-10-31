@@ -17,10 +17,10 @@ export const CREATION_CONFIG: CreationConfig = {
   createAdmin: true,
   createTicketAdder: true,
 
-  nftDrops: true,
-  tokenDrops: true,
-  scavDrops: true,
-  multichainDrops: true,
+  nftDrops: false,
+  tokenDrops: false,
+  scavDrops: false,
+  multichainDrops: false,
 };
 
 export const SITE_BASE_URL = "https://development.keypom-events-app.pages.dev";
