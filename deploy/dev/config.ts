@@ -5,26 +5,26 @@ export const GLOBAL_NETWORK = "testnet";
 export const SIGNER_ACCOUNT = "benjiman.testnet";
 export const CLEANUP_CONTRACT = false;
 export const CREATION_CONFIG: CreationConfig = {
-  deployContract: true,
+  deployContract: false,
 
   // TICKETS
-  addTickets: true,
-  premadeTickets: true,
+  addTickets: false,
+  premadeTickets: false,
 
   // ACCOUNTS
-  createSponsors: true,
-  createWorker: true,
-  createAdmin: true,
-  createTicketAdder: true,
+  createSponsors: false,
+  createWorker: false,
+  createAdmin: false,
+  createTicketAdder: false,
 
-  nftDrops: false,
-  tokenDrops: false,
-  scavDrops: false,
-  multichainDrops: false,
+  nftDrops: true,
+  tokenDrops: true,
+  scavDrops: true,
+  multichainDrops: true,
 };
 
 export const SITE_BASE_URL = "https://development.keypom-events-app.pages.dev";
-export const EXISTING_FACTORY = `1730317152765-factory.testnet`;
+export const EXISTING_FACTORY = `1730385829953-factory.testnet`;
 export const ADMIN_ACCOUNTS = [SIGNER_ACCOUNT];
 
 export const PREMADE_TICKET_DATA: PremadeTicketData = [
