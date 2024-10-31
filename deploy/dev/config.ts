@@ -24,7 +24,7 @@ export const CREATION_CONFIG: CreationConfig = {
 };
 
 export const SITE_BASE_URL = "https://development.keypom-events-app.pages.dev";
-export const EXISTING_FACTORY = `1729883347621-factory.testnet`;
+export const EXISTING_FACTORY = `1730317152765-factory.testnet`;
 export const ADMIN_ACCOUNTS = [SIGNER_ACCOUNT];
 
 export const PREMADE_TICKET_DATA: PremadeTicketData = [
@@ -42,18 +42,6 @@ export const PREMADE_TICKET_DATA: PremadeTicketData = [
   },
   {
     name: "Test User 4",
-    email: "foo",
-  },
-  {
-    name: "Test User 5",
-    email: "foo",
-  },
-  {
-    name: "Test User 6",
-    email: "foo",
-  },
-  {
-    name: "Test User 7",
     email: "foo",
   },
 ];

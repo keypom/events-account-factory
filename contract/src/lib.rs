@@ -81,8 +81,124 @@ pub struct Contract {
     pub agenda_timestamp: u64, // clearable
 }
 
+/// Data for each ticket such as the account status, starting balances, etc...
+#[near(serializers = [borsh])]
+pub struct OldAccountDetails {
+    pub account_status: Option<AccountStatus>,
+
+    // ------------------------ Fungible Tokens ---------------------------- //
+    pub ft_balance: NearToken,
+
+    // ------------------------ Leaderboard -------------------------------- //
+    pub tokens_collected: NearToken,
+
+    // ------------------------ Drops -------------------------------------- //
+    pub drops_created: IterableSet<DropId>,
+
+    /// Represents what the user has claimed for a specific drop. If scavenger IDs is none, the drop contains no scavengers
+    /// If scavengers is Some, the drop needs X amount of scavenger Ids to be found before the reward is allocated
+    /// On the frontend, query for drop data to see how many are needed and cross reference with this data structure to see
+    /// how many more IDs are left to be found
+    /// This is done to optimize the contract and not require duplicate data to be stored
+    pub drops_claimed: IterableMap<DropId, ClaimedDropData>,
+}
+
+#[near(serializers=[borsh])]
+pub struct OldState {
+    // ------------------------ Contract Global ---------------------------- //
+    pub account_details_by_id: IterableMap<AccountId, OldAccountDetails>, // clearable
+    pub is_contract_frozen: bool,
+    pub contract_key: PublicKey,
+
+    // ------------------------ Fungible Tokens ---------------------------- //
+    pub ft_total_supply: NearToken,
+    pub ft_metadata: FungibleTokenMetadata,
+
+    // ------------------------ Non Fungible Tokens ------------------------ //
+    pub nft_tokens_by_id: IterableMap<TokenId, Token>,
+    pub nft_tokens_per_owner: LookupMap<AccountId, IterableSet<TokenId>>,
+    pub series_by_id: IterableMap<SeriesId, Series>,
+    pub nft_metadata: NFTContractMetadata,
+
+    // ------------------------ Drops -------------------------------------- //
+    pub drop_by_id: IterableMap<DropId, DropData>, // clearable
+
+    // ------------------------ Account Factory ---------------------------- //
+    pub ticket_data_by_id: IterableMap<DropId, TicketType>, // clearable
+
+    // ------------------------ Leaderboard ------------------------------------ //
+    pub token_leaderboard: Vec<AccountId>,         // clearable
+    pub poap_leaderboard: Vec<AccountId>,          // clearable
+    pub recent_transactions: Vec<TransactionType>, // clearable
+    pub total_transactions: u64,
+    pub total_tokens_transferred: NearToken,
+
+    // ------------------------ Tickets ------------------------------------ //
+    pub attendee_ticket_by_pk: IterableMap<PublicKey, AttendeeTicketInformation>, // clearable
+
+    // ------------------------ External Databases ------------------------- //
+    pub agenda: String,        // clearable
+    pub alerts: String,        // clearable
+    pub alerts_timestamp: u64, // clearable
+    pub agenda_timestamp: u64, // clearable
+}
+
 #[near]
 impl Contract {
+    #[private]
+    #[init(ignore_state)]
+    pub fn migrate() -> Self {
+        // retrieve the current state from the contract
+        let old_state: OldState = env::state_read().expect("failed");
+
+        // iterate through the state migrating it to the new version
+        let mut account_details_by_id: IterableMap<AccountId, AccountDetails> =
+            IterableMap::new(StorageKeys::AccountDetailsByIdNew);
+
+        for (account_id, old_account_details) in old_state.account_details_by_id.iter() {
+            let drops_created = IterableSet::new(StorageKeys::DropIdsByCreatorInner {
+                account_id_hash: hash_string(&account_id.to_string()),
+            });
+            let drops_claimed = IterableMap::new(StorageKeys::DropsClaimedByAccountInner {
+                account_id_hash: hash_string(&account_id.to_string()),
+            });
+
+            let new_account_details = AccountDetails {
+                account_status: old_account_details.account_status.clone(),
+                ft_balance: old_account_details.ft_balance,
+                tokens_collected: old_account_details.tokens_collected,
+                drops_created,
+                drop_nonce: 0,
+                drops_claimed,
+            };
+            account_details_by_id.insert(account_id.clone(), new_account_details);
+        }
+
+        // return the new state
+        Self {
+            agenda: old_state.agenda,
+            alerts: old_state.alerts,
+            token_leaderboard: old_state.token_leaderboard,
+            poap_leaderboard: old_state.poap_leaderboard,
+            agenda_timestamp: old_state.agenda_timestamp,
+            alerts_timestamp: old_state.alerts_timestamp,
+            nft_tokens_per_owner: old_state.nft_tokens_per_owner,
+            contract_key: old_state.contract_key,
+            is_contract_frozen: old_state.is_contract_frozen,
+            account_details_by_id,
+            ft_total_supply: old_state.ft_total_supply,
+            recent_transactions: old_state.recent_transactions,
+            total_transactions: old_state.total_transactions,
+            total_tokens_transferred: old_state.total_tokens_transferred,
+            ft_metadata: old_state.ft_metadata,
+            series_by_id: old_state.series_by_id,
+            nft_tokens_by_id: old_state.nft_tokens_by_id,
+            nft_metadata: old_state.nft_metadata,
+            drop_by_id: old_state.drop_by_id,
+            ticket_data_by_id: old_state.ticket_data_by_id,
+            attendee_ticket_by_pk: old_state.attendee_ticket_by_pk,
+        }
+    }
     /// Initializes a new contract instance.
     ///
     /// # Arguments

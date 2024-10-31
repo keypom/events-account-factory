@@ -4,6 +4,30 @@ use crate::*;
 #[derive(Clone)]
 #[near(serializers = [json, borsh])]
 #[serde(tag = "type")]
+pub enum ExtDropData {
+    Token(ExtTokenDropData),
+    Multichain(MultichainDropData),
+    Nft(NFTDropData),
+}
+
+#[derive(Clone)]
+#[near(serializers = [json, borsh])]
+pub struct ExtTokenDropData {
+    pub id: String,
+    pub key: PublicKey,
+    pub name: String,
+    pub image: String,
+    pub scavenger_hunt: Option<Vec<ScavengerHuntData>>,
+    pub num_claimed: u64,
+    pub creator_has_funds: bool,
+
+    pub token_amount: U128,
+}
+
+#[allow(non_camel_case_types)]
+#[derive(Clone)]
+#[near(serializers = [json, borsh])]
+#[serde(tag = "type")]
 pub enum ExtClaimedDrop {
     token(ExtClaimedTokenDropData),
     nft(ExtClaimedNFTDropData),
@@ -40,6 +64,7 @@ pub struct ExtClaimedMultichainDropData {
 pub struct ExtClaimedTokenDropData {
     pub found_scavenger_ids: ScavengerKeys,
     pub needed_scavenger_ids: Option<Vec<ScavengerHuntData>>,
+    pub creator_has_funds: bool,
     pub name: String,
     pub image: String,
     pub token_amount: U128,
@@ -58,8 +83,71 @@ impl Contract {
     /// # Returns
     ///
     /// An `Option` containing the `ExtDropData` if the drop is found, otherwise `None`.
-    pub fn get_drop_information(&self, drop_id: String) -> Option<DropData> {
-        self.drop_by_id.get(&drop_id).cloned()
+    pub fn get_drop_information(&self, drop_id: String) -> Option<ExtDropData> {
+        // Get the DropData
+        if let Some(drop_data) = self.drop_by_id.get(&drop_id) {
+            // Parse the creator_id from the drop_id
+            let creator_id = parse_drop_id(&drop_id);
+            // Get the creator's account details
+            if let Some(creator) = self.account_details_by_id.get(&creator_id) {
+                // Now, depending on the type of drop, construct the appropriate ExtDropData
+                match drop_data {
+                    DropData::Token(token_data) => {
+                        // Compute creator_has_funds
+                        let creator_has_funds = match creator.account_status {
+                            Some(AccountStatus::Admin) => true,
+                            _ => creator.ft_balance.as_yoctonear() >= token_data.token_amount.0,
+                        };
+                        // Construct ExtTokenDropData
+                        let ext_token_data = ExtTokenDropData {
+                            id: token_data.id.clone(),
+                            key: token_data.key.clone(),
+                            name: token_data.name.clone(),
+                            image: token_data.image.clone(),
+                            scavenger_hunt: token_data.scavenger_hunt.clone(),
+                            num_claimed: token_data.num_claimed,
+                            creator_has_funds,
+                            token_amount: token_data.token_amount,
+                        };
+                        Some(ExtDropData::Token(ext_token_data))
+                    }
+                    DropData::Nft(nft_data) => {
+                        // Construct NFTDropData (no creator_has_funds needed)
+                        let ext_nft_data = NFTDropData {
+                            id: nft_data.id.clone(),
+                            key: nft_data.key.clone(),
+                            name: nft_data.name.clone(),
+                            image: nft_data.image.clone(),
+                            scavenger_hunt: nft_data.scavenger_hunt.clone(),
+                            num_claimed: nft_data.num_claimed,
+                            nft_metadata: nft_data.nft_metadata.clone(),
+                            nft_series_id: nft_data.nft_series_id,
+                        };
+                        Some(ExtDropData::Nft(ext_nft_data))
+                    }
+                    DropData::Multichain(mc_data) => {
+                        // Construct MultichainDropData (no creator_has_funds needed)
+                        let ext_mc_data = MultichainDropData {
+                            id: mc_data.id.clone(),
+                            key: mc_data.key.clone(),
+                            name: mc_data.name.clone(),
+                            image: mc_data.image.clone(),
+                            scavenger_hunt: mc_data.scavenger_hunt.clone(),
+                            num_claimed: mc_data.num_claimed,
+                            nft_metadata: mc_data.nft_metadata.clone(),
+                            mc_metadata: mc_data.mc_metadata.clone(),
+                        };
+                        Some(ExtDropData::Multichain(ext_mc_data))
+                    }
+                }
+            } else {
+                // Creator not found
+                None
+            }
+        } else {
+            // DropData not found
+            None
+        }
     }
 
     /// Generic function to retrieve claimed drops for a specific account based on a filter.
@@ -87,6 +175,9 @@ impl Contract {
             for (drop_id, found_scavenger_ids) in claimed_drops.iter() {
                 // Convert drop_id (which is a &String) to &str
                 let drop_id_str: &str = drop_id;
+
+                let creator_id = parse_drop_id(drop_id);
+                let creator = self.account_details_by_id.get(&creator_id).unwrap();
 
                 // Get the drop information associated with the drop ID
                 if let Some(drop_data) = self.drop_by_id.get(drop_id_str) {
@@ -130,11 +221,19 @@ impl Contract {
                             }
                             DropData::Token(_) => {
                                 if let DropData::Token(token_data) = &drop_data {
+                                    let creator_has_funds = match creator.account_status {
+                                        Some(AccountStatus::Admin) => true,
+                                        _ => {
+                                            creator.ft_balance.as_yoctonear()
+                                                >= token_data.token_amount.0
+                                        }
+                                    };
                                     result_drops.push(ExtClaimedDrop::token(
                                         ExtClaimedTokenDropData {
                                             found_scavenger_ids: found_scavenger_ids.clone(),
                                             image: token_data.image.clone(),
                                             needed_scavenger_ids: drop_data.get_scavenger_data(),
+                                            creator_has_funds,
                                             key: token_data.key.clone(),
                                             name: token_data.name.clone(),
                                             token_amount: token_data.token_amount,
@@ -182,6 +281,9 @@ impl Contract {
             .expect("Drop not found")
             .clone();
 
+        let creator_id = parse_drop_id(&drop_id);
+        let creator = self.account_details_by_id.get(&creator_id).unwrap();
+
         match drop_data {
             DropData::Multichain(_) => {
                 if let DropData::Multichain(multichain_data) = &drop_data {
@@ -221,10 +323,16 @@ impl Contract {
             }
             DropData::Token(_) => {
                 if let DropData::Token(token_data) = &drop_data {
+                    let creator_has_funds = match creator.account_status {
+                        Some(AccountStatus::Admin) => true,
+                        _ => creator.ft_balance.as_yoctonear() >= token_data.token_amount.0,
+                    };
+
                     ExtClaimedDrop::token(ExtClaimedTokenDropData {
                         found_scavenger_ids: found_scavenger_ids.clone(),
                         key: token_data.key.clone(),
                         needed_scavenger_ids: drop_data.get_scavenger_data(),
+                        creator_has_funds,
                         image: token_data.image.clone(),
                         name: token_data.name.clone(),
                         token_amount: token_data.token_amount,
@@ -288,7 +396,10 @@ impl Contract {
     /// # Returns
     ///
     /// A vector of `ExtClaimedDrop` containing the claimed NFT drops for the account.
-    pub fn get_claimed_multichain_nfts_for_account(&self, account_id: AccountId) -> Vec<ExtClaimedDrop> {
+    pub fn get_claimed_multichain_nfts_for_account(
+        &self,
+        account_id: AccountId,
+    ) -> Vec<ExtClaimedDrop> {
         // Filter for NFT drops only
         self.get_claimed_drops(account_id, |drop, _| drop.is_multichain_drop())
     }
@@ -302,7 +413,7 @@ impl Contract {
     /// # Returns
     ///
     /// A vector of `DropData` containing the drops created by the account.
-    pub fn get_drops_created_by_account(&self, account_id: AccountId) -> Vec<DropData> {
+    pub fn get_drops_created_by_account(&self, account_id: AccountId) -> Vec<ExtDropData> {
         let mut drops_created = Vec::new();
         // Retrieve the account details to get the list of drops created
         let account_details = self
@@ -338,7 +449,7 @@ impl Contract {
     /// # Returns
     ///
     /// A vector of `ExtDropData` containing the drops.
-    pub fn get_drops(&self, from_index: Option<U128>, limit: Option<u64>) -> Vec<DropData> {
+    pub fn get_drops(&self, from_index: Option<U128>, limit: Option<u64>) -> Vec<ExtDropData> {
         // Where to start pagination - if we have a from_index, we'll use that - otherwise start from 0 index
         let start = u128::from(from_index.unwrap_or(U128(0)));
 
