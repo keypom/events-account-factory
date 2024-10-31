@@ -9,6 +9,7 @@ pub type ClaimedDropData = Option<Vec<PublicKey>>;
 pub enum StorageKeys {
     AttendeeTicketInformation,
     AccountDetailsById,
+    AccountDetailsByIdNew,
     DropsClaimedByAccountInner { account_id_hash: CryptoHash },
     DropById,
     TokensForOwner,
@@ -27,7 +28,7 @@ pub enum AccountStatus {
     Sponsor,
     DataSetter,
     Admin,
-    TicketAdder
+    TicketAdder,
 }
 
 impl AccountStatus {
@@ -115,6 +116,7 @@ pub struct AccountDetails {
 
     // ------------------------ Drops -------------------------------------- //
     pub drops_created: IterableSet<DropId>,
+    pub drop_nonce: u64,
 
     /// Represents what the user has claimed for a specific drop. If scavenger IDs is none, the drop contains no scavengers
     /// If scavengers is Some, the drop needs X amount of scavenger Ids to be found before the reward is allocated
@@ -136,6 +138,7 @@ impl AccountDetails {
         AccountDetails {
             ft_balance: NearToken::from_yoctonear(0),
             tokens_collected: NearToken::from_yoctonear(0),
+            drop_nonce: 0,
             account_status: None,
             drops_created,
             drops_claimed,

@@ -31,9 +31,7 @@ impl Contract {
         // The drop ID will be a concatenation of the creator, delimiter, and the drop number
         let drop_id = format!(
             "{}{}{}",
-            drop_creator,
-            DROP_DELIMITER,
-            account_details.drops_created.len()
+            drop_creator, DROP_DELIMITER, account_details.drop_nonce
         );
         require!(
             self.drop_by_id
@@ -55,6 +53,7 @@ impl Contract {
 
         // Add the drop ID to the creator's list of drop IDs
         account_details.drops_created.insert(drop_id.clone());
+        account_details.drop_nonce += 1;
 
         let drop_creation_log: EventLog = EventLog {
             standard: KEYPOM_STANDARD_NAME.to_string(),
@@ -99,9 +98,7 @@ impl Contract {
         // The drop ID will be a concatenation of the creator, delimiter, and the drop number
         let drop_id = format!(
             "{}{}{}",
-            drop_creator,
-            DROP_DELIMITER,
-            account_details.drops_created.len()
+            drop_creator, DROP_DELIMITER, account_details.drop_nonce
         );
 
         // Create the series
@@ -140,6 +137,7 @@ impl Contract {
 
         // Add the drop ID to the creator's list of drop IDs
         account_details.drops_created.insert(drop_id.clone());
+        account_details.drop_nonce += 1;
 
         let drop_creation_log: EventLog = EventLog {
             standard: KEYPOM_STANDARD_NAME.to_string(),
@@ -188,9 +186,7 @@ impl Contract {
         // The drop ID will be a concatenation of the creator, delimiter, and the drop number
         let drop_id = format!(
             "{}{}{}",
-            drop_creator,
-            DROP_DELIMITER,
-            account_details.drops_created.len()
+            drop_creator, DROP_DELIMITER, account_details.drop_nonce
         );
 
         require!(
@@ -214,6 +210,7 @@ impl Contract {
 
         // Add the drop ID to the creator's list of drop IDs
         account_details.drops_created.insert(drop_id.clone());
+        account_details.drop_nonce += 1;
 
         let drop_creation_log: EventLog = EventLog {
             standard: KEYPOM_STANDARD_NAME.to_string(),
