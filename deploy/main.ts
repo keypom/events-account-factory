@@ -3,7 +3,7 @@ import { adminCreateAccount } from "./adminCreateAccounts";
 import fs from "fs";
 import path from "path";
 import { createDrops } from "./createDrops";
-import { Config } from "./types";
+import { Config, PremadeTicketData } from "./types";
 import {
   convertMapToRawJsonCsv,
   initNear,
@@ -222,12 +222,20 @@ const main = async () => {
   }
 
   if (CREATION_CONFIG.premadeTickets) {
+    const PREMADE_TICKET_DATA_FILLED: PremadeTicketData = Array.from(
+      { length: 1800 },
+      (_, index) => ({
+        name: `Test User ${index + 1}`,
+        email: index === 0 ? "" : "foo", // Empty email for the first user, "foo" for others
+      }),
+    );
+
     const { premadeCSV, premadeTicketCSV } = await addPremadeTickets({
       near,
       signerAccount,
       factoryAccountId,
       dropId: "ga_pass",
-      attendeeInfo: PREMADE_TICKET_DATA,
+      attendeeInfo: PREMADE_TICKET_DATA_FILLED,
       config,
     });
     // Write the sponsors CSV to the "data" directory
