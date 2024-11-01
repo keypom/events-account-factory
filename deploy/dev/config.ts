@@ -3,12 +3,13 @@ import { CreationConfig, PremadeTicketData } from "../types";
 export const GLOBAL_NETWORK = "testnet";
 
 export const SIGNER_ACCOUNT = "benjiman.testnet";
+export const FREEZE_CONTRACT = false;
 export const CLEANUP_CONTRACT = false;
 export const CREATION_CONFIG: CreationConfig = {
   deployContract: false,
 
   // TICKETS
-  addTickets: false,
+  addTickets: true,
   premadeTickets: false,
 
   // ACCOUNTS
@@ -17,14 +18,14 @@ export const CREATION_CONFIG: CreationConfig = {
   createAdmin: false,
   createTicketAdder: false,
 
-  nftDrops: true,
-  tokenDrops: true,
-  scavDrops: true,
-  multichainDrops: true,
+  nftDrops: false,
+  tokenDrops: false,
+  scavDrops: false,
+  multichainDrops: false,
 };
 
 export const SITE_BASE_URL = "https://development.keypom-events-app.pages.dev";
-export const EXISTING_FACTORY = `1730385829953-factory.testnet`;
+export const EXISTING_FACTORY = `1730317152765-factory.testnet`;
 export const ADMIN_ACCOUNTS = [SIGNER_ACCOUNT];
 
 export const PREMADE_TICKET_DATA: PremadeTicketData = [

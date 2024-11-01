@@ -2,6 +2,7 @@ import { addPremadeTickets, addTickets } from "./addTickets";
 import { adminCreateAccount } from "./adminCreateAccounts";
 import fs from "fs";
 import path from "path";
+import { KeyPair } from "near-api-js";
 import { createDrops } from "./createDrops";
 import { Config, PremadeTicketData } from "./types";
 import {
@@ -59,6 +60,7 @@ const main = async () => {
   const {
     ADMIN_ACCOUNTS,
     CLEANUP_CONTRACT,
+    FREEZE_CONTRACT,
     CREATION_CONFIG,
     EXISTING_FACTORY,
     GLOBAL_NETWORK,
@@ -290,6 +292,21 @@ const main = async () => {
   if (factoryKey !== undefined) {
     await setFactoryFullAccessKey(factoryKey, factoryAccountId, config);
   }
+
+  if (factoryKey !== undefined) {
+    let factoryKeyPair = KeyPair.fromString(factoryKey);
+    let keyStore = near.connection.signer.keyStore;
+    await keyStore.setKey(GLOBAL_NETWORK, factoryAccountId, factoryKeyPair);
+  }
+  const factoryAccount = await near.account(factoryAccountId);
+  // Freeze the contract
+  console.log("Setting contract freeze to: ", FREEZE_CONTRACT);
+  await factoryAccount.functionCall({
+    contractId: factoryAccountId,
+    methodName: "toggle_freeze",
+    args: { is_freeze: FREEZE_CONTRACT },
+    gas: "300000000000000",
+  });
 
   if (CLEANUP_CONTRACT) {
     const summary = await cleanupContract({

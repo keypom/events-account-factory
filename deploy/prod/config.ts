@@ -3,19 +3,20 @@ import { CreationConfig, PremadeTicketData } from "../types";
 export const GLOBAL_NETWORK = "mainnet";
 
 export const SIGNER_ACCOUNT = "keypom.near";
+export const FREEZE_CONTRACT = true;
 export const CLEANUP_CONTRACT = false;
 export const CREATION_CONFIG: CreationConfig = {
-  deployContract: true,
+  deployContract: false,
 
   // TICKETS
   addTickets: false,
-  premadeTickets: true,
+  premadeTickets: false,
 
   // ACCOUNTS
   createSponsors: true,
-  createWorker: true,
-  createAdmin: true,
-  createTicketAdder: true,
+  createWorker: false,
+  createAdmin: false,
+  createTicketAdder: false,
 
   nftDrops: false,
   tokenDrops: false,

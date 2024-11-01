@@ -98,6 +98,7 @@ export interface CreationConfig {
 // General configuration interface
 export interface Config {
   GLOBAL_NETWORK: string;
+  FREEZE_CONTRACT: boolean;
   SIGNER_ACCOUNT: string;
   CLEANUP_CONTRACT: boolean;
   CREATION_CONFIG: CreationConfig;

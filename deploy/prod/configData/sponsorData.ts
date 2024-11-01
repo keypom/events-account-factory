@@ -2,9 +2,15 @@ import { Sponsors } from "../../types";
 
 export const SPONSOR_DATA: Sponsors = [
   {
-    accountName: "test-sponsor",
+    accountName: "calimero",
     startingNearBalance: "0.01",
-    startingTokenBalance: "10000",
+    startingTokenBalance: "2000",
+    accountType: "Sponsor",
+  },
+  {
+    accountName: "calimero",
+    startingNearBalance: "0.01",
+    startingTokenBalance: "2000",
     accountType: "Sponsor",
   },
 ];
