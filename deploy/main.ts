@@ -1,4 +1,4 @@
-import { addPremadeTickets, addTickets } from "./addTickets";
+import { addPremadeTickets, addTickets, encodeToBase64 } from "./addTickets";
 import { adminCreateAccount } from "./adminCreateAccounts";
 import fs from "fs";
 import path from "path";
@@ -109,6 +109,8 @@ const main = async () => {
   // STEP 2: Create Sponsors
   if (CREATION_CONFIG.createSponsors) {
     const sponsorCSV: string[] = [];
+    const sponsorTicketsCSV: string[] = [];
+
     for (const sponsorData of SPONSOR_DATA) {
       const { accountId, secretKey } = await adminCreateAccount({
         signerAccount,
@@ -118,14 +120,35 @@ const main = async () => {
         startingTokenBalance: sponsorData.startingTokenBalance,
         accountType: sponsorData.accountType,
       });
-      sponsorCSV.push(
-        `${sponsorData.accountName}, ${config.SITE_BASE_URL}/sponsorDashboard/${accountId}#${secretKey}`,
-      );
+
+      // Write sponsor link
+      const sponsorLink = `${sponsorData.accountName}, ${config.SITE_BASE_URL}/sponsorDashboard/${accountId}#${secretKey}`;
+      sponsorCSV.push(sponsorLink);
+
+      // Prepare attendee info for ticket creation
+      const name =
+        sponsorData.accountName.charAt(0).toUpperCase() +
+        sponsorData.accountName.slice(1);
+      const userData = { name, email: "" };
+      // Instead of encrypting, create a base64-encoded JSON object
+      const sponsorJsonObject = {
+        ticket: secretKey, // Private key of the ticket
+        userData,
+      };
+
+      const encodedJson = encodeToBase64(sponsorJsonObject); // Encode to base64
+      // Map the keypair's public key to the corresponding attendee info
+      const sponsorTicketLink = `${userData.name}, ${config.SITE_BASE_URL}/tickets/ticket/ga_pass#${encodedJson}`;
+      sponsorTicketsCSV.push(sponsorTicketLink);
     }
 
-    // Write the sponsors CSV to the "data" directory
+    // Write the sponsor links CSV to the "data" directory
     csvFilePath = path.join(dataDir, "sponsors.csv");
     fs.writeFileSync(csvFilePath, sponsorCSV.join("\n"));
+
+    // Write the sponsor tickets CSV to the "data" directory
+    csvFilePath = path.join(dataDir, "sponsorTickets.csv");
+    fs.writeFileSync(csvFilePath, sponsorTicketsCSV.join("\n"));
   }
 
   // STEP 3: Create Worker

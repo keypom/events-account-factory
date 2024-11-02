@@ -3,7 +3,7 @@ import { CreationConfig, PremadeTicketData } from "../types";
 export const GLOBAL_NETWORK = "mainnet";
 
 export const SIGNER_ACCOUNT = "keypom.near";
-export const FREEZE_CONTRACT = true;
+export const FREEZE_CONTRACT = false;
 export const CLEANUP_CONTRACT = false;
 export const CREATION_CONFIG: CreationConfig = {
   deployContract: false,
@@ -13,7 +13,7 @@ export const CREATION_CONFIG: CreationConfig = {
   premadeTickets: false,
 
   // ACCOUNTS
-  createSponsors: true,
+  createSponsors: false,
   createWorker: false,
   createAdmin: false,
   createTicketAdder: false,

@@ -3,7 +3,7 @@ import { KeyPair } from "near-api-js";
 import { Config, PremadeTicket, PremadeTicketData } from "./types";
 
 // Utility function to base64 encode a JSON object
-const encodeToBase64 = (jsonObject: Record<string, any>) => {
+export const encodeToBase64 = (jsonObject: Record<string, any>) => {
   const jsonString = JSON.stringify(jsonObject);
   return Buffer.from(jsonString).toString("base64");
 };
@@ -177,5 +177,5 @@ export const addPremadeTickets = async ({
     premadeTicketCSV.push(`${userData.name}, ${ticket}`);
   }
 
-  return {premadeCSV, premadeTicketCSV};
+  return { premadeCSV, premadeTicketCSV };
 };

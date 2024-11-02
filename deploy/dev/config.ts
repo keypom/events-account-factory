@@ -9,11 +9,11 @@ export const CREATION_CONFIG: CreationConfig = {
   deployContract: false,
 
   // TICKETS
-  addTickets: true,
+  addTickets: false,
   premadeTickets: false,
 
   // ACCOUNTS
-  createSponsors: false,
+  createSponsors: true,
   createWorker: false,
   createAdmin: false,
   createTicketAdder: false,
