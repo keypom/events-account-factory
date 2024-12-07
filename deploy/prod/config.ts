@@ -3,8 +3,8 @@ import { CreationConfig, PremadeTicketData } from "../types";
 export const GLOBAL_NETWORK = "mainnet";
 
 export const SIGNER_ACCOUNT = "keypom.near";
-export const FREEZE_CONTRACT = false;
-export const CLEANUP_CONTRACT = false;
+export const FREEZE_CONTRACT = true;
+export const CLEANUP_CONTRACT = true;
 export const CREATION_CONFIG: CreationConfig = {
   deployContract: false,
 
